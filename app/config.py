@@ -379,9 +379,33 @@ def raiz() -> Path:
     return atual().raiz
 
 
+SEM_PLATAFORMA = "nenhuma plataforma configurada"
+
+
+def sem_plataforma() -> Config:
+    """Config de quem ainda não tem plataforma nenhuma.
+
+    A raiz aponta para o próprio hub, que não tem o marcador — então `ok()` é
+    falso e **todo o resto degrada pelo caminho que já existe**, o mesmo da pasta
+    que não é plataforma. Sem isto, `config.atual()` levantaria em cada endpoint
+    e o primeiro contato com o produto seria um traceback.
+    """
+    cfg = carregar(hub_dir())
+    cfg.origem = SEM_PLATAFORMA
+    return aplicar(cfg)
+
+
 def iniciar(argv=None) -> Config:
-    """Resolve a raiz, carrega o config e o marca como ativo."""
-    r, inline, origem = resolver(argv)
+    """Resolve a raiz, carrega o config e o marca como ativo.
+
+    Quando nada resolve — o caso de quem acabou de clonar — **não levanta**:
+    devolve a config de `sem_plataforma()`, para o servidor subir e a aba
+    Embarque abrir. Quem quiser o erro chama `resolver()` direto.
+    """
+    try:
+        r, inline, origem = resolver(argv)
+    except RaizNaoResolvida:
+        return sem_plataforma()
     cfg = carregar(r, inline)
     cfg.origem = f"{origem} · {cfg.origem}"
     return aplicar(cfg)

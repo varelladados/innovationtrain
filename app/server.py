@@ -742,13 +742,16 @@ class Handler(BaseHTTPRequestHandler):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    try:
-        cfg = config.iniciar(argv)
-    except config.RaizNaoResolvida as e:
-        print(str(e))
-        return 2
+    cfg = config.iniciar(argv)   # nunca levanta: sem plataforma, degrada
+    primeira_vez = cfg.origem == config.SEM_PLATAFORMA
 
     reindex()  # nunca levanta: ver o docstring dele
+    if primeira_vez:
+        # a mensagem do sanity_check ("_indice.md não encontrado em …") descreve
+        # o sintoma, não a situação. Quem acabou de clonar precisa ler a situação.
+        with STATE_LOCK:
+            STATE["plataforma_erro"] = (
+                "nenhuma plataforma configurada ainda — a aba Embarque cria a primeira")
     with STATE_LOCK:
         ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
 
@@ -764,7 +767,14 @@ def main(argv=None):
     url = f"http://127.0.0.1:{PORT}"
     print(f"Estacao rodando em {url}")
     print(f"Plataforma: {cfg.nome} — {cfg.raiz}  ({cfg.origem})")
-    if not ok:
+    if primeira_vez:
+        print("")
+        print("Ainda não há plataforma nenhuma configurada — e tudo bem.")
+        print("Abra o endereço acima: a aba Embarque cria a primeira.")
+        print("")
+        print("Se você já tem uma, aponte por --raiz, pela variável de ambiente")
+        print(f"ESTACAO_PLATAFORMA, ou registrando-a em {config.estacao_json()}")
+    elif not ok:
         print(f"Atenção: a plataforma não pôde ser lida ({erro}).")
         print("O servidor subiu assim mesmo — abra o app para configurar.")
 

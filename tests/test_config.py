@@ -66,6 +66,24 @@ class TestResolucaoDaRaiz(unittest.TestCase):
         self.assertIn("estacao.json", msg)
         self.assertIn("Embarque", msg)
 
+    def test_iniciar_sem_nada_NAO_levanta(self):
+        """O caso de quem acabou de clonar. `resolver()` levanta — é a função
+        que responde "onde fica?" —, mas `iniciar()` tem que devolver a config de
+        sem-plataforma, para o servidor subir e a aba Embarque abrir. Era o
+        contrário disso, e um clone recém-feito morria no boot com um texto de
+        erro: o primeiro contato com o produto era uma parede."""
+        anterior = config._ATUAL
+        try:
+            cfg = config.iniciar([])
+            self.assertEqual(cfg.origem, config.SEM_PLATAFORMA)
+            self.assertFalse(cfg.ok())
+            self.assertTrue(config.definida(), "config.atual() precisa funcionar")
+            # e tudo que os endpoints chamam tem que responder, não levantar
+            self.assertIsInstance(cfg.siglas, list)
+            self.assertIsNotNone(cfg.arquivo_rel("registro"))
+        finally:
+            config.aplicar(anterior) if anterior else None
+
     def test_o_fallback_project_dir_parent_nao_voltou(self):
         """Sem plataforma indicada, tem que ERRAR — nunca cair numa pasta
         qualquer e indexar a árvore errada em silêncio."""
