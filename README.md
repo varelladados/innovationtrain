@@ -71,20 +71,31 @@ São **duas**, e elas usam o mesmo método em assuntos opostos de propósito:
 | `plataformas/exemplo` | cozinha e fotografia — doméstico, sem prazo. Começa com *"comprei coentro de novo"* rabiscado num ônibus e termina num projeto com backlog |
 | `plataformas/exemplo-precos` | preços, concorrência e lojas clone — trabalho, com dinheiro e advogada envolvidos |
 
-A segunda mostra a metade que um exemplo costuma esconder: das cinco cadeias
-dela, **duas chegam a projeto e três empacam pelo caminho** — uma na nota, duas
-na ideia — e há uma captura de julho, nunca tratada, que bloqueia uma delas.
-É o estado normal de qualquer plataforma de verdade.
+São duas de propósito, e elas se completam:
 
-Troque entre elas pelo seletor no topo da barra lateral, sem reiniciar.
+- **`plataformas/exemplo` começa vazia** — só nove capturas. Ela vem com uma
+  **trilha de três passos**: um clique e a plataforma inteira passa para o estado
+  seguinte, até uma captura virar projeto com backlog. **↺ voltar ao início**
+  desfaz tudo. Nada é calculado: cada passo é um instantâneo pronto, e o botão só
+  o restaura.
+- **`plataformas/exemplo-precos` já rodou** — cinco cadeias, das quais **duas
+  chegam a projeto e três empacam pelo caminho**, mais uma captura de julho nunca
+  tratada que bloqueia uma delas. É o estado normal de uma plataforma de verdade,
+  e é a metade que um exemplo costuma esconder.
+
+Uma existe para ser dirigida, a outra para ser lida. Troque entre elas pelo
+seletor no topo da barra lateral, sem reiniciar.
+
+A trilha e o reiniciar **só existem nas plataformas de exemplo**: é uma chave do
+`plataforma.json` que os libera, e uma plataforma sua não a declara.
 
 ## O que tem aqui
 
 ```
 app/                       o servidor e a interface (stdlib puro, zero dependência)
 metodo/                    as regras, a taxonomia, os templates e o utilitário
-plataformas/exemplo/       cozinha e fotografia — uma cadeia inteira, do ônibus ao backlog
-plataformas/exemplo-precos/ preços e lojas clone — e o que ficou pelo caminho
+plataformas/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 3 passos
+plataformas/exemplo-precos/ preços e lojas clone — já povoada, e o que ficou pelo caminho
 docs/design-system.md  tokens, temas, fontes e a regra de ouro do CSS
 tests/                 137 testes, stdlib, sem dependência
 ```

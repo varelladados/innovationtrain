@@ -35,6 +35,7 @@ import portfolio as portfolio_mod
 import notas as notas_mod
 import workflow as workflow_mod
 import avanco as avanco_mod
+import trilha as trilha_mod
 import pendencias as pendencias_mod
 import projetos as projetos_mod
 import noar as noar_mod
@@ -297,6 +298,9 @@ class Handler(BaseHTTPRequestHandler):
                 "plataforma_ok": ok,
                 "plataforma_erro": erro,
                 "plataforma": cfg.resumo() if cfg else None,
+                # Onde a plataforma está na trilha de exemplo. Fora de exemplo
+                # vem `{"tem": false}` e a interface não mostra nada.
+                "trilha": trilha_mod.estado(cfg) if cfg else {"tem": False},
             })
             return
 
@@ -478,6 +482,10 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_projeto_anotar(payload)
             return
 
+        if path == "/api/exemplo/passo":
+            self._handle_exemplo_passo(payload)
+            return
+
         self._send_json({"error": "not found"}, status=404)
 
     def _handle_embarque_prompt(self, payload):
@@ -548,6 +556,31 @@ class Handler(BaseHTTPRequestHandler):
             "plataforma": config.atual().resumo(),
         })
 
+    def _handle_exemplo_passo(self, payload):
+        """Põe uma plataforma de EXEMPLO num passo da trilha. Passo 0 = reiniciar.
+
+        Não há promoção acontecendo aqui: cada passo é uma pasta com a
+        plataforma inteira já naquele estado, e o utilitário só copia por cima.
+        Ver `app/trilha.py` — inclusive sobre por que isto **não** é um motor de
+        avanço, e por que numa plataforma de verdade a passagem continua sendo
+        decisão e escrita de uma sessão de IA.
+        """
+        try:
+            n = int(payload.get("passo", 0))
+        except (TypeError, ValueError):
+            self._send_json({"error": "passo inválido"}, status=400)
+            return
+        try:
+            resultado = trilha_mod.restaurar(n)
+        except trilha_mod.TrilhaError as e:
+            self._send_json({"error": str(e)}, status=400)
+            return
+        except Exception as e:
+            self._send_json({"error": f"{type(e).__name__}: {e}"}, status=500)
+            return
+        reindex()
+        self._send_json({"ok": True, **resultado, "estado": trilha_mod.estado()})
+
     def _handle_projeto_anotar(self, payload):
         """Quinto endpoint de escrita: acrescenta uma linha de checkbox no backlog
         de um projeto. Allow-list vem do índice (só backlogs daquela pasta), trava
@@ -617,8 +650,8 @@ class Handler(BaseHTTPRequestHandler):
         """Terceiro endpoint com efeito colateral: cria uma captura crua a
         partir de texto solto — arquivo no estágio de entrada + linha no registro
         central. Nunca classifica, nunca decide destino (mesma disciplina da skill
-        rotina de encaminhamento equivalente, só que via HTTP em vez de chat). Ver
-        app/notas.py e plano-console-operacional-2026-09-06.md, frente 1."""
+        rotina de encaminhamento equivalente, só que via HTTP em vez de chat).
+        Ver `app/notas.py`."""
         texto = payload.get("texto", "")
         try:
             resultado = notas_mod.criar_captura_crua(texto)

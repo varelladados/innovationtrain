@@ -1,0 +1,31 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Protótipo — série de preço</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:38rem;margin:3rem auto;padding:0 1rem;
+       line-height:1.5}
+  h1{font-size:1.3rem}
+  h2{font-size:1rem;margin-top:1.6rem}
+  table{border-collapse:collapse;width:100%;font-size:.9rem}
+  th,td{text-align:left;padding:.35rem .5rem;border-bottom:1px solid #e4e4e4}
+  th{color:#555;font-weight:600}
+  .caiu{color:#8C2F3A;font-weight:600}
+  .serie{font-family:ui-monospace,monospace;letter-spacing:-1px;color:#2F6F6B}
+  p.nota{color:#777;font-size:.85rem}
+</style>
+<h1>Peça A — o que mudou desde sexta</h1>
+<table>
+  <tr><th>Onde</th><th>Vitrine</th><th>Frete</th><th>Total</th><th>vs. sexta</th></tr>
+  <tr><td><strong>Minha loja</strong></td><td>219,00</td><td>18,00</td><td>237,00</td><td>—</td></tr>
+  <tr><td>Concorrente 1</td><td>192,90</td><td>54,00</td><td>246,90</td><td class="caiu">−12%</td></tr>
+  <tr><td>Concorrente 2</td><td>229,00</td><td>19,90</td><td>248,90</td><td>0%</td></tr>
+</table>
+<h2>Série do Concorrente 1 — 14 dias</h2>
+<p class="serie">219 219 219 219 <strong>193</strong> 193 219 219 219 219 219 <strong>193</strong> 193 219</p>
+<p class="nota">Cai na sexta, volta na segunda. Duas vezes em duas semanas — é isso
+que um print não mostra e a série mostra.</p>
+<h2>O que a vitrine escondia</h2>
+<p>O Concorrente 1 está <strong>12% mais barato na vitrine</strong> e
+<strong>4% mais caro no total</strong>. Igualar o preço dele teria sido perder margem
+numa disputa já ganha.</p>
+<p class="nota">Protótipo estático de exemplo — dados inventados, lojas inventadas.</p>

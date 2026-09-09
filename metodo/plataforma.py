@@ -349,6 +349,91 @@ def cmd_verificar(args):
 
 # --------------------------------------------------------------------------
 
+# ---------------------------------------------------------------- reiniciar
+
+#: Nunca removidos ao reiniciar: metadados de ferramenta, não conteúdo da
+#: plataforma. `cache/` e `dist/` são derivados e voltam sozinhos.
+PRESERVAR = {".git", ".hg", ".svn", "cache", "dist", "node_modules", "__pycache__"}
+
+
+def cmd_reiniciar(args):
+    """Devolve a plataforma ao estado declarado em `estado_inicial`.
+
+    A semântica é simples de explicar e de conferir: **deixa a pasta idêntica ao
+    instantâneo**. Some o que foi criado depois, volta o que foi apagado, e o que
+    foi editado volta ao texto original.
+
+    Três portões, nesta ordem, e o primeiro é o que importa:
+
+    1. **A plataforma tem que declarar `estado_inicial`.** Uma plataforma de
+       verdade não declara, e por isso este comando não tem como apagar o
+       trabalho de ninguém — ele recusa antes de olhar o disco.
+    2. O instantâneo tem que existir e ser mesmo uma plataforma (`plataforma.json`).
+    3. O instantâneo tem que estar **fora** da raiz, senão ele se apagaria.
+
+    Sem `--confirmar` só mostra o que faria.
+    """
+    import shutil
+
+    p = Plataforma(Path(args.raiz))
+    rel = p.d.get("estado_inicial")
+    if not rel:
+        print("Esta plataforma não declara `estado_inicial` no plataforma.json.")
+        print("")
+        print("Reiniciar só existe para as plataformas de exemplo, que vêm com uma")
+        print("cópia intacta de si mesmas. Uma plataforma sua não tem essa cópia —")
+        print("e é por isso que este comando não consegue apagar o seu trabalho.")
+        return 2
+
+    # `--de` escolhe QUAL instantaneo restaurar (a trilha usa isso para andar de
+    # passo em passo). O portao continua sendo `estado_inicial`: sem ele, nem
+    # `--de` faz este comando tocar em nada.
+    rel = getattr(args, "de", None) or rel
+    origem = (p.raiz / str(rel).replace("\\", "/")).resolve()
+    if not (origem / "plataforma.json").is_file():
+        print(f"ERRO: `estado_inicial` aponta para {origem}, que não é uma plataforma.")
+        return 2
+    if origem == p.raiz or p.raiz in origem.parents:
+        print(f"ERRO: o estado inicial ({origem}) está dentro da própria plataforma.")
+        print("Ele seria apagado junto. Mova-o para fora antes.")
+        return 2
+
+    atual = {q.name for q in p.raiz.iterdir()} - PRESERVAR
+    novo = {q.name for q in origem.iterdir()}
+    remover = sorted(atual)
+    print(f"Plataforma: {p.d.get('nome') or p.raiz.name}  ({p.raiz})")
+    print(f"Estado inicial: {origem}")
+    print("")
+    print(f"  remove da raiz:  {len(remover)} item(ns)  {', '.join(remover[:8])}"
+          + (" …" if len(remover) > 8 else ""))
+    print(f"  restaura:        {len(novo)} item(ns)")
+    preservados = sorted({q.name for q in p.raiz.iterdir()} & PRESERVAR)
+    if preservados:
+        print(f"  preserva:        {', '.join(preservados)}")
+
+    if not args.confirmar:
+        print("")
+        print("Nada foi tocado. Rode de novo com --confirmar para valer.")
+        return 0
+
+    for nome in remover:
+        alvo = p.raiz / nome
+        if alvo.is_dir():
+            shutil.rmtree(alvo)
+        else:
+            alvo.unlink()
+    for q in sorted(origem.iterdir()):
+        destino = p.raiz / q.name
+        if q.is_dir():
+            shutil.copytree(q, destino)
+        else:
+            shutil.copy2(q, destino)
+
+    print("")
+    print("  a plataforma voltou ao estado inicial.")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Utilitário de uma plataforma da Estação.")
@@ -374,6 +459,15 @@ def main(argv=None):
 
     p_v = com_raiz(sub.add_parser("verificar", help="checa as invariantes da plataforma"))
     p_v.set_defaults(func=cmd_verificar)
+
+    p_r = com_raiz(sub.add_parser(
+        "reiniciar",
+        help="devolve uma plataforma de EXEMPLO ao estado de origem"))
+    p_r.add_argument("--de", help="pasta do instantâneo a restaurar "
+                                  "(padrão: o `estado_inicial` da plataforma)")
+    p_r.add_argument("--confirmar", action="store_true",
+                     help="sem isto, só mostra o que faria")
+    p_r.set_defaults(func=cmd_reiniciar)
 
     args = parser.parse_args(argv)
     rc = args.func(args)

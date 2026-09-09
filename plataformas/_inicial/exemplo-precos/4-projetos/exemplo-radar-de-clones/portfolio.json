@@ -1,0 +1,9 @@
+{
+  "nome": "Exemplo — Radar de clones",
+  "tags": [
+    "servico",
+    "exemplo"
+  ],
+  "nota": "Projeto de exemplo da plataforma. Mostra um projeto que declara em voz alta o que está FORA do escopo dele, e um backlog com item bloqueado por uma decisão aberta.",
+  "repo_publico": false
+}

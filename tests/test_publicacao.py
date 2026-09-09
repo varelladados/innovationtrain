@@ -26,7 +26,17 @@ RAIZ = Path(__file__).resolve().parent.parent
 #: Nomes de pasta do sistema de origem têm a forma `PJx-Nome` / `PRx-Nome`.
 #: Qualquer coisa com essa forma que não esteja na lista de permitidos é um
 #: vazamento em potencial.
-FORMA_PROJETO = re.compile(r"\b(?:PJ|PR)[A-Z]-[A-Za-z][A-Za-z0-9_-]{2,}")
+#:
+#: O lookbehind separa **nome de pasta** de **identificador**: em
+#: `26.09.09-PRJ-APP-001-assunto-87eb` a parte depois da data é sigla + tipo +
+#: sequência desta taxonomia, não pasta de projeto de terceiro.
+#:
+#: (E repare que o exemplo acima **precisa** vir com a data: escrito sem ela,
+#: este próprio comentário derruba o teste. Foi o que aconteceu ao escrevê-lo.)
+#: Sem ele, avançar um item para projeto com tipo declarado quebrava o
+#: build — descoberto exercitando a ação avançar, não em revisão.
+FORMA_PROJETO = re.compile(
+    r"(?<!\d{2}\.\d{2}\.\d{2}-)\b(?:PJ|PR)[A-Z]-[A-Za-z][A-Za-z0-9_-]{2,}")
 
 #: O que pode aparecer com essa forma. Tudo aqui é deste projeto ou genérico.
 PERMITIDOS = {

@@ -96,6 +96,14 @@ PADROES = {
     "fluxo": None,
     "manifesto": None,          # documento com a frase-tese, usado pela vitrine
     "manifesto_marca": None,    # o rótulo que precede a frase dentro dele
+    #: Pasta com uma cópia intacta desta plataforma, para `plataforma.py
+    #: reiniciar` devolvê-la ao estado de origem. **Só as plataformas de exemplo
+    #: declaram isto**, e a ausência dela é o que torna reiniciar impossível numa
+    #: plataforma de verdade: sem a chave, o comando recusa antes de olhar disco.
+    "estado_inicial": None,
+    #: Os instantâneos seguintes da trilha de exemplo — cada um é a plataforma
+    #: inteira num estado adiante. Só as de exemplo declaram.
+    "tutorial": None,
 }
 
 
@@ -236,6 +244,10 @@ class Config:
             "registro": self.arquivo_rel("registro"),
             "historico": self.historico,
             "ok": self.ok(),
+            # A interface só oferece "reiniciar" onde ele existe. Uma plataforma
+            # de verdade não declara `estado_inicial`, e o botão nem aparece —
+            # a mesma chave que faz o utilitário recusar.
+            "exemplo": bool(self.get("estado_inicial")),
         }
 
 

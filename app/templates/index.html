@@ -398,6 +398,22 @@ th{background:var(--surface-2)}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-1);font-size:var(--fs-2);opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.show{opacity:1}
 
+/* Avançar e reiniciar: as duas ações que fazem o trem andar e voltar.
+   `--estagio-3` é a cor de maturidade, não uma cor nova. */
+.btn-avancar{border:1px solid var(--accent);background:var(--accent);color:var(--bg);
+  border-radius:var(--r-pill);padding:2px var(--sp-2);font-size:var(--fs-1);
+  font-family:inherit;cursor:pointer;white-space:nowrap}
+.btn-avancar:hover{filter:brightness(1.1)}
+.btn-avancar[disabled]{opacity:.5;cursor:progress}
+#trilha-painel{margin:0 0 var(--sp-3);padding:var(--sp-2);border:1px solid var(--border);
+  border-radius:var(--r-1);background:var(--surface-2)}
+#trilha-onde{font-size:var(--fs-1);color:var(--text-2);margin-bottom:var(--sp-1);line-height:1.35}
+#trilha-painel .btn-avancar{width:100%;margin-bottom:var(--sp-1);padding:var(--sp-1) var(--sp-2)}
+#btn-reiniciar{width:100%;margin:0;padding:var(--sp-1) var(--sp-2);
+  border:1px dashed var(--border);border-radius:var(--r-1);background:transparent;
+  color:var(--text-2);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
+#btn-reiniciar:hover{border-style:solid;color:var(--text)}
+
 /* Tour — o documento de trilha da plataforma, renderizado por parada */
 .tour-nav{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin:var(--sp-2) 0 var(--sp-4);position:sticky;top:0;background:var(--bg);padding:var(--sp-2) 0;z-index:2;border-bottom:1px solid var(--border)}
 .tour-step{padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-pill);background:var(--surface);cursor:pointer;font-size:var(--fs-1);font-family:"IBM Plex Mono",monospace;color:var(--text-2)}
@@ -487,6 +503,11 @@ th{background:var(--surface-2)}
     <div id="sidebar-header">
       <h1>Estação</h1>
       <select id="plataforma-seletor" title="A plataforma que esta Estação está operando"></select>
+      <div id="trilha-painel" hidden>
+        <div id="trilha-onde"></div>
+        <button id="btn-trilha" class="btn-avancar"></button>
+        <button id="btn-reiniciar">↺ voltar ao início</button>
+      </div>
       <select id="tema-seletor" title="A identidade visual da Estação">
         <option value="">Tema padrão</option>
         <option value="areia">Areia</option>
@@ -558,6 +579,56 @@ const TYPE_LABELS = {
   "dashboard-html": "dashboard", "other-markdown": "outro (.md)", "other-pertinent": "outro"
 };
 
+// A trilha das plataformas de exemplo. **Não há motor de avanço aqui**: cada
+// passo é uma pasta com a plataforma inteira já naquele estado, e "avançar" só
+// pede ao servidor para restaurar a próxima. Numa plataforma de verdade este
+// painel nem aparece — ver app/trilha.py.
+let TRILHA = {tem: false};
+
+function renderTrilha(){
+  const painel = document.getElementById("trilha-painel");
+  if (!painel) return;
+  painel.hidden = !TRILHA.tem;
+  if (!TRILHA.tem) return;
+
+  const onde = document.getElementById("trilha-onde");
+  const btn = document.getElementById("btn-trilha");
+  const rei = document.getElementById("btn-reiniciar");
+  const atual = TRILHA.passo;
+  const total = TRILHA.total || 0;
+
+  if (atual === null || atual === undefined){
+    onde.innerHTML = "<strong>Trilha de exemplo</strong><br>você mexeu aqui — fora dos passos";
+    btn.hidden = true;
+  } else if (atual >= total){
+    onde.innerHTML = `<strong>Trilha de exemplo</strong><br>passo ${atual} de ${total}`
+                   + (total ? " · chegou ao fim" : "");
+    btn.hidden = true;
+  } else {
+    const prox = TRILHA.passos[atual + 1] || {};
+    onde.innerHTML = `<strong>Trilha de exemplo</strong><br>passo ${atual} de ${total}`;
+    btn.hidden = false;
+    btn.textContent = `▶ ${prox.rotulo || "próximo passo"}`;
+    btn.title = "Restaura o próximo estado desta plataforma de exemplo";
+  }
+  rei.hidden = (atual === 0);
+}
+
+async function irParaPasso(n, botao){
+  const rotulo = botao.textContent;
+  botao.disabled = true; botao.textContent = "…";
+  try {
+    const r = await fetch("/api/exemplo/passo", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({passo: n})});
+    const d = await r.json();
+    if (!r.ok){ toast("Não deu: " + (d.error || r.status)); }
+    else { toast(n === 0 ? "Voltou ao início." : `Passo ${n}: ${d.rotulo}`); }
+  } catch (e) { toast("Erro: " + e); }
+  botao.disabled = false; botao.textContent = rotulo;
+  await loadIndex();
+}
+
 function toast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -579,6 +650,10 @@ async function loadIndex(){
   document.getElementById("tour-nav-btn").hidden = !TOUR_PATH;
   renderTypeChips();
   renderTree();
+  // A trilha só aparece onde ela existe: a plataforma tem que declarar
+  // `estado_inicial`. Numa plataforma de verdade o painel nem é renderizado.
+  TRILHA = data.trilha || {tem: false};
+  renderTrilha();
 }
 
 // ============================================================
@@ -2365,8 +2440,8 @@ async function openFluxoView(){
 // ============================================================
 // Nota — captura crua pela UI, no primeiro estágio (POST /api/nota/nova)
 // ============================================================
-// Só cria SBC crua, sem classificar (opção default enquanto a decisão de escopo
-// não é respondida — ver plano-console-operacional-2026-09-06.md, frente 1).
+// Só cria item cru no primeiro estágio, sem classificar: classificar é a
+// passagem seguinte, e ela tem critérios próprios (aba Fluxo).
 let NOTAS_CRIADAS_SESSAO = [];
 
 async function openNotaView(){
@@ -2568,6 +2643,17 @@ document.getElementById("brf-overlay").addEventListener("click", (ev) => {
 });
 document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape") fecharBriefing();
+});
+
+document.getElementById("btn-trilha").addEventListener("click", (ev) => {
+  if (TRILHA.passo === null || TRILHA.passo === undefined) return;
+  irParaPasso(TRILHA.passo + 1, ev.currentTarget);
+});
+document.getElementById("btn-reiniciar").addEventListener("click", (ev) => {
+  if (!confirm("Voltar esta plataforma de exemplo ao início?\n\n"
+               + "Tudo que você mudou aqui some. Isto não toca em nenhuma outra "
+               + "plataforma.")) return;
+  irParaPasso(0, ev.currentTarget);
 });
 
 document.getElementById("plataforma-seletor").addEventListener("change", (ev) => {

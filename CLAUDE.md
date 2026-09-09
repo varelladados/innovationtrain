@@ -104,13 +104,16 @@ estacao/                  ← a raiz do repositório É o hub
 │   ├── briefing.py       GET /api/briefing — texto pronto pra colar numa sessão de IA
 │   ├── embarque.py       POST /api/embarque/prompt — os primeiros passos de quem não tem plataforma
 │   ├── versoes.py        GET /api/versoes — leitura do git, allow-list de subcomando, só leitura
+│   ├── trilha.py         a trilha das plataformas de exemplo — restaura instantâneos, não promove nada
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
 ├── metodo/               regras, taxonomia, templates e plataforma.py (o utilitário)
 ├── plataformas/
-│   ├── exemplo/          cozinha e fotografia — a cadeia 1→2→3→4 navegável
-│   └── exemplo-precos/   preços e lojas clone — e três cadeias que empacaram
+│   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 3 passos
+│   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
+│   ├── _inicial/         cópias intactas das duas: é delas que "voltar ao início" copia
+│   └── _passos/          os estados seguintes da trilha do exemplo
 ├── tests/                a suíte, stdlib, sem dependência
 ├── docs/                 design-system.md e os mockups de aprovação
 ├── cache/                index.json + backups/, gitignored
@@ -165,6 +168,39 @@ O padrão está em `config.PADROES["excluir"]` (`.git`, `node_modules`,
 `__pycache__`, `.claude`, `dist`, `build`) e **cada plataforma acrescenta o que
 quiser** no `plataforma.json` dela — acervos externos, pastas de build de
 projetos, o que não deve entrar em varredura. Nada disso é escrito no código.
+
+## A trilha de exemplo — e por que ela não é um motor
+
+As duas plataformas de exemplo declaram `estado_inicial`, e a de cozinha declara
+também `tutorial.passos`. Isso liga duas coisas na interface: **voltar ao
+início** e **avançar a trilha**.
+
+**Não há promoção acontecendo.** Cada passo é uma pasta em `plataformas/_passos/`
+com a plataforma inteira já naquele estado; avançar copia essa pasta por cima. A
+lógica destrutiva mora num lugar só — `metodo/plataforma.py reiniciar`, chamado
+por subprocess, o mesmo caminho de `novo-id`.
+
+A fronteira é deliberada e vale a pena entender antes de propor mudá-la: numa
+plataforma de verdade, a passagem entre estágios é **decisão** (os critérios de
+`metodo/classificar.md`) e **escrita** (o texto do estágio novo). Um botão não faz
+nenhuma das duas. Automatizar a mecânica sem elas produziria notas que são cópia
+da captura — ruído com identificador. A trilha mostra **como fica**; quem faz
+acontecer numa plataforma sua é uma sessão de IA com o briefing da aba 📋.
+
+| Peça | Onde |
+|---|---|
+| Quais são os passos, e em qual estamos | `app/trilha.py` |
+| Apagar e restaurar | `metodo/plataforma.py reiniciar [--de <pasta>]` |
+| O portão | a chave `estado_inicial` — **uma plataforma sua não a declara** |
+
+O passo atual **não é guardado**: é deduzido comparando o `_registro.md` da
+plataforma com o de cada instantâneo. Sem arquivo de controle para
+dessincronizar, e quem editar o exemplo à mão vê "fora dos passos" em vez de um
+número mentiroso.
+
+Editou um arquivo constante do exemplo (`_indice.md`, `CLAUDE.md`…)? **Propague
+para os instantâneos**, senão o primeiro "voltar ao início" desfaz a edição em
+silêncio — `tests/test_trilha.py` cobra isso.
 
 ## Endpoints de escrita — tabela
 

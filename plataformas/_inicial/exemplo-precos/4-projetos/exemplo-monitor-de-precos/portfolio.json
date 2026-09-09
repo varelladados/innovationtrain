@@ -1,0 +1,12 @@
+{
+  "nome": "Exemplo — Monitor de preços",
+  "tags": [
+    "dados",
+    "exemplo"
+  ],
+  "nota": "Projeto de exemplo da plataforma. Mostra um projeto do tipo `dados`, com backlog que cita as notas que decidiram cada item.",
+  "repo_publico": false,
+  "destaque": [
+    "prototipo-serie-de-preco.html"
+  ]
+}

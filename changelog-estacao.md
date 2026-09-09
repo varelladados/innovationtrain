@@ -1,5 +1,50 @@
 # Changelog — Estação
 
+## 0.8.4 — 2026-09-09
+
+**As duas plataformas de exemplo viram duas trilhas**, e elas passam a se
+completar em vez de repetir a mesma coisa.
+
+- **`plataformas/exemplo` (cozinha) começa vazia**: só as nove capturas, nenhuma
+  nota, ideia ou projeto. Ela é a que se **dirige**.
+- **`plataformas/exemplo-precos` continua povoada.** É a que se **lê**.
+
+**A trilha, e o que ela deliberadamente não é.** A plataforma de cozinha declara
+três passos; um clique põe a plataforma inteira no estado seguinte, até a captura
+`ideia-no-onibus` virar o projeto `exemplo-app-de-receitas` com backlog. **↺
+voltar ao início** desfaz.
+
+Não há motor de promoção, e a ausência dele é a decisão de projeto aqui. Cada
+passo é uma pasta em `plataformas/_passos/` com a plataforma inteira já naquele
+estado; avançar copia por cima. Numa plataforma de verdade a passagem é
+**decisão** (os critérios de `metodo/classificar.md`) e **escrita** (o texto do
+estágio novo) — nenhuma das duas cabe num botão, e automatizar a mecânica sem
+elas produziria notas que são cópia da captura, ruído com identificador.
+
+- **`metodo/plataforma.py reiniciar [--de <pasta>]`** (novo) — apaga e restaura.
+  A lógica destrutiva mora num lugar só, chamável da linha de comando, e o
+  **portão** é a chave `estado_inicial` do `plataforma.json`: uma plataforma sua
+  não a declara, e o comando recusa antes de olhar o disco.
+- **`app/trilha.py`** (novo) — quais são os passos e em qual estamos. O passo
+  atual **não é guardado**: é deduzido comparando o `_registro.md` com o de cada
+  instantâneo. Sem arquivo de controle para dessincronizar; quem editar o exemplo
+  à mão vê "fora dos passos" em vez de um número mentiroso.
+- **`tests/test_trilha.py`** (novo) — percorre a trilha inteira numa cópia e
+  cobra que voltar ao início devolva o estado **byte a byte**; que as setas do
+  registro cresçam passo a passo; que os arquivos constantes não derivem entre os
+  instantâneos; e que uma config sem `estado_inicial` recuse restaurar.
+
+**Um falso positivo do guarda-corpo, achado exercitando isto:**
+`tests/test_publicacao.py` tratava `26.09.09-PRJ-APP-001-assunto-87eb` como nome
+de pasta de projeto de terceiro. Um identificador com tipo declarado tem essa
+forma, e o build quebrava. A regex ganhou um lookbehind que separa identificador
+(precedido de data) de nome de pasta — e o comentário que documenta isso precisa
+trazer o exemplo **com** a data, senão ele próprio derruba o teste.
+
+`tests/test_exemplo.py` passou a separar o que vale para as duas plataformas do
+que só vale para uma povoada, com um bloco novo para a que começa vazia: nada
+avançou, o registro não tem seta, e há material de sobra no primeiro estágio.
+
 ## 0.8.3 — 2026-09-09
 
 **Uma segunda plataforma de exemplo**, e o teste que impede as duas de

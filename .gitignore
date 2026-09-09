@@ -12,6 +12,10 @@ estacao.json
 # Suas decisoes sobre o proprio produto — pessoais, ficam de fora.
 pendencias/
 
+# Copia que o teste da trilha cria e apaga. Versionada nunca; se sobrar aqui,
+# foi uma execucao interrompida.
+plataformas/_teste-trilha/
+
 # Papel de trabalho nao entra neste repositorio: ele e' publico.
 # Ver tests/test_publicacao.py, que falha o build se algum voltar.
 /plano-*.md

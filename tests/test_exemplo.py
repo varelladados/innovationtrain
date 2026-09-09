@@ -57,7 +57,24 @@ class _Exemplo:
     # -- estrutura ---------------------------------------------------------
     def test_o_indexer_sobe(self):
         self.assertTrue(config.atual().ok())
-        self.assertGreater(len(self.entries), 20)
+        self.assertGreater(len(self.entries), 8)
+
+    def _frontmatter(self, caminho):
+        """Usado pelos dois lados — por isso mora no mixin comum, não no da
+        plataforma madura, onde ele nasceu e onde a versão anterior o deixou."""
+        fm, _ = indexer.split_frontmatter(caminho.read_text(encoding="utf-8"))
+        return fm
+
+    def test_declara_estado_inicial(self):
+        """Sem isto, nem reiniciar nem avançar existem — e um exemplo em que não
+        se pode mexer sem medo não serve para aprender."""
+        rel = config.atual().get("estado_inicial")
+        self.assertTrue(rel, f"{self.RAIZ.name} não declara `estado_inicial`")
+        snap = (self.RAIZ / str(rel).replace("\\", "/")).resolve()
+        self.assertTrue((snap / "plataforma.json").is_file(),
+                        f"o instantâneo de {self.RAIZ.name} não existe: {snap}")
+        self.assertNotIn(self.RAIZ, snap.parents,
+                         "o instantâneo está dentro da plataforma: seria apagado junto")
 
     def test_os_quatro_estagios_existem_e_tem_historico(self):
         cfg = config.atual()
@@ -67,6 +84,15 @@ class _Exemplo:
             self.assertTrue((self.RAIZ / e["pasta"] / cfg.historico).is_dir(),
                             f"{e['pasta']}/{cfg.historico}")
 
+
+class _Madura:
+    """O que só uma plataforma povoada pode prometer.
+
+    A de exemplo crua não tem nota, ideia nem projeto — de propósito, porque
+    ela existe para ser dirigida. Cobrar dela uma cadeia inteira seria cobrar
+    que ela não fosse o que é.
+    """
+
     def test_cada_estagio_tem_pelo_menos_dois_itens_ativos(self):
         """É o que o itinerário pede: 2 por estágio, contados e não afirmados."""
         cfg = config.atual()
@@ -75,11 +101,6 @@ class _Exemplo:
             self.assertGreaterEqual(len(ativos), 2, f"{e['pasta']} tem {len(ativos)}")
         projetos = indexer.pastas_de_projeto()
         self.assertGreaterEqual(len(projetos), 2, projetos)
-
-    # -- a cadeia ----------------------------------------------------------
-    def _frontmatter(self, caminho):
-        fm, _ = indexer.split_frontmatter(caminho.read_text(encoding="utf-8"))
-        return fm
 
     def test_a_cadeia_1_2_3_4_esta_inteira(self):
         """Um mesmo grão do primeiro estágio até um projeto. Se isto quebrar, a
@@ -125,6 +146,10 @@ class _Exemplo:
             visitados.append(atual.stem)
         return visitados
 
+
+class _Comum2:
+    """Continuação do mixin comum, depois do bloco da plataforma madura."""
+
     def test_todo_link_de_linhagem_aponta_para_arquivo_que_existe(self):
         import re
         quebrados = []
@@ -154,7 +179,10 @@ class _Exemplo:
         repetidos = [k for k, v in Counter(ids).items() if v > 1]
         self.assertEqual(repetidos, [])
 
-    # -- as abas -----------------------------------------------------------
+
+class _Abas:
+    """As abas contra uma plataforma povoada."""
+
     def test_o_kanban_usa_os_estagios_e_todos_tem_carta(self):
         wf = workflow.build_workflow(self.entries)
         cfg = config.atual()
@@ -179,21 +207,72 @@ class _Exemplo:
         self.assertTrue(any(p["tipo"] != "—" for p in pf["projetos"]),
                         "nenhum projeto declara tipo")
 
+
+class _Trilha:
     def test_a_trilha_do_tour_existe(self):
         trilha = config.atual().caminho("trilha")
         self.assertIsNotNone(trilha, f"{self.RAIZ.name} não declara trilha")
         self.assertTrue(trilha.exists())
 
 
+class _Crua:
+    """O que só a plataforma que começa vazia promete.
+
+    Ela é o tutorial: nada avançou ainda, e há material de sobra para avançar.
+    Se isto quebrar, ou alguém povoou o exemplo sem querer, ou o `reiniciar`
+    parou de devolver o estado de origem.
+    """
+
+    def test_nada_avancou_ainda(self):
+        cfg = config.atual()
+        # só o que está em pasta de estágio: a trilha *fala* de `avancou_para`
+        # em prosa, e a primeira versão deste teste caiu por causa disso.
+        itens = [a for e in cfg.estagios for a in (self.RAIZ / e["pasta"]).rglob("*.md")]
+        com_destino = [a.name for a in itens
+                       if self._frontmatter(a).get("avancou_para")]
+        self.assertEqual(com_destino, [], "algo já avançou nesta plataforma")
+        for e in cfg.estagios:
+            hist = self.RAIZ / e["pasta"] / cfg.historico
+            # só ITEM conta: o `_leia-me.md` do histórico é documentação da
+            # pasta, e ele existe desde antes de qualquer coisa avançar.
+            itens_hist = [h.name for h in hist.glob("*.md") if cfg.id_re.match(h.stem)]
+            self.assertEqual(itens_hist, [],
+                             f"{e['pasta']}/{cfg.historico} deveria estar vazio")
+
+    def test_o_registro_nao_tem_nenhuma_seta(self):
+        texto = config.atual().arquivo("registro").read_text(encoding="utf-8")
+        self.assertNotIn("→", texto.split("## Entradas")[1] if "## Entradas" in texto else "")
+
+    def test_ha_material_de_sobra_no_primeiro_estagio(self):
+        """Uma plataforma para ser dirigida precisa de matéria-prima."""
+        cfg = config.atual()
+        primeiro = self.RAIZ / cfg.estagios[0]["pasta"]
+        ativos = [a for a in primeiro.glob("*.md")]
+        self.assertGreaterEqual(len(ativos), 5, f"só {len(ativos)} capturas para avançar")
+
+    def test_a_trilha_tem_passos(self):
+        """Sem passos, a plataforma crua não ensina nada — fica só vazia."""
+        import trilha
+        estado = trilha.estado()
+        self.assertTrue(estado["tem"], "esta plataforma não declara trilha")
+        self.assertGreaterEqual(estado["total"], 3, estado)
+        self.assertEqual(estado["passo"], 0,
+                         "a plataforma versionada tem que estar no passo 0 da trilha")
+        for p in trilha.passos()[1:]:
+            pasta = (self.RAIZ / str(p["pasta"]).replace("\\", "/")).resolve()
+            self.assertTrue((pasta / "plataforma.json").is_file(),
+                            f"instantâneo ausente: {pasta}")
+
+
 @_existe(EXEMPLO)
-class TestExemploCozinha(_Exemplo, unittest.TestCase):
-    """A plataforma doméstica: cozinha e fotografia."""
+class TestExemploCozinha(_Exemplo, _Comum2, _Trilha, _Crua, unittest.TestCase):
+    """Cozinha e fotografia: a que começa vazia, para ser dirigida."""
     RAIZ = EXEMPLO
 
 
 @_existe(PRECOS)
-class TestExemploPrecos(_Exemplo, unittest.TestCase):
-    """A plataforma de trabalho: preços, concorrência e lojas clone."""
+class TestExemploPrecos(_Exemplo, _Madura, _Comum2, _Abas, _Trilha, unittest.TestCase):
+    """Preços e lojas clone: a que já rodou, para ser lida."""
     RAIZ = PRECOS
 
 
