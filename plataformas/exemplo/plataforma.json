@@ -1,0 +1,63 @@
+{
+  "nome": "Exemplo — cozinha e fotografia",
+  "marcador": "_indice.md",
+  "estagios": [
+    {
+      "n": 1,
+      "pasta": "1-capturas",
+      "nome": "Captura",
+      "plural": "Capturas",
+      "sigla": "CAP"
+    },
+    {
+      "n": 2,
+      "pasta": "2-notas",
+      "nome": "Nota",
+      "plural": "Notas",
+      "sigla": "NOT"
+    },
+    {
+      "n": 3,
+      "pasta": "3-ideias",
+      "nome": "Ideia",
+      "plural": "Ideias",
+      "sigla": "IDE"
+    },
+    {
+      "n": 4,
+      "pasta": "4-projetos",
+      "nome": "Projeto",
+      "plural": "Projetos",
+      "sigla": "PRJ"
+    }
+  ],
+  "historico": "_historico",
+  "arquivos": {
+    "indice": "_indice.md",
+    "registro": "_registro.md",
+    "sem_destino": "_sem-destino.md"
+  },
+  "tipos": [
+    "app",
+    "dados",
+    "curso",
+    "servico"
+  ],
+  "projetos": {
+    "pasta": "4-projetos",
+    "prefixo_re": null
+  },
+  "excluir": [
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".claude"
+  ],
+  "pendencias": "_pendencias",
+  "trilha": "_trilha.md",
+  "utilitario": "../../metodo/plataforma.py",
+  "entrada": "1-capturas",
+  "doutrina": "../../metodo/regras.md",
+  "checklist": "../../metodo/classificar.md",
+  "fluxo": "../../metodo/taxonomia.md"
+}
