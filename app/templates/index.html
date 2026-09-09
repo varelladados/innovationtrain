@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2ECDE; --surface:#FBF8F0; --surface-2:#EFE7D2; --border:rgba(27,22,15,0.14);
+  --text:#1B160F; --text-2:#6E6555; --accent:#9C7A3C; --accent-bg:#F0E6CC;
+  --danger:#7A2F2F; --danger-bg:#F0DFE1; --success:#4C6B2F; --success-bg:#E7EDD9;
+  --warn:#7A5E2C; --warn-bg:#EFE7D2; --stub:#A8A69C;
+  --shadow:0 1px 2px rgba(27,22,15,0.06), 0 8px 24px -12px rgba(27,22,15,0.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16130E; --surface:#1E1A13; --surface-2:#2A2418; --border:rgba(242,236,222,0.14);
+    --text:#F2ECDE; --text-2:#B2A98F; --accent:#CBA25A; --accent-bg:#34301F;
+    --danger:#C97F92; --danger-bg:#34222A; --success:#9BB579; --success-bg:#232A1C;
+    --warn:#E0B876; --warn-bg:#2A2418; --stub:#6E6555;
+    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16130E; --surface:#1E1A13; --surface-2:#2A2418; --border:rgba(242,236,222,0.14);
+  --text:#F2ECDE; --text-2:#B2A98F; --accent:#CBA25A; --accent-bg:#34301F;
+  --danger:#C97F92; --danger-bg:#34222A; --success:#9BB579; --success-bg:#232A1C;
+  --warn:#E0B876; --warn-bg:#2A2418; --stub:#6E6555;
+  --shadow:0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Public Sans",-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:12.5px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+pre{background:var(--surface-2);padding:10px;border-radius:6px;overflow-x:auto}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;font-size:13px;vertical-align:top}
+th{background:var(--surface-2)}
+
+#layout{display:grid;grid-template-columns:300px 1fr;height:100vh}
+
+/* ---------- sidebar ---------- */
+#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#sidebar-header{padding:12px;border-bottom:1px solid var(--border)}
+#sidebar-header h1{font-family:"Fraunces",serif;font-weight:600;font-size:17px;margin:0 0 8px}
+#search-box{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px}
+#type-chips{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.chip{font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;color:var(--text-2)}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+#tree{flex:1;overflow-y:auto;padding:6px}
+.tree-folder{margin-bottom:2px}
+.tree-folder-label{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;font-weight:600;color:var(--text-2);padding:4px 6px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.tree-folder-label:hover{background:var(--surface-2);border-radius:4px}
+.tree-children{margin-left:12px;display:none}
+.tree-children.open{display:block}
+.tree-file{padding:3px 6px 3px 10px;border-radius:4px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tree-file:hover{background:var(--surface-2)}
+.tree-file.selected{background:var(--accent-bg);color:var(--accent)}
+.tree-file.stub{opacity:.45}
+.type-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+#reindex-btn{margin:8px 12px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);cursor:pointer;font-size:12px;color:var(--text-2)}
+#reindex-btn:hover{background:var(--border)}
+#portfolio-nav-btn,#tour-nav-btn,#dashboard-nav-btn,#workflow-nav-btn,#nota-nav-btn,#fluxo-nav-btn{margin:0 12px 12px;padding:8px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-bg);cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);font-family:"Fraunces",serif}
+#portfolio-nav-btn:hover,#tour-nav-btn:hover,#dashboard-nav-btn:hover,#workflow-nav-btn:hover,#nota-nav-btn:hover,#fluxo-nav-btn:hover{background:var(--accent);color:var(--bg)}
+
+/* ---------- dashboard view ---------- */
+.dash-lead{color:var(--text-2);font-size:13px;margin:-8px 0 20px}
+.dash-section{margin-bottom:40px}
+.dash-section h2{font-family:"Fraunces",serif;font-weight:600;font-size:18px;margin:0 0 16px;padding-bottom:8px;border-bottom:2px solid var(--accent)}
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.dash-kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:14px 16px}
+.dash-kpi-card .num{font-family:"Fraunces",serif;font-size:28px;font-weight:600;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+.dash-kpi-card .label{margin-top:6px;font-size:12px;color:var(--text-2)}
+.dash-bar-row{display:grid;grid-template-columns:70px 1fr 40px;align-items:center;gap:10px;margin-bottom:10px}
+.dash-bar-row .rotulo{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px}
+.dash-bar-track{height:12px;background:var(--surface-2);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.dash-bar-fill{height:100%;background:var(--accent)}
+.dash-bar-row .valor{text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--text-2)}
+.dash-chart-vert{display:flex;align-items:flex-end;gap:8px;height:150px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow-x:auto}
+.dash-chart-vert .col{display:flex;flex-direction:column;align-items:center;min-width:38px}
+.dash-chart-vert .col .val{font-size:11px;color:var(--text-2);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.dash-chart-vert .col .bar{width:22px;background:var(--accent);border-radius:3px 3px 0 0}
+.dash-chart-vert .col .dia{margin-top:5px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;color:var(--text-2)}
+.dash-esforco{background:var(--danger-bg);border:1px solid var(--danger);border-radius:8px;padding:16px;font-size:13px;color:var(--text)}
+.dash-esforco strong{color:var(--danger)}
+
+/* ---------- workflow (kanban + pendências) ---------- */
+.wf-avanco{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;margin-bottom:22px}
+.wf-avanco .tit{font-weight:600;font-size:13.5px;margin:0 0 4px;color:var(--accent)}
+.wf-avanco .ctx{font-size:12.5px;color:var(--text-2);margin:0}
+.wf-board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.wf-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;min-width:0}
+.wf-col h3{font-family:"Fraunces",serif;font-weight:600;font-size:14px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.wf-col h3 .cnt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--text-2);font-weight:400}
+.wf-card{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;margin-bottom:6px;cursor:pointer;font-size:12.5px;overflow:hidden}
+.wf-card:hover{border-color:var(--accent)}
+.wf-card .et{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--accent);display:block;margin-bottom:2px}
+.wf-card .ti{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wf-empty{font-size:12px;color:var(--stub);font-style:italic;padding:4px 0}
+.wf-pend{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.wf-pend.respondida{border-color:var(--success)}
+.wf-pend.adiada-marcada{border-color:var(--warn)}
+.wf-pend .tit{font-weight:600;font-size:14px;margin:0 0 6px}
+.wf-pend .ctx{font-size:12px;color:var(--text-2);margin:0 0 8px;line-height:1.5}
+.wf-pend .meta{font-size:11px;color:var(--text-2);font-family:"IBM Plex Mono",ui-monospace,monospace;margin:8px 0 0;border-top:1px solid var(--border);padding-top:6px;display:flex;flex-wrap:wrap;gap:10px}
+.wf-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.wf-b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;padding:2px 8px;border-radius:10px}
+.wf-b-incremento{background:var(--accent-bg);color:var(--accent)}
+.wf-b-sustentacao{background:var(--surface-2);color:var(--text-2)}
+.wf-b-essencial{background:var(--danger-bg);color:var(--danger)}
+.wf-b-adiada{background:var(--warn-bg);color:var(--warn)}
+.wf-b-aberta{background:var(--surface-2);color:var(--text-2)}
+.wf-b-respondida{background:var(--success-bg);color:var(--success)}
+.wf-b-adiada-marcada{background:var(--warn-bg);color:var(--warn)}
+.wf-b-nao-parseavel{background:var(--danger-bg);color:var(--danger)}
+.wf-perg{margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--border)}
+.wf-perg-t{font-size:12.5px;margin:0 0 6px;font-weight:600;color:var(--text)}
+.wf-opt{display:flex;align-items:flex-start;gap:7px;padding:5px 6px;border-radius:5px;cursor:pointer;font-size:12.5px;line-height:1.45}
+.wf-opt:hover{background:var(--surface-2)}
+.wf-opt input{margin:2px 0 0;cursor:pointer;flex-shrink:0}
+.wf-opt.marcada{background:var(--success-bg)}
+.wf-opt .lb{font-weight:600}
+.wf-opt .rz{color:var(--text-2)}
+.wf-outra{display:flex;gap:6px;margin-top:6px;padding-left:6px}
+.wf-outra input[type=text]{flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;font-family:inherit;background:var(--surface-2);color:var(--text)}
+.wf-outra button{padding:5px 12px;border:1px solid var(--accent);border-radius:5px;background:var(--accent-bg);color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit}
+.wf-filtros{display:flex;gap:6px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
+.wf-raw{font-size:11.5px;background:var(--surface-2);padding:8px;border-radius:6px;max-height:150px;overflow:auto;white-space:pre-wrap;margin:6px 0 0}
+
+/* ---------- briefing pra IA (modal) ---------- */
+#brf-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
+#brf-overlay.open{display:flex}
+#brf-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);width:min(820px,100%);max-height:86vh;display:flex;flex-direction:column;padding:16px 18px}
+#brf-box h2{font-family:"Fraunces",serif;font-weight:600;font-size:18px;margin:0 0 4px}
+#brf-box .sub{font-size:12.5px;color:var(--text-2);margin:0 0 10px}
+#brf-texto{flex:1;min-height:300px;width:100%;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;line-height:1.5;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);resize:vertical}
+#brf-acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+#brf-acoes button{padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);cursor:pointer;font-size:13px;font-family:inherit;color:var(--text)}
+#brf-acoes button.prim{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:600}
+.brf-btn{padding:6px 12px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-bg);color:var(--accent);cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit}
+.brf-btn:disabled{opacity:.45;cursor:default}
+
+/* ---------- fluxo (checklist guiado) ---------- */
+.fx-passo{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.fx-passo h3{font-family:"Fraunces",serif;font-size:15px;margin:0 0 6px}
+.fx-crit{display:flex;align-items:flex-start;gap:8px;padding:6px;border-radius:6px;cursor:pointer;font-size:13px}
+.fx-crit:hover{background:var(--surface-2)}
+.fx-crit.sim{background:var(--success-bg)}
+.fx-veredito{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600}
+.fx-veredito.sbi{background:var(--success-bg);color:var(--success)}
+.fx-veredito.fica{background:var(--warn-bg);color:var(--warn)}
+
+/* ---------- projeto (view por Projeto) ---------- */
+.pj-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:4px}
+.pj-head h1{margin:0;border:0;padding:0}
+.pj-git{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--text-2);display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 18px}
+.pj-mat{display:grid;grid-template-columns:90px 1fr 34px;gap:8px;align-items:center;margin-bottom:6px;font-size:12px}
+.pj-mat .rot{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--text-2)}
+.pj-mat-track{height:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;overflow:hidden}
+.pj-mat-fill{height:100%;background:var(--accent)}
+.pj-mat .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.pj-sec{margin-bottom:26px}
+.pj-sec h2{font-family:"Fraunces",serif;font-weight:600;font-size:17px;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.pj-lista{margin:0;padding-left:18px;font-size:12.5px;line-height:1.6;color:var(--text-2)}
+.pj-anotar{display:flex;gap:8px;margin:10px 0 4px;flex-wrap:wrap}
+.pj-anotar input[type=text]{flex:1;min-width:240px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text)}
+.pj-anotar select{padding:7px 8px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit;background:var(--surface);color:var(--text)}
+.pj-anotar button{padding:7px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-bg);color:var(--accent);cursor:pointer;font-weight:600;font-size:13px;font-family:inherit}
+.pj-anotar button:disabled{opacity:.5;cursor:default}
+.pj-hint{font-size:11.5px;color:var(--text-2);margin:0 0 14px}
+.pj-doc{display:inline-block;margin:0 6px 6px 0;font-size:12px;padding:4px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);cursor:pointer}
+.pj-doc:hover{border-color:var(--accent)}
+.pill-noar-ok{background:var(--success-bg);color:var(--success)}
+.pill-noar-fora{background:var(--danger-bg);color:var(--danger)}
+
+/* ---------- nota (captura crua) ---------- */
+#nota-texto{width:100%;max-width:640px;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:var(--surface);color:var(--text)}
+#nota-salvar-btn{padding:8px 16px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-bg);color:var(--accent);cursor:pointer;font-weight:600;font-family:inherit;font-size:13px}
+#nota-salvar-btn:disabled{opacity:.5;cursor:default}
+#nota-recentes p{font-size:13px}
+
+/* ---------- main pane ---------- */
+#main{overflow-y:auto;padding:24px 32px}
+#breadcrumb{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--text-2);margin-bottom:10px}
+#breadcrumb a{color:var(--text-2)}
+#meta-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.badge{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;padding:3px 9px;border-radius:12px;font-weight:500}
+.badge-processed{background:var(--success-bg);color:var(--success)}
+.badge-raw{background:var(--surface-2);color:var(--text-2)}
+.badge-orphan{background:var(--warn-bg);color:var(--warn)}
+.badge-type{background:var(--accent-bg);color:var(--accent)}
+.badge-stage-entrada{background:var(--danger-bg);color:var(--danger)}
+.badge-stage-pendente{background:var(--warn-bg);color:var(--warn)}
+.badge-stage-historico{background:var(--surface-2);color:var(--text-2)}
+#meta-path{font-size:12px;color:var(--text-2);font-family:"IBM Plex Mono",ui-monospace,monospace}
+#content{max-width:900px;line-height:1.6}
+#content h1{font-family:"Fraunces",serif;font-weight:600;font-size:26px;border-bottom:2px solid var(--accent);padding-bottom:8px}
+#content h2{font-family:"Fraunces",serif;font-weight:600;font-size:20px;margin-top:28px}
+#content h3{font-size:16px;font-weight:600}
+#welcome{color:var(--text-2);max-width:640px}
+.linkmap-banner{background:var(--warn-bg);color:var(--warn);padding:8px 12px;border-radius:6px;font-size:12.5px;margin-bottom:14px}
+
+/* backlog checkboxes */
+.backlog-checkbox{margin-right:6px}
+.backlog-line{display:flex;align-items:flex-start;gap:6px;padding:2px 0}
+
+/* log table view */
+#log-view table{font-size:12.5px}
+.arrow-chip{display:inline-block;background:var(--accent-bg);color:var(--accent);padding:1px 7px;border-radius:10px;font-size:11px;cursor:pointer}
+#log-filter{margin-bottom:10px;padding:6px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:280px}
+
+/* search results */
+.search-result{padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.search-result:hover{background:var(--surface-2)}
+.search-result-title{font-weight:600}
+.search-result-path{font-size:11.5px;color:var(--text-2);font-family:monospace}
+.search-result-snippet{font-size:12.5px;color:var(--text-2);margin-top:3px}
+
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:9px 16px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.show{opacity:1}
+
+/* Tour — trilha.md renderizada por parada */
+.tour-nav{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 16px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2;border-bottom:1px solid var(--border)}
+.tour-step{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface);cursor:pointer;font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--text-2)}
+.tour-step:hover{border-color:var(--accent);color:var(--text)}
+.tour-step.active{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.tour-step.done::before{content:"✓ ";opacity:.8}
+.tour-footer{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:12px;border-top:1px solid var(--border);gap:8px}
+.tour-footer button{padding:8px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-bg);color:var(--accent);cursor:pointer;font-weight:600}
+.tour-footer button:hover{background:var(--accent);color:var(--bg)}
+.tour-footer button[disabled]{opacity:.4;cursor:default}
+.tour-footer .tour-progress{font-size:12px;color:var(--text-2)}
+.tour-mermaid{border:1px dashed var(--accent);border-radius:8px;padding:10px 12px;background:var(--surface);margin:12px 0}
+.tour-mermaid .tour-mermaid-label{font-size:11px;color:var(--text-2);margin-bottom:6px;font-family:"IBM Plex Mono",monospace}
+.tour-mermaid pre{margin:0;max-height:260px;overflow:auto;font-size:11.5px}
+.tour-mermaid.rendered{border-style:solid;text-align:center;overflow-x:auto}
+.tour-mermaid.rendered svg{max-width:100%;height:auto}
+.tour-body blockquote{border-left:3px solid var(--accent);margin:12px 0;padding:6px 12px;background:var(--accent-bg);border-radius:0 6px 6px 0}
+
+/* ---------- portfólio ---------- */
+.pf-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.pf-head h1{margin:0;border:0;padding:0}
+.pf-kpis{display:flex;flex-wrap:wrap;gap:8px}
+.pf-kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:86px}
+.pf-kpi .n{font-family:"Fraunces",serif;font-size:22px;font-weight:600;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+.pf-kpi .l{font-size:10.5px;color:var(--text-2);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.pf-filtros{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 16px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:2}
+.pf-filtros .sep{width:1px;height:18px;background:var(--border);margin:0 4px}
+.pf-filtros input{padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;min-width:180px;background:var(--surface);color:var(--text)}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+#content.pf-wide{max-width:none}
+.pf-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pf-card.vazio{opacity:.72}
+.pf-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.pf-card h2{font-family:"Fraunces",serif;font-weight:600;font-size:17px;margin:0;line-height:1.2;text-wrap:balance}
+.pf-card h2 small{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;font-weight:400;color:var(--text-2);margin-top:3px}
+.pf-pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;flex-shrink:0}
+.pill{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;padding:2px 8px;border-radius:10px;white-space:nowrap;border:1px solid transparent}
+.pill-tipo{background:var(--accent-bg);color:var(--accent)}
+.pill-ativo{background:var(--success-bg);color:var(--success)}
+.pill-idea,.pill-early{background:var(--warn-bg);color:var(--warn)}
+.pill-adormecida,.pill-sem{background:var(--surface-2);color:var(--stub)}
+.pill-versao{background:var(--surface-2);color:var(--text-2)}
+.pill-estavel{background:var(--success-bg);color:var(--success)}
+.pill-prototipo{background:var(--accent-bg);color:var(--accent)}
+.pill-rascunho{background:var(--surface-2);color:var(--stub);text-decoration:line-through}
+.pf-resumo{font-size:12.5px;color:var(--text-2);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+.pf-nota{font-size:12px;color:var(--text);background:var(--accent-bg);border-radius:6px;padding:6px 9px;margin:0}
+.pf-git{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;color:var(--text-2);display:flex;gap:10px;flex-wrap:wrap}
+.pf-sec{display:flex;flex-direction:column;gap:5px}
+.pf-sec-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);font-weight:600;display:flex;align-items:center;gap:6px}
+.pf-sec-t .cnt{font-weight:400;font-family:"IBM Plex Mono",ui-monospace,monospace;letter-spacing:0;text-transform:none}
+.pf-links{display:flex;flex-wrap:wrap;gap:6px}
+.pf-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);max-width:100%;text-decoration:none}
+.pf-link:hover{border-color:var(--accent);text-decoration:none}
+.pf-link.noar{border-color:var(--success);background:var(--success-bg);color:var(--success);font-weight:600}
+.pf-link.run{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:600;cursor:pointer;font-family:inherit}
+.pf-link.destaque{border-color:var(--accent)}
+.pf-link .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.pf-link .grp{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;color:var(--text-2)}
+.pf-link.rascunho{opacity:.55}
+.pf-mais{font-size:11.5px;color:var(--text-2);cursor:pointer;background:none;border:0;padding:0;text-align:left;font-family:inherit}
+.pf-mais:hover{color:var(--accent)}
+.pf-foot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--text-2);border-top:1px solid var(--border);padding-top:8px;margin-top:auto}
+.pf-foot a{cursor:pointer}
+.pf-vazio-msg{font-size:12px;color:var(--stub);font-style:italic}
+.static .pf-local{opacity:.45;pointer-events:none}
+.static .pf-static-note{display:block}
+.pf-static-note{display:none;font-size:11.5px;color:var(--text-2);margin:-8px 0 12px}
+</style>
+</head>
+<body>
+<div id="layout">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>Estação</h1>
+      <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
+    </div>
+    <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por Projeto">🗂 Portfólio</button>
+    <button id="tour-nav-btn" title="Trilha de leitura que explica todo o C:\Plataforma (_metodo/trilha.md)">🧭 Tour</button>
+    <button id="dashboard-nav-btn">📊 Dashboard</button>
+    <button id="workflow-nav-btn" title="Pipeline SBC→SBI→SBZ + pendências ativas, numa view só">🔀 Workflow</button>
+    <button id="nota-nav-btn" title="Captura rápida de ideia crua (Captura), sem abrir sessão do Claude Code">📝 Nota</button>
+    <button id="fluxo-nav-btn" title="O método na tela: Passo 0/1/2/3 e os 4 critérios de promoção">🧩 Fluxo</button>
+    <div id="type-chips"></div>
+    <div id="tree"></div>
+    <button id="reindex-btn">↻ reindexar</button>
+  </div>
+  <div id="main">
+    <div id="breadcrumb"></div>
+    <div id="meta-bar"></div>
+    <div id="content">
+      <div id="welcome">
+        <p>Navegador local do corpus inteiro de <code>C:\Plataforma</code> — orquestras, backlogs, LOG central e demais arquivos pertinentes.</p>
+        <p>Escolha um arquivo na árvore à esquerda, ou use a busca.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="brf-overlay">
+  <div id="brf-box">
+    <h2>Briefing pra IA</h2>
+    <p class="sub">Cole numa sessão do Claude Code / Codex com <code>cwd</code> em <code>C:\Plataforma</code>. Os guardrails do método já vão junto.</p>
+    <textarea id="brf-texto" readonly></textarea>
+    <div id="brf-acoes">
+      <button type="button" id="brf-fechar">Fechar</button>
+      <button type="button" id="brf-copiar" class="prim">Copiar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app/templates/vendor/marked.min.js"></script>
+<script src="/app/templates/vendor/mermaid.min.js"></script>
+<script>
+// ============================================================
+// Estado global
+// ============================================================
+let ENTRIES = [];
+let ACTIVE_TYPE_FILTER = null;
+let SELECTED_PATH = null;
+
+const TYPE_COLORS = {
+  "orquestra": "#185fa5", "backlog": "#3b6d11", "log": "#a32d2d",
+  "changelog": "#854f0b", "readme": "#7a4fbf", "skill": "#0e7a6e",
+  "glossary": "#b8862f", "doctrine": "#7a2f8f", "linkmap": "#b8862f", "script": "#4a4a4a", "trilha": "#9C7A3C",
+  "dashboard-html": "#c2410c", "other-markdown": "#9a988e", "other-pertinent": "#9a988e"
+};
+const TYPE_LABELS = {
+  "orquestra": "orquestra", "backlog": "backlog", "log": "log",
+  "changelog": "changelog", "readme": "readme", "skill": "skill",
+  "glossary": "glossário", "doctrine": "doutrina", "linkmap": "mapa de links", "script": "script", "trilha": "trilha",
+  "dashboard-html": "dashboard", "other-markdown": "outro (.md)", "other-pertinent": "outro"
+};
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ============================================================
+// Carregamento do índice
+// ============================================================
+async function loadIndex(){
+  const r = await fetch("/api/index");
+  const data = await r.json();
+  ENTRIES = data.entries;
+  renderTypeChips();
+  renderTree();
+}
+
+async function reindex(){
+  toast("Reindexando…");
+  await fetch("/api/reindex", {method: "POST"});
+  await loadIndex();
+  toast("Índice atualizado");
+}
+
+// ============================================================
+// Sidebar — chips de tipo
+// ============================================================
+function renderTypeChips(){
+  const counts = {};
+  ENTRIES.forEach(e => counts[e.type] = (counts[e.type]||0)+1);
+  const container = document.getElementById("type-chips");
+  container.innerHTML = "";
+  Object.keys(TYPE_LABELS).forEach(type => {
+    if (!counts[type]) return;
+    const chip = document.createElement("div");
+    chip.className = "chip" + (ACTIVE_TYPE_FILTER === type ? " active" : "");
+    chip.textContent = `${TYPE_LABELS[type]} (${counts[type]})`;
+    chip.onclick = () => {
+      ACTIVE_TYPE_FILTER = (ACTIVE_TYPE_FILTER === type) ? null : type;
+      renderTypeChips();
+      renderTree();
+    };
+    container.appendChild(chip);
+  });
+}
+
+// ============================================================
+// Sidebar — árvore de pastas
+// ============================================================
+function buildTree(entries){
+  const root = {name: "", children: {}, files: []};
+  entries.forEach(e => {
+    const parts = e.path.split("/");
+    const fileName = parts.pop();
+    let node = root;
+    for (const part of parts){
+      if (!node.children[part]) node.children[part] = {name: part, children: {}, files: []};
+      node = node.children[part];
+    }
+    node.files.push(e);
+  });
+  return root;
+}
+
+function renderTree(){
+  const q = document.getElementById("search-box").value.trim().toLowerCase();
+  let filtered = ENTRIES;
+  if (ACTIVE_TYPE_FILTER) filtered = filtered.filter(e => e.type === ACTIVE_TYPE_FILTER);
+  if (q) filtered = filtered.filter(e => e.path.toLowerCase().includes(q) || e.title.toLowerCase().includes(q));
+
+  const tree = buildTree(filtered);
+  const container = document.getElementById("tree");
+  container.innerHTML = "";
+  renderTreeNode(tree, container, true);
+}
+
+function renderTreeNode(node, container, isRoot){
+  const folderNames = Object.keys(node.children).sort((a,b)=>a.localeCompare(b));
+  folderNames.forEach(fname => {
+    const child = node.children[fname];
+    const wrapper = document.createElement("div");
+    wrapper.className = "tree-folder";
+    const label = document.createElement("div");
+    label.className = "tree-folder-label";
+    label.innerHTML = `<span class="arrow">▸</span> ${escapeHtml(fname)}`;
+    const childrenDiv = document.createElement("div");
+    childrenDiv.className = "tree-children";
+    label.onclick = () => {
+      childrenDiv.classList.toggle("open");
+      label.querySelector(".arrow").textContent = childrenDiv.classList.contains("open") ? "▾" : "▸";
+    };
+    wrapper.appendChild(label);
+    wrapper.appendChild(childrenDiv);
+    renderTreeNode(child, childrenDiv, false);
+    container.appendChild(wrapper);
+  });
+
+  const files = node.files.slice().sort((a,b) => {
+    // orquestras/backlogs primeiro, depois alfabético
+    const aOrq = a.type === "orquestra" ? 0 : 1;
+    const bOrq = b.type === "orquestra" ? 0 : 1;
+    if (aOrq !== bOrq) return aOrq - bOrq;
+    return a.path.localeCompare(b.path);
+  });
+  files.forEach(e => {
+    const item = document.createElement("div");
+    item.className = "tree-file" + (e.is_stub ? " stub" : "") + (e.path === SELECTED_PATH ? " selected" : "");
+    const dot = `<span class="type-dot" style="background:${TYPE_COLORS[e.type]||'#999'}"></span>`;
+    item.innerHTML = `${dot} ${escapeHtml(e.title || e.path.split("/").pop())}`;
+    item.title = e.path;
+    item.onclick = () => openFile(e.path);
+    container.appendChild(item);
+  });
+}
+
+function escapeHtml(s){
+  const d = document.createElement("div");
+  d.textContent = s || "";
+  return d.innerHTML;
+}
+
+// ============================================================
+// Main pane — abrir arquivo
+// ============================================================
+async function openFile(path){
+  SELECTED_PATH = path;
+  renderTree();
+  if (path === "1-capturas/LOG/_log.md"){
+    await openLogView();
+    return;
+  }
+  if (path === TOUR_PATH){
+    await openTourView();
+    return;
+  }
+  const r = await fetch("/api/file?path=" + encodeURIComponent(path));
+  const data = await r.json();
+  if (data.error){ toast("Erro: " + data.error); return; }
+  renderFile(data.entry, data.raw);
+}
+
+function renderBreadcrumb(path){
+  const parts = path.split("/");
+  const bc = document.getElementById("breadcrumb");
+  let acc = "";
+  const segs = parts.map((p, i) => {
+    acc += (i>0?"/":"") + p;
+    return `<span>${escapeHtml(p)}</span>`;
+  });
+  bc.innerHTML = "C:\\Plataforma\\ " + segs.join(" / ");
+}
+
+function renderMetaBar(entry){
+  const bar = document.getElementById("meta-bar");
+  let badges = "";
+  badges += `<span class="badge badge-type">${TYPE_LABELS[entry.type]||entry.type}</span>`;
+  if (entry.processed){
+    badges += `<span class="badge badge-processed">processado (${escapeHtml(entry.processed_id||"")})</span>`;
+  } else {
+    badges += `<span class="badge badge-raw">cru</span>`;
+  }
+  if (entry.orphaned){
+    badges += `<span class="badge badge-orphan" title="Pasta com CLAUDE.md mas sem linha em _indice-projetos.md">não listado em _indice-projetos.md</span>`;
+  }
+  if (entry.lifecycle_stage){
+    const stageLabel = {"entrada": "entrada — ninguém viu ainda", "pendente": "pendente — sem destino", "historico": "histórico — já seguiu"}[entry.lifecycle_stage] || entry.lifecycle_stage;
+    badges += `<span class="badge badge-stage badge-stage-${entry.lifecycle_stage}">${stageLabel}</span>`;
+  }
+  bar.innerHTML = badges + `<span id="meta-path">${escapeHtml(entry.path)} · ${entry.size_bytes}B · ${escapeHtml(entry.mtime)}</span>`;
+}
+
+function renderFile(entry, raw){
+  document.getElementById("content").classList.remove("pf-wide");
+  renderBreadcrumb(entry.path);
+  renderMetaBar(entry);
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+
+  if (entry.type === "linkmap"){
+    const banner = document.createElement("div");
+    banner.className = "linkmap-banner";
+    banner.textContent = "Mantido manualmente — pode divergir do estado real da árvore.";
+    content.appendChild(banner);
+  }
+
+  const body = document.createElement("div");
+  if (entry.type === "backlog"){
+    renderBacklogBody(body, entry, raw);
+  } else if (entry.path.endsWith(".html") || entry.path.endsWith(".htm")){
+    body.innerHTML = `<p><a class="pf-local" href="/files/${entry.path.split("/").map(encodeURIComponent).join("/")}" target="_blank" rel="noopener">Abrir este HTML renderizado, em nova aba</a></p><pre><code>${escapeHtml(raw.slice(0,3000))}${raw.length>3000?"\n…":""}</code></pre>`;
+  } else if (entry.path.endsWith(".py")){
+    body.innerHTML = `<pre><code>${escapeHtml(raw)}</code></pre>`;
+  } else {
+    // strip frontmatter before rendering
+    const stripped = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+    body.innerHTML = marked.parse(stripped);
+  }
+  content.appendChild(body);
+}
+
+// ============================================================
+// Backlog — renderiza checkboxes reais, liga ao toggle endpoint
+// ============================================================
+function renderBacklogBody(container, entry, raw){
+  const stripped = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+  const rawLines = raw.split(/\r?\n/);
+  const offset = raw.length - stripped.length > 0 ? (raw.split(/\r?\n/).length - stripped.split(/\r?\n/).length) : 0;
+
+  // Render markdown normalmente, depois faz post-processing pra achar linhas de checkbox
+  container.innerHTML = marked.parse(stripped);
+
+  // Constrói uma lista de {lineIndex, text} pra cada linha checkbox no arquivo cru
+  const checkboxLines = [];
+  rawLines.forEach((line, idx) => {
+    if (line.includes("- [ ] ") || line.includes("- [x] ")){
+      checkboxLines.push({idx, text: line});
+    }
+  });
+
+  // Substitui os <li> correspondentes por checkboxes reais interativos.
+  // Estratégia simples: percorre os <li> do DOM na ordem e casa 1:1 com checkboxLines
+  // (marked já reconhece "- [ ] " como task list item com <input disabled>).
+  const domCheckboxes = container.querySelectorAll('li input[type="checkbox"]');
+  domCheckboxes.forEach((input, i) => {
+    const match = checkboxLines[i];
+    if (!match) return;
+    input.disabled = false;
+    input.classList.add("backlog-checkbox");
+    input.onchange = () => toggleBacklogCheckbox(entry.path, match.idx, match.text, input);
+  });
+
+  if (domCheckboxes.length === 0){
+    const note = document.createElement("p");
+    note.style.color = "var(--text-2)";
+    note.style.fontSize = "12px";
+    note.textContent = "(nenhum item de checkbox detectado neste backlog)";
+    container.appendChild(note);
+  }
+}
+
+async function toggleBacklogCheckbox(path, lineNumber, expectedText, inputEl){
+  inputEl.disabled = true;
+  try{
+    const r = await fetch("/api/backlog/toggle", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({path, line_number: lineNumber, expected_text: expectedText})
+    });
+    const data = await r.json();
+    if (!r.ok){
+      toast("Erro: " + (data.error || r.status));
+      inputEl.checked = !inputEl.checked;
+      inputEl.disabled = false;
+      return;
+    }
+    toast("Backlog atualizado");
+    // reabre o arquivo pra refletir o novo estado com line numbers corretos
+    await openFile(path);
+  } catch(err){
+    toast("Falha de rede: " + err);
+    inputEl.disabled = false;
+  }
+}
+
+// ============================================================
+// LOG central — view estruturada
+// ============================================================
+async function openLogView(){
+  document.getElementById("content").classList.remove("pf-wide");
+  renderBreadcrumb("1-capturas/LOG/_log.md");
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">log central</span>`;
+  const r = await fetch("/api/log");
+  const data = await r.json();
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+
+  const filterInput = document.createElement("input");
+  filterInput.id = "log-filter";
+  filterInput.placeholder = "Filtrar por ID, local, resumo…";
+  content.appendChild(filterInput);
+
+  const tableWrap = document.createElement("div");
+  content.appendChild(tableWrap);
+
+  function draw(){
+    const q = filterInput.value.trim().toLowerCase();
+    let rows = data.rows;
+    if (q) rows = rows.filter(row =>
+      (row.id||"").toLowerCase().includes(q) ||
+      (row.local||"").toLowerCase().includes(q) ||
+      (row.resumo||"").toLowerCase().includes(q)
+    );
+    let html = "<table><thead><tr><th>ID</th><th>Data</th><th>Etapa</th><th>Local</th><th>Resumo</th><th>Link</th></tr></thead><tbody>";
+    rows.forEach(row => {
+      let etapaCell = escapeHtml(row.etapa);
+      if (row.arrow_target){
+        etapaCell = etapaCell.replace(/→.*/, "") + ` <span class="arrow-chip" data-target="${escapeHtml(row.arrow_target)}">→ ${escapeHtml(row.arrow_target)}</span>`;
+      }
+      html += `<tr>
+        <td><code>${escapeHtml(row.id)}</code></td>
+        <td>${escapeHtml(row.data)}</td>
+        <td>${etapaCell}</td>
+        <td>${escapeHtml(row.local)}</td>
+        <td>${escapeHtml(row.resumo)}</td>
+        <td>${row.link_href ? `<a href="#" data-href="${escapeHtml(row.link_href)}">${escapeHtml(row.link_text)}</a>` : ""}</td>
+      </tr>`;
+    });
+    html += "</tbody></table>";
+    tableWrap.innerHTML = html;
+
+    tableWrap.querySelectorAll(".arrow-chip").forEach(chip => {
+      chip.onclick = () => tryOpenTarget(chip.dataset.target);
+    });
+    tableWrap.querySelectorAll("a[data-href]").forEach(a => {
+      a.onclick = (ev) => { ev.preventDefault(); tryOpenTarget(a.dataset.href); };
+    });
+  }
+
+  filterInput.oninput = draw;
+  draw();
+}
+
+
+// ============================================================
+// Tour — _metodo/trilha.md renderizada por parada
+// ============================================================
+// A trilha é um .md comum (fonte única de verdade, editável fora daqui).
+// Esta view só a fatia por "## " (uma parada por seção de nível 2), mostra
+// uma parada por vez com navegação, marca as já vistas (localStorage) e
+// deixa os links relativos resolverem contra o índice via tryOpenTarget,
+// como em qualquer outro arquivo. Blocos ```mermaid são renderizados pelo
+// mermaid.min.js vendorizado (vendor/, carregado no <head>); erro de
+// sintaxe ou lib ausente caem em modo fonte — ver renderMermaidBlocks.
+const TOUR_PATH = "_metodo/trilha.md";
+const TOUR_DONE_KEY = "estacao.tour.done";
+let TOUR_STEPS = [];
+let TOUR_CURRENT = 0;
+
+function tourDone(){
+  try { return new Set(JSON.parse(localStorage.getItem(TOUR_DONE_KEY) || "[]")); } catch(e){ return new Set(); }
+}
+function tourMarkDone(idx){
+  try {
+    const done = tourDone(); done.add(idx);
+    localStorage.setItem(TOUR_DONE_KEY, JSON.stringify([...done]));
+  } catch(e){}
+}
+
+function splitTourSteps(markdown){
+  // separa preâmbulo (antes do primeiro "## ") e seções "## ..."
+  const lines = markdown.split(/\r?\n/);
+  const steps = [];
+  let cur = {title: "Início", body: []};
+  let inFence = false;
+  for (const ln of lines){
+    if (/^```/.test(ln)) inFence = !inFence;
+    if (!inFence && /^## /.test(ln)){
+      steps.push(cur);
+      cur = {title: ln.replace(/^## /, "").trim(), body: []};
+      continue;
+    }
+    if (!inFence && /^---\s*$/.test(ln)) continue; // separadores visuais entre paradas
+    cur.body.push(ln);
+  }
+  steps.push(cur);
+  return steps.filter(s => s.body.join("").trim().length > 0 || s.title !== "Início");
+}
+
+function tourShortLabel(title){
+  const m = title.match(/^(N\d)\s*—\s*(.+?)(\s*\(.*\))?$/);
+  if (m) return `${m[1]} ${m[2]}`;
+  return title.length > 26 ? title.slice(0, 24) + "…" : title;
+}
+
+let MERMAID_READY = false;
+function ensureMermaid(){
+  if (MERMAID_READY || typeof mermaid === "undefined") return MERMAID_READY;
+  const dark = document.documentElement.dataset.theme === "dark" ||
+    (!document.documentElement.dataset.theme && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  mermaid.initialize({startOnLoad: false, theme: dark ? "dark" : "neutral", securityLevel: "strict",
+    fontFamily: '"Public Sans", sans-serif'});
+  MERMAID_READY = true;
+  return true;
+}
+
+// Blocos ```mermaid da trilha: renderiza com o mermaid.min.js vendorizado
+// (app/templates/vendor/, MIT, 10.9.1). Se a lib não carregou ou o diagrama
+// tem erro de sintaxe, cai no modo "fonte" — a trilha continua legível.
+async function renderMermaidBlocks(container){
+  const blocks = [...container.querySelectorAll("pre > code.language-mermaid")];
+  if (!blocks.length) return;
+  const ok = ensureMermaid();
+  for (const [i, code] of blocks.entries()){
+    const pre = code.parentElement;
+    const src = code.textContent;
+    const wrap = document.createElement("div");
+    wrap.className = "tour-mermaid";
+    pre.replaceWith(wrap);
+    if (!ok){
+      wrap.innerHTML = `<div class="tour-mermaid-label">diagrama (fonte Mermaid — mermaid.min.js não carregou)</div>`;
+      wrap.appendChild(pre);
+      continue;
+    }
+    try{
+      const {svg} = await mermaid.render(`tour-mmd-${Date.now()}-${i}`, src);
+      wrap.classList.add("rendered");
+      wrap.innerHTML = svg;
+    } catch(err){
+      wrap.innerHTML = `<div class="tour-mermaid-label">diagrama com erro de sintaxe Mermaid (${escapeHtml(String(err.message||err).slice(0,120))}) — fonte abaixo</div>`;
+      wrap.appendChild(pre);
+    }
+  }
+}
+
+async function openTourView(){
+  SELECTED_PATH = TOUR_PATH; // faz os links relativos resolverem a partir de _metodo/
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  renderBreadcrumb(TOUR_PATH);
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">trilha</span><span id="meta-path">${escapeHtml(TOUR_PATH)} · uma parada por vez · links abrem aqui dentro</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<p class="dash-lead">Carregando trilha…</p>`;
+
+  const r = await fetch("/api/file?path=" + encodeURIComponent(TOUR_PATH));
+  const data = await r.json();
+  if (data.error){
+    content.innerHTML = `<p class="dash-lead">A trilha não está no índice (${escapeHtml(data.error)}). Ela deveria existir em <code>${TOUR_PATH}</code> — ver plano-trilha.md.</p>`;
+    return;
+  }
+  const stripped = data.raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+  TOUR_STEPS = splitTourSteps(stripped);
+  TOUR_CURRENT = 0;
+  drawTourStep();
+}
+
+function drawTourStep(){
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  const done = tourDone();
+
+  const nav = document.createElement("div");
+  nav.className = "tour-nav";
+  TOUR_STEPS.forEach((st, i) => {
+    const b = document.createElement("div");
+    b.className = "tour-step" + (i === TOUR_CURRENT ? " active" : "") + (done.has(i) && i !== TOUR_CURRENT ? " done" : "");
+    b.textContent = tourShortLabel(st.title);
+    b.title = st.title;
+    b.onclick = () => { TOUR_CURRENT = i; drawTourStep(); };
+    nav.appendChild(b);
+  });
+  content.appendChild(nav);
+
+  const st = TOUR_STEPS[TOUR_CURRENT];
+  const body = document.createElement("div");
+  body.className = "tour-body";
+  const heading = TOUR_CURRENT === 0 ? "" : `## ${st.title}\n\n`;
+  body.innerHTML = marked.parse(heading + st.body.join("\n"));
+  renderMermaidBlocks(body);
+  content.appendChild(body);
+
+  const footer = document.createElement("div");
+  footer.className = "tour-footer";
+  const prev = document.createElement("button");
+  prev.textContent = "← Anterior";
+  prev.disabled = TOUR_CURRENT === 0;
+  prev.onclick = () => { TOUR_CURRENT--; drawTourStep(); };
+  const prog = document.createElement("span");
+  prog.className = "tour-progress";
+  prog.textContent = `parada ${TOUR_CURRENT + 1} de ${TOUR_STEPS.length} · ${done.size} vista(s)`;
+  const next = document.createElement("button");
+  const last = TOUR_CURRENT === TOUR_STEPS.length - 1;
+  next.textContent = last ? "Concluir ✓" : "Li esta parada → próxima";
+  next.onclick = () => {
+    tourMarkDone(TOUR_CURRENT);
+    if (last){ toast("Trilha concluída — agora responda o teste de controle"); drawTourStep(); return; }
+    TOUR_CURRENT++; drawTourStep();
+    document.getElementById("main").scrollTo({top: 0, behavior: "smooth"});
+  };
+  footer.appendChild(prev); footer.appendChild(prog); footer.appendChild(next);
+  content.appendChild(footer);
+}
+
+// ============================================================
+// Portfólio — hub de tudo que "roda", por Projeto (GET /api/portfolio)
+// ============================================================
+// Dados vêm de app/portfolio.py (curadoria em portfolio.json por projeto).
+// Filtros são estado de tela, não de servidor. Links locais (/files/…,
+// launch) só funcionam no servidor local — o snapshot estático os desliga.
+let PF = null;
+const PF_FILTRO = {tipo: null, status: null, kind: null, q: "", mostrarRascunho: false};
+const PF_KIND_LABEL = {launcher: "abrir (.bat)", binario: "executável", servidor: "servidor (python)", prototipo: "protótipo", build: "build", doc: "documento", design: "design"};
+const PF_ABERTOS = new Set();
+
+function pfStatusClass(status){
+  const s = (status||"").toLowerCase();
+  if (s.startsWith("ativo")) return "pill-ativo";
+  if (s.includes("idea")) return "pill-idea";
+  if (s.includes("early")) return "pill-early";
+  if (s.includes("adormec")) return "pill-adormecida";
+  if (/^v\d/.test(s)) return "pill-versao";
+  return "pill-sem";
+}
+
+async function openPortfolioView(){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Portfólio";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">portfólio</span><span id="meta-path">tudo que roda, por Projeto · links, launchers, protótipos, docs</span>`;
+  const content = document.getElementById("content");
+  content.classList.add("pf-wide");
+  content.innerHTML = `<p class="dash-lead">Carregando portfólio…</p>`;
+  try{
+    const r = await fetch("/api/portfolio");
+    PF = await r.json();
+  } catch(err){
+    content.innerHTML = `<p class="dash-lead">Falha ao carregar: ${escapeHtml(String(err))}</p>`;
+    return;
+  }
+  drawPortfolio();
+}
+
+function pfProjetoPassa(p){
+  const f = PF_FILTRO;
+  if (f.tipo && p.tipo !== f.tipo) return false;
+  if (f.status && pfStatusClass(p.status) !== f.status) return false;
+  if (f.kind === "no-ar" && !p.contagens.no_ar) return false;
+  if (f.kind === "local" && !p.contagens.roda_local) return false;
+  if (f.kind === "prototipo" && !p.contagens.prototipos) return false;
+  if (f.kind === "docs" && !p.contagens.docs) return false;
+  if (f.kind === "nada" && (p.contagens.no_ar || p.contagens.roda_local || p.contagens.prototipos || p.contagens.docs)) return false;
+  if (f.q){
+    const ql = f.q.toLowerCase();
+    const alvo = [p.pasta, p.nome, p.resumo, (p.tags||[]).join(" "), p.execs.map(e => e.nome).join(" ")].join(" ").toLowerCase();
+    if (!alvo.includes(ql)) return false;
+  }
+  return true;
+}
+
+function pfChip(label, ativo, onclick, title){
+  const c = document.createElement("div");
+  c.className = "chip" + (ativo ? " active" : "");
+  c.textContent = label;
+  if (title) c.title = title;
+  c.onclick = onclick;
+  return c;
+}
+
+function drawPortfolio(){
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  const t = PF.totais;
+  const head = document.createElement("div");
+  head.className = "pf-head";
+  head.innerHTML = `<div><h1>Portfólio</h1><p class="dash-lead" style="margin:4px 0 0">Gerado ${escapeHtml(PF.gerado_em.replace("T"," "))} · curadoria por <code>portfolio.json</code> em cada projeto</p></div>`;
+  const kpis = document.createElement("div");
+  kpis.className = "pf-kpis";
+  [[t.projetos, "projetos"], [t.no_ar, "no ar"], [t.roda_local, "rodam local"], [t.prototipos, "protótipos"], [t.docs, "docs & design"], [t.com_repo, "com repo"]]
+    .forEach(([n, l]) => { const k = document.createElement("div"); k.className = "pf-kpi"; k.innerHTML = `<div class="n">${n}</div><div class="l">${l}</div>`; kpis.appendChild(k); });
+  head.appendChild(kpis);
+  content.appendChild(head);
+  const nota = document.createElement("p");
+  nota.className = "pf-static-note";
+  nota.textContent = "Snapshot estático: links \"no ar\" e repositórios funcionam; abrir protótipos e launchers só na Estação local.";
+  content.appendChild(nota);
+
+  const filtros = document.createElement("div");
+  filtros.className = "pf-filtros";
+  const busca = document.createElement("input");
+  busca.placeholder = "filtrar por nome, resumo, tag, arquivo…";
+  busca.value = PF_FILTRO.q;
+  busca.oninput = () => { PF_FILTRO.q = busca.value.trim(); drawPortfolioGrid(); };
+  filtros.appendChild(busca);
+  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
+  [["no-ar", "no ar"], ["local", "roda local"], ["prototipo", "tem protótipo"], ["docs", "tem docs"], ["nada", "sem nada ainda"]]
+    .forEach(([k, l]) => filtros.appendChild(pfChip(l, PF_FILTRO.kind === k, () => { PF_FILTRO.kind = PF_FILTRO.kind === k ? null : k; drawPortfolio(); })));
+  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
+  const tipos = [...new Set(PF.projetos.map(p => p.tipo))].filter(x => x && x !== "—").sort();
+  tipos.forEach(tp => filtros.appendChild(pfChip(tp, PF_FILTRO.tipo === tp, () => { PF_FILTRO.tipo = PF_FILTRO.tipo === tp ? null : tp; drawPortfolio(); },
+    {DIG: "digital", DAD: "dados", CON: "consultoria", ADE: "adestramento/ensino"}[tp] || tp)));
+  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
+  [["pill-ativo", "ativo"], ["pill-idea", "idea-stage"], ["pill-early", "early-stage"], ["pill-versao", "versionado"]]
+    .forEach(([k, l]) => filtros.appendChild(pfChip(l, PF_FILTRO.status === k, () => { PF_FILTRO.status = PF_FILTRO.status === k ? null : k; drawPortfolio(); })));
+  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
+  filtros.appendChild(pfChip("mostrar rascunhos", PF_FILTRO.mostrarRascunho, () => { PF_FILTRO.mostrarRascunho = !PF_FILTRO.mostrarRascunho; drawPortfolio(); }, "cópias, versões antigas, relatórios de teste"));
+  content.appendChild(filtros);
+
+  const grid = document.createElement("div");
+  grid.className = "pf-grid";
+  grid.id = "pf-grid";
+  content.appendChild(grid);
+  drawPortfolioGrid();
+  busca.focus();
+}
+
+function pfLinkArquivo(e){
+  const local = ["launcher", "binario", "servidor"].includes(e.kind);
+  const el = document.createElement(local ? "button" : "a");
+  el.className = "pf-link pf-local" + (local ? " run" : "") + (e.destaque ? " destaque" : "") + (e.estagio === "rascunho" ? " rascunho" : "");
+  const grp = e.grupo && e.grupo !== "raiz" ? `<span class="grp">${escapeHtml(e.grupo)}/</span>` : "";
+  const est = e.estagio && e.estagio !== "prototipo" ? `<span class="pill pill-${e.estagio}">${e.estagio === "estavel" ? "estável" : e.estagio}</span>` : "";
+  el.innerHTML = `${local ? "▶ " : ""}${grp}<span class="nm" title="${escapeHtml(e.path)}">${escapeHtml(e.nome)}</span>${est}`;
+  el.title = `${PF_KIND_LABEL[e.kind] || e.kind} · ${e.path} · ${e.mtime}`;
+  if (local){
+    el.onclick = () => pfLaunch(e);
+  } else {
+    el.href = "/files/" + e.path.split("/").map(encodeURIComponent).join("/");
+    el.target = "_blank";
+    el.rel = "noopener";
+  }
+  return el;
+}
+
+async function pfLaunch(e){
+  if (!confirm(`Abrir agora, nesta máquina?\n\n${e.path}\n\nIsso executa o arquivo numa janela própria.`)) return;
+  try{
+    const r = await fetch("/api/launch", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({path: e.path})});
+    const d = await r.json();
+    if (!r.ok){ toast("Não abriu: " + (d.error || r.status)); return; }
+    toast("Iniciado: " + e.nome);
+  } catch(err){ toast("Falha: " + err); }
+}
+
+function pfSecao(container, titulo, itens, key, limite){
+  if (!itens.length) return;
+  const sec = document.createElement("div");
+  sec.className = "pf-sec";
+  const aberto = PF_ABERTOS.has(key);
+  const visiveis = aberto ? itens : itens.slice(0, limite);
+  sec.innerHTML = `<div class="pf-sec-t">${escapeHtml(titulo)} <span class="cnt">${itens.length}</span></div>`;
+  const wrap = document.createElement("div");
+  wrap.className = "pf-links";
+  visiveis.forEach(e => wrap.appendChild(pfLinkArquivo(e)));
+  sec.appendChild(wrap);
+  if (itens.length > limite){
+    const b = document.createElement("button");
+    b.className = "pf-mais";
+    b.textContent = aberto ? "mostrar menos" : `+ ${itens.length - limite} mais…`;
+    b.onclick = () => { aberto ? PF_ABERTOS.delete(key) : PF_ABERTOS.add(key); drawPortfolioGrid(); };
+    sec.appendChild(b);
+  }
+  container.appendChild(sec);
+}
+
+function drawPortfolioGrid(){
+  const grid = document.getElementById("pf-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  const projetos = PF.projetos.filter(pfProjetoPassa).sort((a, b) => a.ordem - b.ordem || a.pasta.localeCompare(b.pasta));
+  if (!projetos.length){
+    grid.innerHTML = `<p class="pf-vazio-msg">Nenhuma projeto bate com esse filtro.</p>`;
+    return;
+  }
+  projetos.forEach(p => {
+    const execs = p.execs.filter(e => PF_FILTRO.mostrarRascunho || e.estagio !== "rascunho");
+    const nada = !p.links.length && !execs.length;
+    const card = document.createElement("div");
+    card.className = "pf-card" + (nada ? " vazio" : "");
+    const pills = [`<span class="pill pill-tipo">${escapeHtml(p.tipo)}</span>`, `<span class="pill ${pfStatusClass(p.status)}">${escapeHtml(p.status)}</span>`];
+    if (!p.listada) pills.push(`<span class="pill pill-sem" title="pasta não está em _indice-projetos.md">não listada</span>`);
+    card.innerHTML = `<div class="pf-card-top"><h2>${escapeHtml(p.nome)}<small>${escapeHtml(p.pasta)}</small></h2><div class="pf-pills">${pills.join("")}</div></div>`;
+    if (p.resumo){ const r = document.createElement("p"); r.className = "pf-resumo"; r.title = p.resumo; r.textContent = p.resumo; card.appendChild(r); }
+    if (p.nota){ const n = document.createElement("p"); n.className = "pf-nota"; n.textContent = p.nota; card.appendChild(n); }
+    const g = p.git || {};
+    const gitEl = document.createElement("div");
+    gitEl.className = "pf-git";
+    gitEl.innerHTML = (g.ultimo_commit ? `<span>último commit ${escapeHtml(g.ultimo_commit)}</span><span>${g.commits} commit${g.commits === 1 ? "" : "s"}</span>` : `<span>sem git</span>`)
+      + (p.tags && p.tags.length ? `<span>${p.tags.map(t => "#" + escapeHtml(t)).join(" ")}</span>` : "");
+    card.appendChild(gitEl);
+
+    // links externos: no ar + repositório
+    if (p.links.length){
+      const sec = document.createElement("div");
+      sec.className = "pf-sec";
+      sec.innerHTML = `<div class="pf-sec-t">Na internet</div>`;
+      const wrap = document.createElement("div");
+      wrap.className = "pf-links";
+      p.links.forEach(l => {
+        const a = document.createElement("a");
+        a.className = "pf-link" + (l.kind === "no-ar" ? " noar" : "");
+        a.href = l.url; a.target = "_blank"; a.rel = "noopener";
+        const host = l.url.replace(/^https?:\/\//, "").split("/")[0];
+        a.innerHTML = `${l.kind === "no-ar" ? "🌐 " : "⌥ "}<span class="nm">${escapeHtml(l.label)} · ${escapeHtml(host)}</span>`;
+        a.title = l.url;
+        wrap.appendChild(a);
+      });
+      sec.appendChild(wrap);
+      card.appendChild(sec);
+    }
+    pfSecao(card, "Rodar aqui", execs.filter(e => ["launcher", "binario", "servidor"].includes(e.kind)), p.pasta + ":run", 4);
+    pfSecao(card, "Protótipos e builds", execs.filter(e => ["prototipo", "build"].includes(e.kind)), p.pasta + ":prot", 4);
+    pfSecao(card, "Docs e design", execs.filter(e => ["doc", "design"].includes(e.kind)), p.pasta + ":doc", 3);
+    if (nada){
+      const v = document.createElement("p"); v.className = "pf-vazio-msg";
+      v.textContent = p.tem_claude ? "Nada executável ainda — só a orquestra e o backlog." : "Sem CLAUDE.md — pasta ainda não é uma projeto completa.";
+      card.appendChild(v);
+    }
+    const foot = document.createElement("div");
+    foot.className = "pf-foot";
+    foot.innerHTML = `<a data-abrir-projeto>abrir projeto →</a><a data-open="${escapeHtml(p.pasta)}/CLAUDE.md">orquestra (CLAUDE.md)</a><span>${p.contagens.rascunhos ? p.contagens.rascunhos + " rascunho(s) oculto(s)" : ""}</span>`;
+    foot.querySelector("[data-abrir-projeto]").onclick = () => openProjetoView(p.pasta);
+    foot.querySelector("[data-open]").onclick = () => tryOpenTarget(p.pasta + "/CLAUDE.md");
+    card.appendChild(foot);
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// Dashboard — view estruturada de métricas (GET /api/metricas)
+// ============================================================
+async function openDashboardView(){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Dashboard";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">dashboard</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<p class="dash-lead">Carregando métricas…</p>`;
+
+  let data;
+  try{
+    const r = await fetch("/api/metricas");
+    data = await r.json();
+  } catch(err){
+    content.innerHTML = `<p class="dash-lead">Falha ao carregar métricas: ${escapeHtml(String(err))}</p>`;
+    return;
+  }
+
+  const fmt = n => (n === null || n === undefined) ? "—" : n.toLocaleString("pt-BR");
+  content.innerHTML = "";
+
+  const header = document.createElement("div");
+  header.innerHTML = `<h1>Dashboard Método</h1><p class="dash-lead">Gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do LOG central e do disco.</p>`;
+  content.appendChild(header);
+
+  // KPIs
+  const kpis = [
+    {num: data.log.total_linhas_log, label: "Entradas no LOG central"},
+    {num: data.log.sem_destino_por_etapa.SBC || 0, label: "Capturas cruas sem destino"},
+    {num: data.log.sem_destino_por_etapa.SBI || 0, label: "Candidatos a Projeto (SBI sem destino)"},
+    {num: data.log.por_etapa.SBZ || 0, label: "Projetos já registradas"},
+    {num: data.arquivos.total_arquivos, label: "Arquivos no repositório"},
+    {num: data.arquivos.total_md, label: "Arquivos .md"},
+    {num: data.arquivos.linhas_codigo, label: "Linhas de código"},
+    {num: data.nucleo.marcados_parte_do_nucleo, label: "Marcados parte_do_nucleo"}
+  ];
+  const kpiSection = document.createElement("div");
+  kpiSection.className = "dash-section";
+  kpiSection.innerHTML = "<h2>Visão geral</h2>";
+  const kpiGrid = document.createElement("div");
+  kpiGrid.className = "dash-kpi-grid";
+  kpis.forEach(k => {
+    const card = document.createElement("div");
+    card.className = "dash-kpi-card";
+    card.innerHTML = `<div class="num">${fmt(k.num)}</div><div class="label">${escapeHtml(k.label)}</div>`;
+    kpiGrid.appendChild(card);
+  });
+  kpiSection.appendChild(kpiGrid);
+  content.appendChild(kpiSection);
+
+  // Distribuição por etapa
+  const etapaSection = document.createElement("div");
+  etapaSection.className = "dash-section";
+  etapaSection.innerHTML = "<h2>Distribuição por etapa</h2>";
+  const ordemEtapa = ["SBC", "SBI", "SBZ"];
+  const maxEtapa = Math.max(...ordemEtapa.map(e => data.log.por_etapa[e] || 0), 1);
+  ordemEtapa.forEach(etapa => {
+    const v = data.log.por_etapa[etapa] || 0;
+    const pct = Math.round((v / maxEtapa) * 100);
+    const row = document.createElement("div");
+    row.className = "dash-bar-row";
+    row.innerHTML = `<div class="rotulo">${etapa}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pct}%"></div></div><div class="valor">${fmt(v)}</div>`;
+    etapaSection.appendChild(row);
+  });
+  content.appendChild(etapaSection);
+
+  // Distribuição por tipo
+  const significados = {DIG: "Digital (app/site/ferramenta)", DAD: "Dados/análise", CON: "Consultoria/processo", ADE: "Aprendizado/educação"};
+  const tipoSection = document.createElement("div");
+  tipoSection.className = "dash-section";
+  let tipoRows = Object.keys(data.log.por_tipo).sort().map(t =>
+    `<tr><td>${t}</td><td>${significados[t]||"—"}</td><td>${fmt(data.log.por_tipo[t])}</td></tr>`
+  ).join("");
+  tipoSection.innerHTML = `<h2>Distribuição por tipo de Projeto</h2><table><thead><tr><th>Tipo</th><th>Significado</th><th>Contagem</th></tr></thead><tbody>${tipoRows}</tbody></table>`;
+  content.appendChild(tipoSection);
+
+  // Notas/ideias por dia
+  const diaSection = document.createElement("div");
+  diaSection.className = "dash-section";
+  diaSection.innerHTML = "<h2>Notas e ideias por dia</h2>";
+  const dias = Object.keys(data.log.por_dia).sort();
+  const maxDia = Math.max(...dias.map(d => data.log.por_dia[d]), 1);
+  const chart = document.createElement("div");
+  chart.className = "dash-chart-vert";
+  dias.forEach(d => {
+    const v = data.log.por_dia[d];
+    const alturaPx = Math.max(4, Math.round((v / maxDia) * 120));
+    const col = document.createElement("div");
+    col.className = "col";
+    col.innerHTML = `<div class="val">${v}</div><div class="bar" style="height:${alturaPx}px"></div><div class="dia">${escapeHtml(d.slice(5).replace("-","/"))}</div>`;
+    chart.appendChild(col);
+  });
+  diaSection.appendChild(chart);
+  content.appendChild(diaSection);
+
+  // Esforço
+  const esforcoSection = document.createElement("div");
+  esforcoSection.className = "dash-section";
+  esforcoSection.innerHTML = `<h2>Esforço: hora-homem vs. hora-máquina</h2><div class="dash-esforco"><strong>Sem fonte de dado hoje.</strong> ${escapeHtml(data.esforco.nota)}</div>`;
+  content.appendChild(esforcoSection);
+}
+
+// ============================================================
+// Workflow — pipeline SBC→SBI→SBZ + pendências ativas (GET /api/workflow, /api/avanco)
+// ============================================================
+// v1: só leitura. Resolver uma pendência continua sendo uma sessão do Claude
+// Code — ver plano-console-operacional-2026-09-06.md, frente 2 (decisão em aberto
+// sobre decisão inline ficar pra depois ou entrar aqui).
+const WF_STAGE_LABEL = {entrada: "Entrada (ninguém viu ainda)", pendente: "Pendente (sem destino)", historico: "Histórico (já seguiu)"};
+
+async function openWorkflowView(){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Workflow";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">workflow</span><span id="meta-path">pipeline SBC→SBI→SBZ + pendências ativas — responda aqui, o avanço encaminha na próxima rodada</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<p class="dash-lead">Carregando workflow…</p>`;
+
+  let data, av;
+  try{
+    [data, av] = await Promise.all([
+      fetch("/api/workflow").then(r => r.json()),
+      fetch("/api/avanco").then(r => r.json()),
+    ]);
+  } catch(err){
+    content.innerHTML = `<p class="dash-lead">Falha ao carregar: ${escapeHtml(String(err))}</p>`;
+    return;
+  }
+  content.innerHTML = "";
+
+  const header = document.createElement("div");
+  header.innerHTML = `<h1>Workflow</h1><p class="dash-lead">O que ainda está em trânsito no pipeline Captura→Ideia→Projeto, e as decisões que só você resolve.</p>`;
+  content.appendChild(header);
+
+  if (av && !av.erro){
+    const box = document.createElement("div");
+    box.className = "wf-avanco";
+    box.innerHTML = `<p class="tit">Última rodada — ${escapeHtml(av.titulo)}</p><p class="ctx">${escapeHtml(av.resumo || "")}</p>`;
+    if (av.path){
+      const a = document.createElement("a");
+      a.href = "#"; a.style.fontSize = "12px"; a.textContent = "ver histórico completo →";
+      a.onclick = (ev) => { ev.preventDefault(); openFile(av.path); };
+      box.appendChild(a);
+    }
+    content.appendChild(box);
+  }
+
+  // Pendências primeiro: é a parte acionável. O kanban (panorama, centenas de
+  // cards) vem depois — antes ele empurrava a decisão pra fora da primeira tela.
+  WF_CARDS = (data.pendencias && data.pendencias.cards) || [];
+  WF_ERRO_PEND = (data.pendencias && data.pendencias.erro) || null;
+
+  const pendHeader = document.createElement("h2");
+  pendHeader.style.cssText = "font-family:'Fraunces',serif;font-weight:600;font-size:18px;border-bottom:2px solid var(--accent);padding-bottom:8px";
+  pendHeader.id = "wf-pend-header";
+  content.appendChild(pendHeader);
+
+  const filtros = document.createElement("div");
+  filtros.className = "wf-filtros";
+  filtros.id = "wf-filtros";
+  content.appendChild(filtros);
+
+  const lista = document.createElement("div");
+  lista.id = "wf-lista";
+  content.appendChild(lista);
+
+  const boardHeader = document.createElement("h2");
+  boardHeader.style.cssText = "font-family:'Fraunces',serif;font-weight:600;font-size:18px;border-bottom:2px solid var(--accent);padding-bottom:8px;margin-top:34px";
+  boardHeader.textContent = "Pipeline";
+  content.appendChild(boardHeader);
+
+  const board = document.createElement("div");
+  board.className = "wf-board";
+  Object.keys(WF_STAGE_LABEL).forEach(stage => {
+    const col = document.createElement("div");
+    col.className = "wf-col";
+    const itens = (data.colunas && data.colunas[stage]) || [];
+    col.innerHTML = `<h3>${WF_STAGE_LABEL[stage]} <span class="cnt">${itens.length}</span></h3>`;
+    if (!itens.length){
+      col.innerHTML += `<div class="wf-empty">vazio</div>`;
+    } else {
+      itens.slice(0, WF_KANBAN_MAX).forEach(it => {
+        const card = document.createElement("div");
+        card.className = "wf-card";
+        card.innerHTML = `<span class="et">${escapeHtml(it.etapa || "—")}</span><span class="ti">${escapeHtml(it.title || it.path.split("/").pop())}</span>`;
+        card.title = it.path;
+        card.onclick = () => openFile(it.path);
+        col.appendChild(card);
+      });
+      if (itens.length > WF_KANBAN_MAX){
+        const mais = document.createElement("div");
+        mais.className = "wf-empty";
+        mais.textContent = `+ ${itens.length - WF_KANBAN_MAX} mais (use a árvore/busca)`;
+        col.appendChild(mais);
+      }
+    }
+    board.appendChild(col);
+  });
+  content.appendChild(board);
+
+  drawPendencias();
+}
+
+const WF_KANBAN_MAX = 12;  // panorama, não lista completa — a árvore/busca cobre o resto
+
+// Estado da lista de pendências (a view redesenha só esta parte após cada resposta)
+let WF_CARDS = [];
+let WF_ERRO_PEND = null;
+let WF_FILTRO = "todas";  // todas | aberta | respondida
+
+const WF_ESTADO_LABEL = {
+  "aberta": "aberta",
+  "respondida": "respondida — aguardando avanço",
+  "adiada-marcada": "adiada — volta priorizada",
+  "nao-parseavel": "formato não reconhecido",
+};
+
+function wfPassa(c){
+  if (WF_FILTRO === "todas") return true;
+  if (WF_FILTRO === "aberta") return c.estado === "aberta" || c.estado === "nao-parseavel";
+  if (WF_FILTRO === "respondida") return c.estado === "respondida" || c.estado === "adiada-marcada";
+  return true;
+}
+
+function drawPendencias(){
+  const lista = document.getElementById("wf-lista");
+  if (!lista) return;
+  const visiveis = WF_CARDS.filter(wfPassa);
+
+  const header = document.getElementById("wf-pend-header");
+  const respondidas = WF_CARDS.filter(c => c.estado === "respondida").length;
+  header.textContent = `Pendências ativas (${WF_CARDS.length})`
+    + (respondidas ? ` · ${respondidas} aguardando o avanço` : "");
+
+  const filtros = document.getElementById("wf-filtros");
+  filtros.innerHTML = "";
+  [["todas", "todas"], ["aberta", "só abertas"], ["respondida", "já respondidas"]].forEach(([k, l]) => {
+    const chip = document.createElement("div");
+    chip.className = "chip" + (WF_FILTRO === k ? " active" : "");
+    chip.textContent = l;
+    chip.onclick = () => { WF_FILTRO = k; drawPendencias(); };
+    filtros.appendChild(chip);
+  });
+
+  const brf = document.createElement("button");
+  brf.className = "brf-btn";
+  brf.style.marginLeft = "auto";
+  brf.textContent = respondidas
+    ? `Briefing pra IA (${respondidas} respondida${respondidas > 1 ? "s" : ""}) →`
+    : "Briefing pra IA →";
+  brf.disabled = !respondidas;
+  brf.title = respondidas
+    ? "Gera o texto pra colar numa sessão do Claude Code encaminhar as respondidas"
+    : "Responda alguma pendência primeiro";
+  brf.onclick = () => abrirBriefing("pendencias");
+  filtros.appendChild(brf);
+
+  lista.innerHTML = "";
+  if (WF_ERRO_PEND){
+    const err = document.createElement("p");
+    err.className = "dash-lead";
+    err.textContent = "Pendências indisponíveis: " + WF_ERRO_PEND;
+    lista.appendChild(err);
+  }
+  if (!visiveis.length){
+    const p = document.createElement("p");
+    p.className = "wf-empty";
+    p.textContent = WF_CARDS.length ? "Nenhuma pendência neste filtro." : "Nenhuma pendência ativa no momento.";
+    lista.appendChild(p);
+    return;
+  }
+  visiveis.forEach(c => lista.appendChild(wfCard(c)));
+}
+
+function wfCard(c){
+  const box = document.createElement("div");
+  box.className = "wf-pend " + c.estado;
+
+  const badges = [`<span class="wf-b wf-b-${c.categoria === "Incremento" ? "incremento" : "sustentacao"}">${escapeHtml(c.categoria)}</span>`,
+                  `<span class="wf-b wf-b-${c.estado}">${WF_ESTADO_LABEL[c.estado] || c.estado}</span>`];
+  if (c.essencial) badges.push(`<span class="wf-b wf-b-essencial">essencial</span>`);
+  if (c.adiada) badges.push(`<span class="wf-b wf-b-adiada">adiada ${c.adiada}x</span>`);
+
+  box.innerHTML = `<div class="wf-badges">${badges.join("")}</div>
+    <p class="tit">${escapeHtml(c.title)}</p>
+    ${c.contexto ? `<p class="ctx">${escapeHtml(c.contexto)}</p>` : ""}`;
+
+  if (!c.parse_ok){
+    const aviso = document.createElement("p");
+    aviso.className = "ctx";
+    aviso.textContent = "Este arquivo não tem um bloco de resposta que eu saiba ler — responda abrindo o arquivo.";
+    box.appendChild(aviso);
+    if (c.raw){
+      const pre = document.createElement("pre");
+      pre.className = "wf-raw";
+      pre.textContent = c.raw;
+      box.appendChild(pre);
+    }
+  }
+
+  (c.perguntas || []).forEach(perg => {
+    const bloco = document.createElement("div");
+    bloco.className = "wf-perg";
+    if (perg.texto || perg.titulo !== "Resposta"){
+      const t = document.createElement("p");
+      t.className = "wf-perg-t";
+      t.textContent = perg.texto || perg.titulo;
+      bloco.appendChild(t);
+    }
+    perg.opcoes.forEach(op => bloco.appendChild(wfOpcao(c, op)));
+    box.appendChild(bloco);
+  });
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const partes = [];
+  if (c.revisar_quando) partes.push(`revisar quando: ${escapeHtml(c.revisar_quando)}`);
+  if (c.fonte) partes.push(`fonte: ${escapeHtml(c.fonte)}`);
+  meta.innerHTML = partes.join(" · ");
+  const abrir = document.createElement("a");
+  abrir.href = "#";
+  abrir.textContent = "abrir arquivo →";
+  abrir.onclick = (ev) => { ev.preventDefault(); openFile(c.path); };
+  meta.appendChild(abrir);
+  box.appendChild(meta);
+  return box;
+}
+
+function wfOpcao(card, op){
+  if (op.kind === "outra"){
+    const wrap = document.createElement("div");
+    const label = document.createElement("div");
+    label.className = "wf-opt" + (op.marcado ? " marcada" : "");
+    label.innerHTML = `<span class="lb">Outra resposta</span>${op.texto_livre ? `<span class="rz">— ${escapeHtml(op.texto_livre)}</span>` : ""}`;
+    wrap.appendChild(label);
+    const linha = document.createElement("div");
+    linha.className = "wf-outra";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "responder com suas palavras…";
+    input.value = op.texto_livre || "";
+    input.maxLength = 600;
+    const btn = document.createElement("button");
+    btn.textContent = "Gravar";
+    const enviar = () => {
+      const txt = input.value.trim();
+      if (!txt){ toast("Escreva a resposta antes de gravar"); input.focus(); return; }
+      wfResponder(card, op, "outra", txt);
+    };
+    btn.onclick = enviar;
+    input.onkeydown = (ev) => { if (ev.key === "Enter") enviar(); };
+    linha.appendChild(input);
+    linha.appendChild(btn);
+    wrap.appendChild(linha);
+    return wrap;
+  }
+
+  const el = document.createElement("label");
+  el.className = "wf-opt" + (op.marcado ? " marcada" : "");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = op.marcado;
+  cb.onchange = () => wfResponder(card, op, op.marcado ? "desmarcar" : "marcar");
+  el.appendChild(cb);
+  const txt = document.createElement("span");
+  txt.innerHTML = `<span class="lb">${escapeHtml(op.label)}</span>${op.reason ? ` <span class="rz">— ${escapeHtml(op.reason)}</span>` : ""}`;
+  el.appendChild(txt);
+  return el;
+}
+
+async function wfResponder(card, op, acao, texto){
+  try{
+    const r = await fetch("/api/pendencia/responder", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ref: card.ref, line_number: op.line_number, expected_text: op.text, acao, texto: texto || ""}),
+    });
+    const data = await r.json();
+    if (!r.ok){
+      if (r.status === 409){
+        toast("O arquivo mudou por fora — recarregando");
+        await recarregarPendencias();
+        return;
+      }
+      toast("Erro: " + (data.error || r.status));
+      await recarregarPendencias();
+      return;
+    }
+    const i = WF_CARDS.findIndex(c => c.ref === card.ref);
+    if (i >= 0) WF_CARDS[i] = data.card;
+    drawPendencias();
+    toast(data.estado === "respondida" ? "Respondida — o avanço encaminha na próxima rodada" : "Gravado");
+  } catch(err){
+    toast("Falha de rede: " + err);
+  }
+}
+
+async function recarregarPendencias(){
+  try{
+    const r = await fetch("/api/workflow");
+    const data = await r.json();
+    WF_CARDS = (data.pendencias && data.pendencias.cards) || [];
+    WF_ERRO_PEND = (data.pendencias && data.pendencias.erro) || null;
+    drawPendencias();
+  } catch(err){ toast("Falha ao recarregar: " + err); }
+}
+
+// ============================================================
+// Briefing pra IA — a ponte do console pra sessão do Claude Code / Codex
+// ============================================================
+// O app não tem IA dentro: ele prepara o texto com os caminhos reais e os
+// guardrails do método, e o humano cola na sessão. Ver app/briefing.py.
+async function abrirBriefing(tipo, params){
+  const qs = new URLSearchParams(Object.assign({tipo}, params || {}));
+  try{
+    const r = await fetch("/api/briefing?" + qs.toString());
+    const data = await r.json();
+    if (!r.ok){ toast("Erro: " + (data.error || r.status)); return; }
+    document.getElementById("brf-texto").value = data.texto;
+    document.getElementById("brf-overlay").classList.add("open");
+    document.getElementById("brf-texto").scrollTop = 0;
+  } catch(err){ toast("Falha ao gerar briefing: " + err); }
+}
+
+function fecharBriefing(){
+  document.getElementById("brf-overlay").classList.remove("open");
+}
+
+async function copiarBriefing(){
+  const ta = document.getElementById("brf-texto");
+  try{
+    await navigator.clipboard.writeText(ta.value);
+    toast("Briefing copiado — cole na sessão do Claude Code");
+  } catch(err){
+    ta.removeAttribute("readonly"); ta.select(); document.execCommand("copy");
+    ta.setAttribute("readonly", "");
+    toast("Briefing copiado");
+  }
+}
+
+// ============================================================
+// Fluxo — o método na tela (só leitura; classificar continua sendo da skill)
+// ============================================================
+// Os 4 critérios do Passo 1 do checklist-classificacao.md como checklist ao
+// vivo: 2+ "sim" promovem a Ideia. Não grava veredito — a classificação
+// formal é trabalho da skill; daqui sai o briefing pra ela.
+const FX_CRITERIOS = [
+  "Tem forma definida — é um documento estruturado, não um fragmento solto?",
+  "Poderia ser usado como input de outra coisa sem precisar reprocessar?",
+  "Representa uma decisão, um v1, ou um resumo com próximos passos?",
+  "Deixou de ser ambíguo sobre o que é e pra que serve?",
+];
+let FX_MARCADOS = new Set();
+
+async function openFluxoView(){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Fluxo";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">método</span><span id="meta-path">fluxo.v2 — nenhuma entrada pula etapa</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<h1>Fluxo</h1>
+    <p class="dash-lead">O caminho que toda entrada percorre naquela plataforma. Esta tela não classifica nada — ela ajuda você a decidir e gera o briefing pra sessão de IA fazer o registro.</p>`;
+
+  const passos = [
+    ["Passo 0 — tudo vira Captura crua (SBC)", "Sem exceção, mesmo o que já nasce maduro: ID via <code>plataforma.py novo-id</code>, linha no LOG central, arquivo em <code>1-capturas/.pendente/</code>. Pela interface, é o botão <strong>📝 Nota</strong>."],
+    ["Passo 1 — vale promover a Ideia (SBI)?", null],
+    ["Passo 2 — ganhou corpo próprio? Vira Projeto (SBZ)", "Pasta na raiz com <code>CLAUDE.md</code> (<code>origem_nota:</code>), backlog e git próprio, mais a linha em <code>4-projetos/_indice-projetos.md</code>."],
+    ["Passo 3 — dúvida genuína vai pro Refinar", "<code>1-capturas/REFINAR/</code>. Item novo no saco vira pendência-formulário na rodada seguinte do avanço — não fica esperando contexto aparecer sozinho."],
+  ];
+
+  passos.forEach(([titulo, corpo], i) => {
+    const el = document.createElement("div");
+    el.className = "fx-passo";
+    el.innerHTML = `<h3>${escapeHtml(titulo)}</h3>` + (corpo ? `<p class="ctx" style="font-size:12.5px;color:var(--text-2);margin:0">${corpo}</p>` : "");
+    if (i === 1){
+      const nota = document.createElement("p");
+      nota.style.cssText = "font-size:12.5px;color:var(--text-2);margin:0 0 6px";
+      nota.textContent = "Marque os critérios que valem para o item — 2 ou mais promovem:";
+      el.appendChild(nota);
+      FX_CRITERIOS.forEach((texto, idx) => {
+        const lab = document.createElement("label");
+        lab.className = "fx-crit" + (FX_MARCADOS.has(idx) ? " sim" : "");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = FX_MARCADOS.has(idx);
+        cb.onchange = () => {
+          cb.checked ? FX_MARCADOS.add(idx) : FX_MARCADOS.delete(idx);
+          openFluxoView();
+        };
+        lab.appendChild(cb);
+        const sp = document.createElement("span");
+        sp.textContent = texto;
+        lab.appendChild(sp);
+        el.appendChild(lab);
+      });
+      const ver = document.createElement("div");
+      const n = FX_MARCADOS.size;
+      ver.className = "fx-veredito " + (n >= 2 ? "sbi" : "fica");
+      ver.textContent = n >= 2
+        ? `${n} de 4 → promove a Ideia (SBI)`
+        : `${n} de 4 → fica como Captura crua em .pendente/ (ou vai pro Refinar, se a dúvida for genuína)`;
+      el.appendChild(ver);
+      const btn = document.createElement("button");
+      btn.className = "brf-btn";
+      btn.style.marginTop = "10px";
+      btn.textContent = "Briefing de classificação →";
+      btn.onclick = () => {
+        const alvo = ENTRIES.find(e => e.path === SELECTED_PATH && e.path.includes("1-capturas"))
+          || ENTRIES.find(e => e.lifecycle_stage === "pendente" && e.path.endsWith(".md"));
+        if (!alvo){ toast("Abra uma Captura de .pendente/ antes"); return; }
+        abrirBriefing("classificar", {path: alvo.path});
+      };
+      el.appendChild(btn);
+    }
+    content.appendChild(el);
+  });
+
+  const rodape = document.createElement("p");
+  rodape.className = "dash-lead";
+  rodape.style.marginTop = "18px";
+  rodape.innerHTML = `Fonte do método: <a href="#" data-abrir="_metodo/fluxo.v2.md">fluxo.v2.md</a> · <a href="#" data-abrir="_metodo/templates/checklist-classificacao.md">checklist-classificacao.md</a> · <a href="#" data-abrir="_metodo/doutrina.md">doutrina.md</a>`;
+  rodape.querySelectorAll("[data-abrir]").forEach(a => {
+    a.onclick = (ev) => { ev.preventDefault(); tryOpenTarget(a.dataset.abrir); };
+  });
+  content.appendChild(rodape);
+}
+
+// ============================================================
+// Projeto — uma Projeto por vez (GET /api/projeto, POST /api/projeto/anotar)
+// ============================================================
+// Junta portfólio + perfil da rodada de portfólio + backlogs (com os toggles
+// que já existiam) e deixa anotar direto no backlog do projeto — no formato
+// que o avanço já lê, pra IA pegar na rodada seguinte.
+let PJ = null;
+const PJ_MAT_ROTULOS = {produto: "produto", codigo: "código", docs: "docs", ux: "ux", dados: "dados", operacao: "operação"};
+
+async function openProjetoView(pasta){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ " + pasta;
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">projeto</span><span id="meta-path">${escapeHtml(pasta)}</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<p class="dash-lead">Carregando projeto…</p>`;
+  try{
+    const r = await fetch("/api/projeto?pasta=" + encodeURIComponent(pasta));
+    PJ = await r.json();
+    if (!r.ok){ content.innerHTML = `<p class="dash-lead">${escapeHtml(PJ.error || "erro")}</p>`; return; }
+  } catch(err){
+    content.innerHTML = `<p class="dash-lead">Falha ao carregar: ${escapeHtml(String(err))}</p>`;
+    return;
+  }
+  drawProjeto();
+}
+
+function drawProjeto(){
+  const content = document.getElementById("content");
+  const p = PJ.projeto;
+  content.innerHTML = "";
+
+  const head = document.createElement("div");
+  head.className = "pj-head";
+  head.innerHTML = `<h1>${escapeHtml(p.nome)}</h1>
+    <span class="pill pill-tipo">${escapeHtml(p.tipo)}</span>
+    <span class="pill ${pfStatusClass(p.status)}">${escapeHtml(p.status)}</span>`;
+  const brf = document.createElement("button");
+  brf.className = "brf-btn";
+  brf.style.marginLeft = "auto";
+  brf.textContent = "Briefing pra IA →";
+  brf.title = "Texto pronto pra colar numa sessão do Claude Code avançar este projeto";
+  brf.onclick = () => abrirBriefing("avancar", {pasta: PJ.pasta});
+  head.appendChild(brf);
+  content.appendChild(head);
+
+  if (p.resumo){
+    const r = document.createElement("p");
+    r.className = "dash-lead";
+    r.textContent = p.resumo;
+    content.appendChild(r);
+  }
+
+  const g = p.git || {};
+  const git = document.createElement("div");
+  git.className = "pj-git";
+  git.innerHTML = (g.ultimo_commit
+      ? `<span>último commit ${escapeHtml(g.ultimo_commit)}</span><span>${g.commits} commit(s)</span>`
+      : `<span>sem git</span>`)
+    + (PJ.perfil && PJ.perfil.versao ? `<span>versão ${escapeHtml(String(PJ.perfil.versao))}</span>` : "");
+  content.appendChild(git);
+
+  // links no ar / repositório
+  if ((p.links || []).length){
+    const sec = document.createElement("div");
+    sec.className = "pj-sec";
+    sec.innerHTML = "<h2>Na internet</h2>";
+    const wrap = document.createElement("div");
+    wrap.className = "pf-links";
+    p.links.forEach(l => {
+      const a = document.createElement("a");
+      a.className = "pf-link" + (l.kind === "no-ar" ? " noar" : "");
+      a.href = l.url; a.target = "_blank"; a.rel = "noopener";
+      const host = l.url.replace(/^https?:\/\//, "").split("/")[0];
+      let selo = "";
+      if (l.noar) selo = l.noar.ok
+        ? `<span class="pill pill-noar-ok">no ar</span>`
+        : `<span class="pill pill-noar-fora">fora (${escapeHtml(String(l.noar.status || "?"))})</span>`;
+      a.innerHTML = `${l.kind === "no-ar" ? "🌐 " : "⌥ "}<span class="nm">${escapeHtml(l.label)} · ${escapeHtml(host)}</span>${selo}`;
+      a.title = l.url;
+      wrap.appendChild(a);
+    });
+    sec.appendChild(wrap);
+    content.appendChild(sec);
+  }
+
+  // maturidade (perfil da rodada de portfólio)
+  if (PJ.maturidade){
+    const sec = document.createElement("div");
+    sec.className = "pj-sec";
+    sec.innerHTML = `<h2>Maturidade <span style="font-size:12px;font-weight:400;color:var(--text-2)">média ${PJ.maturidade.media ?? "—"}/5 · medida no disco em 2026-09-05</span></h2>`;
+    Object.keys(PJ_MAT_ROTULOS).forEach(k => {
+      const v = PJ.maturidade[k];
+      if (v === undefined) return;
+      const row = document.createElement("div");
+      row.className = "pj-mat";
+      row.innerHTML = `<div class="rot">${PJ_MAT_ROTULOS[k]}</div>
+        <div class="pj-mat-track"><div class="pj-mat-fill" style="width:${(v/5)*100}%"></div></div>
+        <div class="val">${v}/5</div>`;
+      sec.appendChild(row);
+    });
+    content.appendChild(sec);
+  }
+
+  // backlogs com os toggles que já existiam + anotação
+  (PJ.backlogs || []).forEach(b => {
+    const sec = document.createElement("div");
+    sec.className = "pj-sec";
+    sec.innerHTML = `<h2>${escapeHtml(b.title)} <span style="font-size:12px;font-weight:400;color:var(--text-2)">${b.abertos} aberto(s)</span></h2>`;
+    const corpo = document.createElement("div");
+    const entry = ENTRIES.find(e => e.path === b.path) || {path: b.path, type: "backlog"};
+    renderBacklogBody(corpo, entry, b.raw);
+    sec.appendChild(corpo);
+    sec.appendChild(pjFormAnotar(b));
+    content.appendChild(sec);
+  });
+
+  if ((PJ.lacunas || []).length) content.appendChild(pjListaSec("Lacunas (perfil de 2026-09-05)", PJ.lacunas));
+  if ((PJ.ligacoes || []).length) content.appendChild(pjListaSec("Ligações com outros projetos",
+    PJ.ligacoes.map(l => `${l.projeto} — ${l.relacao}: ${l.detalhe || ""}`)));
+
+  if ((PJ.documentos_chave || []).length){
+    const sec = document.createElement("div");
+    sec.className = "pj-sec";
+    sec.innerHTML = "<h2>Documentos-chave</h2>";
+    PJ.documentos_chave.forEach(d => {
+      const el = document.createElement("span");
+      el.className = "pj-doc";
+      el.textContent = (d.path || "").split("/").pop();
+      el.title = `${d.path} — ${d.funcao || ""}`;
+      el.onclick = () => tryOpenTarget(d.path, PJ.pasta + "/");
+      sec.appendChild(el);
+    });
+    content.appendChild(sec);
+  }
+
+  if (PJ.claude_path){
+    const sec = document.createElement("div");
+    sec.className = "pj-sec";
+    sec.innerHTML = `<h2>Orquestra (CLAUDE.md)</h2>`;
+    const btn = document.createElement("button");
+    btn.className = "pj-doc";
+    btn.textContent = "abrir CLAUDE.md →";
+    btn.onclick = () => openFile(PJ.claude_path);
+    sec.appendChild(btn);
+    content.appendChild(sec);
+  }
+}
+
+function pjListaSec(titulo, itens){
+  const sec = document.createElement("div");
+  sec.className = "pj-sec";
+  sec.innerHTML = `<h2>${escapeHtml(titulo)}</h2>`;
+  const ul = document.createElement("ul");
+  ul.className = "pj-lista";
+  itens.forEach(t => {
+    const li = document.createElement("li");
+    li.textContent = t;
+    ul.appendChild(li);
+  });
+  sec.appendChild(ul);
+  return sec;
+}
+
+function pjFormAnotar(backlog){
+  const wrap = document.createElement("div");
+  const form = document.createElement("div");
+  form.className = "pj-anotar";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "anotar no backlog deste projeto…";
+  input.maxLength = 500;
+  const btn = document.createElement("button");
+  btn.textContent = "Anotar";
+  const enviar = async () => {
+    const texto = input.value.trim();
+    if (texto.length < 3){ toast("Escreva a anotação primeiro"); input.focus(); return; }
+    btn.disabled = true;
+    try{
+      const r = await fetch("/api/projeto/anotar", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({pasta: PJ.pasta, backlog_path: backlog.path, texto, expected_sha1: backlog.sha1}),
+      });
+      const data = await r.json();
+      if (!r.ok){
+        toast(r.status === 409 ? "O backlog mudou por fora — recarregando" : "Erro: " + (data.error || r.status));
+        await openProjetoView(PJ.pasta);
+        return;
+      }
+      input.value = "";
+      toast("Anotado — a IA lê isso na próxima rodada");
+      await openProjetoView(PJ.pasta);
+    } catch(err){ toast("Falha de rede: " + err); }
+    finally { btn.disabled = false; }
+  };
+  btn.onclick = enviar;
+  input.onkeydown = (ev) => { if (ev.key === "Enter") enviar(); };
+  form.appendChild(input);
+  form.appendChild(btn);
+  wrap.appendChild(form);
+  const hint = document.createElement("p");
+  hint.className = "pj-hint";
+  hint.textContent = "Vira uma linha `- [ ] … _(via console, data)_` no backlog — formato que o avanço já lê.";
+  wrap.appendChild(hint);
+  return wrap;
+}
+
+// ============================================================
+// Nota — captura crua de Captura pela UI (POST /api/nota/nova)
+// ============================================================
+// Só cria SBC crua, sem classificar (opção default enquanto a decisão de escopo
+// não é respondida — ver plano-console-operacional-2026-09-06.md, frente 1).
+let NOTAS_CRIADAS_SESSAO = [];
+
+async function openNotaView(){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Nova nota";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">captura</span><span id="meta-path">vira Captura crua (SBC) em 1-capturas/.pendente/ — sem classificação, sem IA</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <h1>Nova nota</h1>
+    <p class="dash-lead">Cole ou escreva o que quiser guardar. Vira uma Captura crua com ID, arquivo e linha no LOG — classificar (Ideia/Projeto) continua sendo trabalho de uma sessão do Claude Code depois.</p>
+    <textarea id="nota-texto" rows="10" placeholder="Cole aqui o texto cru..."></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+      <button id="nota-salvar-btn">Salvar como Captura crua</button>
+      <span id="nota-status" style="font-size:12.5px;color:var(--text-2)"></span>
+    </div>
+    <div id="nota-recentes" style="margin-top:24px"></div>
+  `;
+  document.getElementById("nota-salvar-btn").onclick = salvarNota;
+  renderNotasRecentes();
+  document.getElementById("nota-texto").focus();
+}
+
+async function salvarNota(){
+  const ta = document.getElementById("nota-texto");
+  const status = document.getElementById("nota-status");
+  const texto = ta.value.trim();
+  if (!texto){
+    status.textContent = "Escreva algo antes de salvar.";
+    status.style.color = "var(--danger)";
+    return;
+  }
+  const btn = document.getElementById("nota-salvar-btn");
+  btn.disabled = true;
+  status.textContent = "Salvando…";
+  status.style.color = "var(--text-2)";
+  try{
+    const r = await fetch("/api/nota/nova", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({texto}),
+    });
+    const data = await r.json();
+    if (!r.ok){
+      status.textContent = "Erro: " + (data.error || r.status);
+      status.style.color = "var(--danger)";
+      btn.disabled = false;
+      return;
+    }
+    status.textContent = "";
+    NOTAS_CRIADAS_SESSAO.unshift(data);
+    ta.value = "";
+    renderNotasRecentes();
+    await reindex(); // pra aparecer na árvore/no Workflow sem precisar clicar em "reindexar"
+    toast("Nota salva: " + data.id);
+  } catch(err){
+    status.textContent = "Falha de rede: " + err;
+    status.style.color = "var(--danger)";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderNotasRecentes(){
+  const box = document.getElementById("nota-recentes");
+  if (!box) return;
+  if (!NOTAS_CRIADAS_SESSAO.length){ box.innerHTML = ""; return; }
+  box.innerHTML = "<h2>Criadas nesta sessão</h2>" + NOTAS_CRIADAS_SESSAO.map(n =>
+    `<p><code>${escapeHtml(n.id)}</code> — <a href="#" data-open-nota="${escapeHtml(n.path)}">${escapeHtml(n.path)}</a></p>`
+  ).join("");
+  box.querySelectorAll("[data-open-nota]").forEach(a => {
+    a.onclick = (ev) => { ev.preventDefault(); openFile(a.dataset.openNota); };
+  });
+}
+
+// Resolve um href de markdown (relativo ao arquivo aberto) pro caminho real
+// dentro do índice — mesma lógica de resolução de "../" que um navegador
+// faria, mas contra ENTRIES em vez do disco. Corrige o bug de links com mais
+// de um nível de "../" (ex.: "../../um-projetoCLAUDE.md" a partir de um
+// arquivo 2 níveis fundo) resolverem errado ou não resolverem.
+function resolveRelativePath(href, fromPath){
+  let target = (href || "").split("#")[0].split("?")[0].replace(/`/g, "").trim();
+  if (!target) return null;
+  const isRelative = target.startsWith(".");
+  const baseParts = (fromPath || "").split("/");
+  baseParts.pop(); // remove o nome do arquivo, sobra só o diretório
+  const parts = isRelative ? baseParts.concat(target.split("/")) : target.split("/");
+  const stack = [];
+  for (const seg of parts){
+    if (seg === "" || seg === ".") continue;
+    if (seg === ".."){ stack.pop(); continue; }
+    try { stack.push(decodeURIComponent(seg)); } catch(e) { stack.push(seg); }
+  }
+  return stack.join("/");
+}
+
+function resolveEntry(hrefOrName, basePath){
+  // 1) resolução estrutural (correta pra qualquer profundidade de "../")
+  if (basePath){
+    const resolved = resolveRelativePath(hrefOrName, basePath);
+    if (resolved){
+      let m = ENTRIES.find(e => e.path === resolved);
+      if (m) return m;
+      m = ENTRIES.find(e => e.path === resolved.replace(/\/$/, "") + "/CLAUDE.md");
+      if (m) return m;
+    }
+  }
+  // 2) heurísticas legadas — cobrem casos sem base clara, como um ID parcial
+  // do LOG (YY.MM.DD-ETAPA-SEQ, sem o slug-hash final do nome real do arquivo)
+  let clean = hrefOrName.replace(/^(\.\.\/)+/, "").replace(/^\.\//, "").replace(/`/g, "");
+  let match = ENTRIES.find(e => e.path === clean || e.path.endsWith("/" + clean.split("/").pop()));
+  if (match) return match;
+  match = ENTRIES.find(e => e.path === clean.replace(/\/$/, "") + "/CLAUDE.md");
+  if (match) return match;
+  const base = clean.split("/").pop();
+  match = ENTRIES.find(e => e.path.split("/").pop().startsWith(base));
+  if (match) return match;
+  match = ENTRIES.find(e => e.path.startsWith(clean.replace(/\/$/, "") + "/"));
+  return match || null;
+}
+
+function tryOpenTarget(hrefOrName, basePath){
+  const match = resolveEntry(hrefOrName, basePath || SELECTED_PATH);
+  if (match){
+    openFile(match.path);
+  } else {
+    toast("Não encontrado no índice: " + hrefOrName);
+  }
+}
+
+// Links dentro do markdown renderizado (#content) são <a href="..."> normais
+// — sem isto, o navegador tenta *navegar* pro caminho cru (ex.: clicar em
+// "../_metodo/_indice.md") e o servidor responde 404, porque só
+// serve conteúdo via /api/file?path=..., não por path direto. Intercepta e
+// roteia pela SPA, deixando passar só o que genuinamente deve navegar fora
+// dela (link externo, âncora, e os data-href da view de LOG que já têm
+// handler próprio).
+document.getElementById("content").addEventListener("click", (ev) => {
+  const a = ev.target.closest("a");
+  if (!a) return;
+  const href = a.getAttribute("href");
+  if (!href || href.startsWith("#") || a.dataset.href) return;
+  if (a.target === "_blank" || /^([a-z][a-z0-9+.-]*:)?\/\//i.test(href) || /^(mailto|tel):/i.test(href)) return;
+  ev.preventDefault();
+  tryOpenTarget(href, SELECTED_PATH);
+});
+
+// ============================================================
+// Busca completa (Enter na search box)
+// ============================================================
+async function fullSearch(query){
+  const r = await fetch("/api/search?q=" + encodeURIComponent(query));
+  const data = await r.json();
+  const content = document.getElementById("content");
+  document.getElementById("breadcrumb").textContent = `Busca: "${query}"`;
+  document.getElementById("meta-bar").innerHTML = "";
+  content.innerHTML = "";
+  if (data.results.length === 0){
+    content.innerHTML = `<p style="color:var(--text-2)">Nada encontrado.</p>`;
+    return;
+  }
+  data.results.forEach(res => {
+    const div = document.createElement("div");
+    div.className = "search-result";
+    div.innerHTML = `
+      <div class="search-result-title">${escapeHtml(res.title)} <span class="badge badge-type" style="margin-left:6px">${TYPE_LABELS[res.type]||res.type}</span></div>
+      <div class="search-result-path">${escapeHtml(res.path)}</div>
+      <div class="search-result-snippet">${escapeHtml(res.snippet)}</div>
+    `;
+    div.onclick = () => openFile(res.path);
+    content.appendChild(div);
+  });
+}
+
+// ============================================================
+// Wiring geral
+// ============================================================
+document.getElementById("search-box").addEventListener("input", renderTree);
+document.getElementById("search-box").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter"){
+    const q = ev.target.value.trim();
+    if (q) fullSearch(q);
+  }
+});
+document.getElementById("reindex-btn").addEventListener("click", reindex);
+document.getElementById("dashboard-nav-btn").addEventListener("click", openDashboardView);
+document.getElementById("tour-nav-btn").addEventListener("click", openTourView);
+document.getElementById("portfolio-nav-btn").addEventListener("click", openPortfolioView);
+document.getElementById("workflow-nav-btn").addEventListener("click", openWorkflowView);
+document.getElementById("nota-nav-btn").addEventListener("click", openNotaView);
+document.getElementById("fluxo-nav-btn").addEventListener("click", openFluxoView);
+document.getElementById("brf-fechar").addEventListener("click", fecharBriefing);
+document.getElementById("brf-copiar").addEventListener("click", copiarBriefing);
+document.getElementById("brf-overlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "brf-overlay") fecharBriefing();
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") fecharBriefing();
+});
+
+loadIndex();
+</script>
+</body>
+</html>
