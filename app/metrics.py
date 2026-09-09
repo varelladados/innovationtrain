@@ -13,29 +13,42 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import config
 import indexer
 
 APP_DIR = Path(__file__).resolve().parent
-ROOT = APP_DIR.parent.parent
-_PLATAFORMA_SCRIPTS = ROOT / "_ferramentas" / "scripts"
 
 
 def _plataforma():
-    """Import tardio de _ferramentas/scripts/plataforma.py — só o dashboard precisa dele. Se o
-    plataforma.py não compilar (aconteceu em 2026-09-04, merge com marcadores de conflito),
-    o erro fica restrito a /api/metricas em vez de derrubar o servidor inteiro no import."""
-    if str(_PLATAFORMA_SCRIPTS) not in sys.path:
-        sys.path.insert(0, str(_PLATAFORMA_SCRIPTS))
-    import plataforma  # noqa: E402
-    return plataforma
+    """Import tardio do utilitário da plataforma — só o dashboard precisa dele.
+    Se ele não compilar (aconteceu em 2026-09-04, merge com marcadores de
+    conflito) ou a plataforma não declarar nenhum, o erro fica restrito a
+    /api/metricas em vez de derrubar o servidor inteiro no import."""
+    util = config.atual().caminho("utilitario")
+    if util is None:
+        raise RuntimeError("esta plataforma não declara um utilitário (chave 'utilitario')")
+    if not util.exists():
+        raise FileNotFoundError(f"utilitário declarado mas ausente: {util}")
+    pasta = str(util.parent)
+    if pasta not in sys.path:
+        sys.path.insert(0, pasta)
+    return __import__(util.stem)
 
-ETAPA_RE = re.compile(r"\b(SBC|SBI|SBZ)\b")
-TIPO_RE = re.compile(r"-(DIG|DAD|CON|ADE)\b")
+
+def _tipo_re():
+    tipos = config.atual().tipos
+    if not tipos:
+        return None
+    return re.compile(r"-(" + "|".join(re.escape(x) for x in tipos) + r")\b")
+
+
 EXTS_CODIGO = {".py", ".js", ".html", ".css"}
 
 
 def _metricas_log():
     plataforma = _plataforma()
+    etapa_re = config.atual().etapa_re
+    tipo_re = _tipo_re()
     texto = plataforma.ler_log_texto()
     linhas = plataforma.parse_tabelas_do_log(texto)
     por_etapa = Counter()
@@ -44,9 +57,9 @@ def _metricas_log():
     por_dia = Counter()
     for l in linhas:
         campo = l["etapa_tipo"]
-        m_etapa = ETAPA_RE.search(campo)
+        m_etapa = etapa_re.search(campo)
         etapa = m_etapa.group(1) if m_etapa else "outro"
-        m_tipo = TIPO_RE.search(campo)
+        m_tipo = tipo_re.search(campo) if tipo_re else None
         tipo = m_tipo.group(1) if m_tipo else None
         por_etapa[etapa] += 1
         if tipo:
@@ -64,11 +77,12 @@ def _metricas_log():
 
 
 def _metricas_arquivos():
+    root = config.atual().raiz
     total_arquivos = 0
     total_md = 0
     linhas_codigo = 0
-    for dirpath, dirnames, filenames in os.walk(ROOT):
-        rel_dir = Path(dirpath).relative_to(ROOT).as_posix()
+    for dirpath, dirnames, filenames in os.walk(root):
+        rel_dir = Path(dirpath).relative_to(root).as_posix()
         rel_dir = "" if rel_dir == "." else rel_dir
         dirnames[:] = [
             d for d in dirnames
@@ -92,20 +106,23 @@ def _metricas_arquivos():
 
 
 def _metricas_parte_do_nucleo():
-    areas = [
-        ROOT / "1-capturas" / ".pendente", ROOT / "1-capturas" / ".historico",
-        ROOT / "1-capturas" / ".entrada", ROOT / "3-ideias", ROOT / "_metodo",
-    ]
+    """Conta o marcador `parte_do_nucleo:` do caso aplicado. Só faz sentido
+    onda plataforma de origem declara `metricas_pastas` — numa plataforma genérica esse
+    campo não existe, e a métrica sai do dashboard em vez de contar zero como
+    se fosse informação."""
+    cfg = config.atual()
+    pastas = cfg.get("metricas_pastas")
+    if not pastas:
+        return {}
     nucleo = []
-    for area in areas:
+    for rel in pastas:
+        area = cfg.raiz / str(rel).replace("\\", "/")
         if area.exists():
             nucleo.extend(area.rglob("*.md"))
-    prefixos = _plataforma().PROJETO_PREFIXOS
-    for pasta in ROOT.iterdir():
-        if pasta.is_dir() and pasta.name.startswith(prefixos):
-            cm = pasta / "CLAUDE.md"
-            if cm.exists():
-                nucleo.append(cm)
+    for nome in indexer.pastas_de_projeto():
+        cm = cfg.projetos_dir / nome / "CLAUDE.md"
+        if cm.exists():
+            nucleo.append(cm)
     marcados = [
         p for p in nucleo
         if re.search(r"^parte_do_nucleo:\s*true", p.read_text(encoding="utf-8", errors="replace"), re.MULTILINE)
@@ -114,8 +131,8 @@ def _metricas_parte_do_nucleo():
 
 
 def compute_metrics():
-    """Custa uma varredura completa de C:\\Plataforma — o server.py calcula no reindex e guarda
-    em STATE, não chama isto a cada GET /api/metricas."""
+    """Custa uma varredura completa da plataforma — o server.py calcula no
+    reindex e guarda em STATE, não chama isto a cada GET /api/metricas."""
     try:
         log, nucleo, erro = _metricas_log(), _metricas_parte_do_nucleo(), None
     except Exception as e:  # plataforma.py quebrado/ausente: só o dashboard degrada

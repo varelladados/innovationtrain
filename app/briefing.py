@@ -18,21 +18,38 @@ são estáveis e testáveis, e o briefing cita o caminho da doutrina pra IA ler 
 import re
 from pathlib import Path
 
+import config
 import pendencias as pendencias_mod
 
 APP_DIR = Path(__file__).resolve().parent
-ROOT = APP_DIR.parent.parent
 
-DOUTRINA = "_metodo/doutrina.md"
-CHECKLIST = "_metodo/templates/checklist-classificacao.md"
-FLUXO = "_metodo/fluxo.v2.md"
 
-GUARDRAILS = f"""## Guardrails (regras permanentes da plataforma de origem — íntegra em `{DOUTRINA}`)
+def _doc(chave, fallback):
+    """Caminho relativo de um documento do método, como declarado pela
+    plataforma. Sem declaração, o briefing diz o nome genérico em vez de citar
+    um arquivo que não existe."""
+    return config.atual().get(chave) or fallback
 
-- **Apagar é sempre lógico, nunca físico.** Rebaixar/consolidar acontece em índice e `.md`; pasta de Projeto/Ideia não some.
-- **O LOG central (`1-capturas/LOG/_log.md`) é append-only.** Nunca edite nem apague linha existente; continuação usa o mesmo ID com sufixo `-N`.
-- **Nunca pule etapa:** SBC → SBI → SBZ em ordem, cada uma com ID próprio e linha própria no LOG, mesmo que as três aconteçam na mesma sessão.
-- **IDs só via `python _ferramentas/scripts/plataforma.py novo-id`** — nunca monte o ID à mão, e grave a linha do LOG antes de pedir o próximo (senão dois itens nascem com o mesmo SEQ).
+
+def guardrails():
+    """Bloco de regras permanentes, montado a partir do config.
+
+    Continua **hardcoded** de propósito: só os *nomes* vêm do config. Parsear a
+    prosa das regras para montar este texto o deixaria quebrar em silêncio a
+    cada edição — o briefing cita o caminho para a IA ler a íntegra.
+    """
+    cfg = config.atual()
+    doutrina = _doc("doutrina", "as regras do método")
+    registro = cfg.arquivo_rel("registro") or "o registro"
+    cadeia = " → ".join(cfg.siglas)
+    util = cfg.get("utilitario")
+    comando_id = f"`python {util} novo-id`" if util else "o utilitário da plataforma"
+    return f"""## Guardrails (regras permanentes — íntegra em `{doutrina}`)
+
+- **Apagar é sempre lógico, nunca físico.** Rebaixar/consolidar acontece em índice e `.md`; pasta de projeto não some.
+- **O registro (`{registro}`) é append-only.** Nunca edite nem apague linha existente; continuação usa o mesmo ID com sufixo `-N`.
+- **Nunca pule etapa:** {cadeia} em ordem, cada uma com ID próprio e linha própria no registro, mesmo que aconteçam na mesma sessão.
+- **IDs só via {comando_id}** — nunca monte o ID à mão, e grave a linha do registro antes de pedir o próximo (senão dois itens nascem com o mesmo SEQ).
 - **Nunca fecha pendência por inferência** — só o campo `## Resposta` explícito fecha; "Deixar para depois" incrementa `**Adiada:**` e mantém ativa.
 - **Nunca commite automaticamente**, e nunca dê push sem autorização explícita e separada.
 - **Artefato de sessão vive no repositório**: plano, relatório ou análise substancial é copiado pra raiz do projeto com a convenção local (`plano-<assunto>-<AAAA-MM-DD>.md`) e commitado na mesma sessão.
@@ -41,13 +58,14 @@ GUARDRAILS = f"""## Guardrails (regras permanentes da plataforma de origem — �
 
 def _rel(p):
     try:
-        return str(Path(p).relative_to(ROOT)).replace("\\", "/")
+        return str(Path(p).relative_to(config.atual().raiz)).replace("\\", "/")
     except (ValueError, TypeError):
         return str(p).replace("\\", "/")
 
 
 def _cabecalho(titulo):
-    return f"# {titulo}\n\nContexto: você está numa sessão do Claude Code com `cwd` em `C:\\Plataforma`."
+    return (f"# {titulo}\n\nContexto: você está numa sessão do Claude Code com "
+            f"`cwd` em `{config.atual().raiz}`.")
 
 
 def briefing_pendencias():
@@ -95,17 +113,19 @@ def briefing_pendencias():
         ]
         linhas += [f"- `{c['path']}` — {c['title']}" for c in adiadas]
         linhas.append("")
-    linhas.append(GUARDRAILS)
+    linhas.append(guardrails())
     return {"texto": "\n".join(linhas), "itens": [c["path"] for c in respondidas]}
 
 
 def briefing_classificar(path, text_cache=None):
-    """Classificar uma Captura crua específica pelo checklist do fluxo v2."""
+    """Classificar um item do primeiro estágio pelo checklist do método."""
+    cfg = config.atual()
+    e1, e2 = cfg.estagios[0], cfg.estagios[1]
     if not path:
-        raise ValueError("informe o caminho da Captura")
+        raise ValueError(f"informe o caminho d{'a' if e1['nome'][-1] == 'a' else 'o'} {e1['nome']}")
     rel = _rel(path)
-    if "1-capturas" not in rel:
-        raise ValueError("o caminho não está em 1-capturas")
+    if e1["pasta"] not in rel:
+        raise ValueError(f"o caminho não está em {e1['pasta']}")
 
     trecho = ""
     if text_cache:
@@ -114,33 +134,38 @@ def briefing_classificar(path, text_cache=None):
         trecho = " ".join(corpo.split())[:400]
 
     linhas = [
-        _cabecalho("Classificar uma Captura crua"), "",
+        _cabecalho(f"Classificar: {e1['nome']} → {e2['nome']}"), "",
         f"Item: `{rel}`",
     ]
     if trecho:
         linhas += ["", f"> {trecho}…"]
+    checklist = _doc("checklist", "o checklist de classificação")
+    fluxo = _doc("fluxo", "o documento do fluxo")
+    util = cfg.get("utilitario") or "o utilitário da plataforma"
+    tipos = "|".join(cfg.tipos) if cfg.tipos else "tipo"
     linhas += [
         "",
-        f"O Passo 0 já está feito (o item tem ID e linha no LOG). Aplique o Passo 1 de "
-        f"`{CHECKLIST}` — os 4 critérios (forma definida · serve de input sem reprocessar · "
+        f"O item já tem ID e linha no registro. Aplique o checklist de "
+        f"`{checklist}` — os 4 critérios (forma definida · serve de input sem reprocessar · "
         "é decisão/v1/resumo com próximos passos · deixou de ser ambíguo). **2 ou mais "
-        "\"sim\" promovem a Ideia**; menos que isso, o item fica em `.pendente/`, e dúvida "
-        f"genuína vai pro saco Refinar. O fluxo inteiro está em `{FLUXO}`.",
+        f"\"sim\" promovem a {e2['nome']}**; menos que isso, o item fica onde está, e dúvida "
+        f"genuína vira pendência. O fluxo inteiro está em `{fluxo}`.",
         "",
-        "Se promover: gere o ID novo com `plataforma.py novo-id --etapa SBI --tipo <DIG|DAD|CON|ADE>`, "
-        "crie `3-ideias/<ID>/<ID>.md` com `origem_captura:`, acrescente a **linha nova** "
-        "no LOG e o marcador `→<ID-SBI>` na linha da SBC, e mova o arquivo pra `.historico/`.",
+        f"Se promover: gere o ID novo com `{util} novo-id --etapa {e2['sigla']} --tipo <{tipos}>`, "
+        f"crie o arquivo em `{e2['pasta']}/` com `origem:`, acrescente a **linha nova** "
+        f"no registro e o marcador `→<ID-{e2['sigla']}>` na linha de origem, e mova o "
+        f"arquivo original para `{e1['pasta']}/{cfg.historico}/`.",
         "",
-        GUARDRAILS,
+        guardrails(),
     ]
     return {"texto": "\n".join(linhas), "itens": [rel]}
 
 
 def briefing_avancar(pasta, entries, text_cache):
     """Avançar um projeto: o que está aberto e marcado como essencial."""
-    from projetos import PASTA_RE  # import tardio: evita ciclo no boot
-    if not pasta or not PASTA_RE.match(pasta):
-        raise ValueError("pasta não é uma Projeto válida")
+    from projetos import _pasta_valida  # import tardio: evita ciclo no boot
+    if not _pasta_valida(pasta):
+        raise ValueError("pasta não é um projeto desta plataforma")
 
     backlogs = [e for e in entries if e["type"] == "backlog" and e["path"].startswith(pasta + "/")]
     essenciais, abertos_total = [], 0
@@ -163,14 +188,16 @@ def briefing_avancar(pasta, entries, text_cache):
     if essenciais:
         linhas += ["", "Essenciais (pré-requisito pra entregar):", ""]
         linhas += [f"- {texto}  \n  _em `{caminho}`_" for caminho, texto in essenciais]
+    pend = config.atual().get("pendencias")
+    onde_regras = f"`{Path(pend).parent.as_posix()}/SKILL.md`" if pend else "o método da plataforma"
     linhas += [
         "",
         "Avance o que der sozinho (código, doc, pesquisa) e transforme em "
         "pendência-formulário só o que depender de decisão do usuário — formato e "
-        "regras em `_ferramentas/skills/rotina-de-avanco/SKILL.md`. Ao terminar, atualize "
+        f"regras em {onde_regras}. Ao terminar, atualize "
         "o backlog e o changelog do projeto.",
         "",
-        GUARDRAILS,
+        guardrails(),
     ]
     return {"texto": "\n".join(linhas), "itens": [b["path"] for b in backlogs]}
 

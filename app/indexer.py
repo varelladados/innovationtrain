@@ -1,5 +1,10 @@
-"""Indexer — varre C:\\Plataforma, classifica cada arquivo pertinente e produz um
-índice JSON. Ver CLAUDE.md para a convenção de nomes/tipos (fonte de verdade).
+"""Indexer — varre a raiz da plataforma ativa, classifica cada arquivo
+pertinente e produz um índice JSON.
+
+Até o Trecho 3 a raiz era `PROJECT_DIR.parent` e os nomes do `plataforma de origem` estavam
+escritos aqui como constante. Agora tudo que é nome de plataforma sai de
+`config.atual()` — e é lido **na hora da chamada**, para que trocar de
+plataforma não exija reiniciar o servidor. Ver `metodo/taxonomia.md`.
 """
 import json
 import os
@@ -7,49 +12,45 @@ import re
 import time
 from pathlib import Path
 
+import config
+
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-ROOT = PROJECT_DIR.parent  # C:\Plataforma
 CACHE_DIR = PROJECT_DIR / "cache"
 INDEX_PATH = CACHE_DIR / "index.json"
 
 TEXT_EXTENSIONS = {".md", ".txt", ".html", ".htm", ".py"}
 MAX_TEXT_READ_BYTES = 500_000
 
-EXCLUDE_PREFIXES = (
-    ".git",
-    "node_modules",
-    "__pycache__",
-    ".claude",  # config/skills do próprio Claude Code, não é conteúdo do usuário
-    ".Biblioteca/Takeout_Google",
-    "outro-app-local/build",
-    "outro-app-local/dist",
-    "pasta-de-rascunho/subpasta",
-    "PRJ-Estacao",
-)
-
 STUB_MAX_BYTES = 220
 STUB_MAX_LINES = 4
 
 PROCESSED_FRONTMATTER_RE = re.compile(r"^registro-id:\s*(\S+)", re.MULTILINE)
-PROCESSED_FILENAME_RE = re.compile(r"^\d{2}\.\d{2}\.\d{2}-SB[CIZ](-[A-Z]{3})?-\d+-")
 HEADING_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 
 
+def raiz() -> Path:
+    return config.atual().raiz
+
+
 def sanity_check():
-    if not (ROOT / "_indice.md").exists():
+    cfg = config.atual()
+    if not cfg.ok():
         raise RuntimeError(
-            f"_indice.md não encontrado em {ROOT} — raiz resolvida parece errada, "
-            "abortando indexação em vez de varrer a árvore errada."
+            f"{cfg.marcador} não encontrado em {cfg.raiz} — a raiz resolvida não "
+            "parece ser uma plataforma, abortando indexação em vez de varrer a "
+            "árvore errada."
         )
 
 
-EXCLUDE_DIR_NAMES = {".git", "node_modules", "__pycache__", ".claude"}  # .claude em qualquer nível (CLAUDE.md, portfolio.SKIP_DIRS)
+#: Sempre excluídos, em qualquer nível e em qualquer plataforma — não são
+#: conteúdo de ninguém.
+EXCLUDE_DIR_NAMES = {".git", "node_modules", "__pycache__", ".claude"}
 
 
 def is_excluded(rel_posix: str) -> bool:
-    for pref in EXCLUDE_PREFIXES:
+    for pref in config.atual().excluir:
         if rel_posix == pref or rel_posix.startswith(pref + "/"):
             return True
     parts = rel_posix.split("/")
@@ -59,14 +60,20 @@ def is_excluded(rel_posix: str) -> bool:
 
 
 def classify(rel_posix: str, name: str, suffix: str) -> str:
-    if rel_posix == "_indice.md":
+    cfg = config.atual()
+
+    indice = cfg.arquivo_rel("indice")
+    if indice and (rel_posix == indice or name == Path(indice).name):
         return "orquestra"
-    if rel_posix == "_metodo/trilha.md":
+
+    trilha = cfg.get("trilha")
+    if trilha and rel_posix == str(trilha).replace("\\", "/"):
         return "trilha"
-    if name in ("_indice.md", "o-captura.md", "o-ideias.md", "_indice-projetos.md",
-                "o-plataformatools.md", "o-framework-metodo.md", "o-biblioteca.md",
-                "o-metaclaude.md") or name.startswith("o-"):
+
+    prefixo = cfg.get("indice_prefixo")
+    if prefixo and name.startswith(prefixo):
         return "orquestra"
+
     if name == "CLAUDE.md":
         return "orquestra"
     if name.startswith("backlog-") or rel_posix.endswith("/docs/BACKLOG.md") or name == "BACKLOG.md":
@@ -75,8 +82,11 @@ def classify(rel_posix: str, name: str, suffix: str) -> str:
         return "readme"
     if name.startswith("changelog-"):
         return "changelog"
-    if rel_posix == "1-capturas/LOG/_log.md":
+
+    registro = cfg.arquivo_rel("registro")
+    if registro and rel_posix == registro:
         return "log"
+
     if name == "SKILL.md":
         return "skill"
     if name == "glossario.md":
@@ -125,8 +135,9 @@ def extract_title(name: str, body: str) -> str:
     if m:
         return m.group(1).strip()
     stem = name
-    if stem.startswith("o-"):
-        stem = stem[2:]
+    prefixo = config.atual().get("indice_prefixo")
+    if prefixo and stem.startswith(prefixo):
+        stem = stem[len(prefixo):]
     if stem.startswith("backlog-") or stem.startswith("readme-") or stem.startswith("changelog-"):
         stem = stem.split("-", 1)[1]
     return Path(stem).stem
@@ -135,22 +146,20 @@ def extract_title(name: str, body: str) -> str:
 def is_processed(name: str, frontmatter: dict):
     if "registro-id" in frontmatter:
         return True, frontmatter["registro-id"]
-    m = PROCESSED_FILENAME_RE.match(name)
-    if m:
+    if config.atual().id_re.match(name):
         return True, name
     return False, None
 
 
-LIFECYCLE_STAGES = {".entrada", ".pendente", ".historico"}
-
-
 def lifecycle_stage(rel_posix: str):
-    """Estágio de triagem física dentro de 1-capturas (convenção 2026-08-31),
-    ortogonal à etapa Captura/Ideia/Projeto — ver o-captura.md."""
-    parts = rel_posix.split("/")
-    for p in parts[:-1]:
-        if p in LIFECYCLE_STAGES:
-            return p.lstrip(".")
+    """Estágio de triagem física dentro de um estágio da taxonomia — ortogonal
+    à etapa. No `plataforma de origem` são `.entrada`/`.pendente`/`.historico`; na
+    taxonomia nova, só o `_historico/` de cada estágio."""
+    cfg = config.atual()
+    nomes = set(cfg.get("ciclo_vida") or [cfg.historico])
+    for p in rel_posix.split("/")[:-1]:
+        if p in nomes:
+            return p.lstrip("._")
     return None
 
 
@@ -161,32 +170,55 @@ def is_stub(size_bytes: int, body: str) -> bool:
     return len(nonblank) <= STUB_MAX_LINES
 
 
+def pastas_de_projeto():
+    """Nomes das pastas que são projeto, na pasta de projetos da plataforma.
+
+    Com prefixo declarado (legado), só as que casam — inclusive as que ainda
+    não têm `CLAUDE.md`, que é justamente o órfão que o índice existe para
+    pegar. Sem prefixo (taxonomia nova), toda pasta dentro da pasta de
+    projetos é um projeto, menos o `_historico/`.
+    """
+    cfg = config.atual()
+    base = cfg.projetos_dir
+    prefixo_re = cfg.projetos_prefixo_re
+    achadas = set()
+    try:
+        itens = list(base.iterdir())
+    except OSError:
+        return achadas
+    for item in itens:
+        if not item.is_dir():
+            continue
+        if item.name in EXCLUDE_DIR_NAMES or item.name == cfg.historico:
+            continue
+        if prefixo_re is None or prefixo_re.match(item.name):
+            achadas.add(item.name)
+    return achadas
+
+
 def build_index():
     sanity_check()
+    cfg = config.atual()
+    root = cfg.raiz
     entries = []
     text_cache = {}
 
-    # first pass: collect top-level project-prefixed folders (PJx-/PRx-),
-    # regardless of whether they have a CLAUDE.md yet — a project folder
-    # with NO CLAUDE.md at all (e.g. um-projeto) is exactly the kind
-    # of orphan this flag exists to catch, not just ones missing from the list.
-    PROJECT_PREFIX_RE = re.compile(r"^(PJ|PR)[A-Z]-")
-    project_like_folders = set()
-    for item in ROOT.iterdir():
-        if item.is_dir() and PROJECT_PREFIX_RE.match(item.name):
-            project_like_folders.add(item.name)
+    project_like_folders = pastas_de_projeto()
 
-    projetos_listed = set()
-    projetos_path = ROOT / "4-projetos" / "_indice-projetos.md"
-    if projetos_path.exists():
-        content = read_text(projetos_path) or ""
+    # Órfão = pasta de projeto que o índice canônico não lista. Sem índice
+    # canônico declarado não existe "estar fora dele" — ninguém é órfão.
+    listados = set()
+    indice_projetos = cfg.caminho("indice_projetos")
+    if indice_projetos and indice_projetos.exists():
+        content = read_text(indice_projetos) or ""
         for m in re.finditer(r"\[([A-Za-z0-9_.\-À-ÿ]+)\]\(\.\./([A-Za-z0-9_.\-À-ÿ]+)/CLAUDE\.md\)", content):
-            projetos_listed.add(m.group(2))
+            listados.add(m.group(2))
+        orphan_folders = project_like_folders - listados
+    else:
+        orphan_folders = set()
 
-    orphan_folders = project_like_folders - projetos_listed
-
-    for dirpath, dirnames, filenames in os.walk(ROOT):
-        rel_dir = os.path.relpath(dirpath, ROOT).replace("\\", "/")
+    for dirpath, dirnames, filenames in os.walk(root):
+        rel_dir = os.path.relpath(dirpath, root).replace("\\", "/")
         if rel_dir == ".":
             rel_dir = ""
         pruned = []
@@ -262,6 +294,9 @@ def save_index(entries):
 
 
 if __name__ == "__main__":
+    import sys
+
+    config.iniciar(sys.argv[1:])
     entries, _ = build_index()
     payload = save_index(entries)
     print(f"Indexed {payload['count']} files -> {INDEX_PATH}")

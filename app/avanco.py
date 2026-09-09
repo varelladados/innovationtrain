@@ -8,9 +8,9 @@ o que já aconteceu, ver plano-console-operacional-2026-09-06.md, frente 3.
 import re
 from pathlib import Path
 
+import config
+
 APP_DIR = Path(__file__).resolve().parent
-ROOT = APP_DIR.parent.parent
-HISTORICO_PATH = ROOT / "_ferramentas" / "skills" / "rotina-de-avanco" / "execucao" / "historico.md"
 
 # Só headings de rodada de verdade — o arquivo termina com um "## Links" de
 # rodapé (mesma convenção de qualquer orquestra deste corpus), que não é uma
@@ -20,10 +20,14 @@ LIMITE_RESUMO = 400
 
 
 def ultima_rodada():
-    if not HISTORICO_PATH.exists():
-        return {"erro": "historico.md não encontrado", "titulo": None, "resumo": None, "path": None}
+    historico = config.atual().caminho("avanco_historico")
+    if historico is None:
+        return {"erro": "esta plataforma não declara uma rotina de avanço",
+                "titulo": None, "resumo": None, "path": None}
+    if not historico.exists():
+        return {"erro": f"{historico.name} não encontrado", "titulo": None, "resumo": None, "path": None}
     try:
-        texto = HISTORICO_PATH.read_text(encoding="utf-8", errors="replace")
+        texto = historico.read_text(encoding="utf-8", errors="replace")
     except OSError as e:
         return {"erro": str(e), "titulo": None, "resumo": None, "path": None}
 
@@ -44,5 +48,5 @@ def ultima_rodada():
         "erro": None,
         "titulo": titulo,
         "resumo": resumo,
-        "path": str(HISTORICO_PATH.relative_to(ROOT)).replace("\\", "/"),
+        "path": str(historico.relative_to(config.atual().raiz)).replace("\\", "/"),
     }

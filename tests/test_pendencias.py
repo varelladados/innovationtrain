@@ -13,7 +13,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import apoio  # noqa: E402  (insere app/ no sys.path)
 import pendencias  # noqa: E402
 
 
@@ -113,13 +114,13 @@ class BaseTemp(unittest.TestCase):
         self.exec_dir = self.tmp / "execucao"
         self.exec_dir.mkdir()
         self.backups = self.tmp / "backups"
-        self._orig_exec = pendencias.EXECUCAO_DIR
+        # a pasta de pendências vem do config da plataforma ativa, não de uma
+        # constante de módulo — é o mesmo caminho que o servidor percorre
+        apoio.aplicar(self.tmp, pendencias="execucao")
         self._orig_backup = pendencias.BACKUPS_DIR
-        pendencias.EXECUCAO_DIR = self.exec_dir
         pendencias.BACKUPS_DIR = self.backups
 
     def tearDown(self):
-        pendencias.EXECUCAO_DIR = self._orig_exec
         pendencias.BACKUPS_DIR = self._orig_backup
         shutil.rmtree(self.tmp, ignore_errors=True)
 

@@ -27,9 +27,10 @@ from pathlib import Path
 
 import portfolio as portfolio_mod
 
+import config
+
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-ROOT = PROJECT_DIR.parent
 DIST_DIR = PROJECT_DIR / "dist"
 
 TIPO_LABEL = {"DIG": "digital", "DAD": "dados", "CON": "consultoria", "ADE": "ensino", "—": "em definição"}
@@ -50,7 +51,7 @@ def _ler(p, limit=200_000):
 
 def frase_manifesto():
     """A frase-tese, do pocket show (N0 da trilha) — fonte única, não reescrever aqui."""
-    txt = _ler(ROOT / "_metodo" / "manifesto.md")
+    txt = _ler(config.atual().raiz / "_metodo" / "manifesto.md")
     m = re.search(r"\*\*\.Método, de cabo a rabo:\*\*\s*(.+)", txt)
     t = m.group(1).strip() if m else ""
     return (t[:1].upper() + t[1:]) if t else t

@@ -11,7 +11,8 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import apoio  # noqa: E402  (insere app/ no sys.path)
 import projetos  # noqa: E402
 
 
@@ -47,13 +48,11 @@ class BaseProjeto(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-proj-"))
         self.projeto_dir = self.tmp / self.PASTA
         self.projeto_dir.mkdir()
-        self._orig_root = projetos.ROOT
+        apoio.aplicar(self.tmp, **apoio.qualquer_pasta_e_projeto())
         self._orig_backups = projetos.BACKUPS_DIR
-        projetos.ROOT = self.tmp
         projetos.BACKUPS_DIR = self.tmp / "backups"
 
     def tearDown(self):
-        projetos.ROOT = self._orig_root
         projetos.BACKUPS_DIR = self._orig_backups
         shutil.rmtree(self.tmp, ignore_errors=True)
 

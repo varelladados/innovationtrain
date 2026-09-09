@@ -21,23 +21,25 @@ import json
 import re
 from pathlib import Path
 
+import config
+import indexer
+
 APP_DIR = Path(__file__).resolve().parent
-ROOT = APP_DIR.parent.parent
-PERFIS_DIR = ROOT / "_metodo" / "portfolio" / "perfis"
-PASTA_RE = re.compile(r"^(PJ|PR)[A-Z]-")
+
 MAX_NOTA = 200
 
 
 def candidatos():
     """(pasta, perfil, destino) de cada Projeto sem portfolio.json."""
-    if not PERFIS_DIR.exists():
+    perfis_dir = config.atual().caminho("perfis")
+    if perfis_dir is None or not perfis_dir.exists():
         return []
     achados = []
-    for perfil_path in sorted(PERFIS_DIR.glob("*.json")):
+    for perfil_path in sorted(perfis_dir.glob("*.json")):
         nome = perfil_path.stem
-        if not PASTA_RE.match(nome):
+        if nome not in indexer.pastas_de_projeto():
             continue  # perfis de coisas que não são pasta de Projeto (ex.: _metodo)
-        pasta = ROOT / nome
+        pasta = config.atual().projetos_dir / nome
         if not pasta.is_dir():
             continue
         destino = pasta / "portfolio.json"
@@ -84,7 +86,7 @@ def main():
         if args.write:
             destino.write_text(
                 json.dumps(dados, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            print(f"    -> escrito em {destino.relative_to(ROOT)}")
+            print(f"    -> escrito em {destino.relative_to(config.atual().raiz)}")
     if not args.write:
         print("\n[dry-run] nada foi escrito. Rode com --write pra gravar.")
     else:

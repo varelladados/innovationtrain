@@ -19,10 +19,13 @@
 > `C:\Plataforma` é **somente leitura** neste trabalho. O hub deste fork é
 > `C:\.Estacao`; a aplicação mora em `C:\.Estacao\app`.
 >
-> **Ainda não generificado.** Enquanto o Trecho 3 não chega, `indexer.ROOT`
-> segue sendo `PROJECT_DIR.parent` — que aqui resolve para `C:\.Estacao`, onde
-> não existe `_indice.md`. Os 47 testes passam, mas o **servidor não sobe
-> neste lugar**: é exatamente o acoplamento que o Trecho 3 remove.
+> **Raiz configurável desde o Trecho 3 (2026-09-08).** Nenhum módulo tem mais
+> caminho de plataforma escrito dentro dele: tudo sai de `app/config.py`, lido
+> **na hora da chamada** (é o que faz o seletor trocar de plataforma sem
+> reiniciar). A raiz resolve nesta ordem — `--raiz` → `ESTACAO_PLATAFORMA` →
+> plataforma ativa no `estacao.json` do hub → erro em português. O fallback
+> `PROJECT_DIR.parent` **foi removido de propósito**: fora do `plataforma de origem` ele
+> mascarava erro de configuração como árvore vazia.
 
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta.

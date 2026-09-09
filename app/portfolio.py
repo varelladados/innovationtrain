@@ -21,10 +21,9 @@ import subprocess
 import time
 from pathlib import Path
 
+import config
 import indexer
 
-ROOT = indexer.ROOT
-PROJECT_RE = re.compile(r"^(PJ|PR)[A-Z]-")
 SKIP_DIRS = {".git", "node_modules", "__pycache__", "cache", "backups", "build", ".claude", ".venv", "venv", "_setup"}
 LAUNCHER_EXT = {".bat", ".cmd", ".ps1"}
 BIN_EXT = {".exe"}
@@ -40,6 +39,36 @@ PROJETOS_ROW_RE = re.compile(
     r"^\|\s*\[([^\]]+)\]\(\.\./([^/]+)/CLAUDE\.md\)\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*(.*?)\s*\|\s*$",
     re.MULTILINE)
 MAX_EXECS_POR_PROJETO = 80
+
+
+def _alt(valores):
+    return "|".join(re.escape(v) for v in valores)
+
+
+def _re_tipo():
+    """Casa a sigla de tipo de projeto declarada pela plataforma."""
+    tipos = config.atual().tipos
+    return re.compile(r"\b(" + _alt(tipos) + r")\b") if tipos else None
+
+
+def _re_id_tipo():
+    """Casa o tipo dentro de um identificador (…-SBZ-DIG-…)."""
+    cfg = config.atual()
+    if not cfg.tipos:
+        return None
+    return re.compile(r"-(?:" + _alt(cfg.siglas) + r")-(" + _alt(cfg.tipos) + r")-")
+
+
+def _pasta_pattern():
+    """Trecho de regex que reconhece uma pasta de projeto dentro de um caminho.
+
+    Com prefixo declarado (legado) é o próprio prefixo; sem ele, qualquer
+    segmento serve — o resultado é filtrado depois contra as pastas reais.
+    """
+    bruto = (config.atual().get("projetos") or {}).get("prefixo_re")
+    if not bruto:
+        return r"[^/`]+"
+    return bruto.lstrip("^") + r"[^/`]+" 
 
 
 def _ler(p: Path, limit=200_000):
@@ -72,7 +101,8 @@ def _git(pasta: Path):
 
 
 def _tabela_projetos():
-    txt = _ler(ROOT / "4-projetos" / "_indice-projetos.md")
+    indice = config.atual().caminho("indice_projetos")
+    txt = _ler(indice) if indice else ""
     out = {}
     for m in PROJETOS_ROW_RE.finditer(txt):
         _, pasta, git, claude, status, resumo = m.groups()
@@ -81,19 +111,26 @@ def _tabela_projetos():
     return out
 
 
-TIPOS = ("DIG", "DAD", "CON", "ADE")
 _LOG_CACHE = {}
 
 
 def _ids_do_log():
-    """pasta -> (id, tipo) a partir das linhas SBZ do LOG central (fallback pra CLAUDE.md sem frontmatter)."""
+    """pasta -> (id, tipo) a partir das linhas de projeto do registro
+    (fallback pra CLAUDE.md sem frontmatter)."""
     if _LOG_CACHE:
         return _LOG_CACHE
-    txt = _ler(ROOT / "1-capturas" / "LOG" / "_log.md", 2_000_000)
-    for m in re.finditer(r"^\|\s*(\S+-SB[CIZ](?:-([A-Z]{3}))?-\d+-\S+)\s*\|[^|]*\|[^|]*\|\s*`[^`]*?/((?:PJ|PR)[A-Z]-[^/`]+)/?`", txt, re.MULTILINE):
+    cfg = config.atual()
+    registro = cfg.arquivo("registro")
+    if not registro:
+        return _LOG_CACHE
+    txt = _ler(registro, 2_000_000)
+    sigla_projeto = cfg.siglas[-1] if cfg.siglas else ""
+    padrao = (r"^\|\s*(\S+-(?:" + _alt(cfg.siglas) + r")(?:-([A-Z]{3}))?-\d+-\S+)\s*"
+              r"\|[^|]*\|[^|]*\|\s*`[^`]*?/(" + _pasta_pattern() + r")/?`")
+    for m in re.finditer(padrao, txt, re.MULTILINE):
         id_, tipo, pasta = m.groups()
-        # a última linha SBZ vence (regularizações vêm depois)
-        if "-SBZ-" in id_ or pasta not in _LOG_CACHE:
+        # a última linha do estágio de projeto vence (regularizações vêm depois)
+        if f"-{sigla_projeto}-" in id_ or pasta not in _LOG_CACHE:
             _LOG_CACHE[pasta] = (id_, tipo)
     return _LOG_CACHE
 
@@ -106,11 +143,12 @@ def _frontmatter_claude(pasta: Path):
         if m:
             fm[chave] = m.group(1).strip()
     sigla = None
-    if "tipo" in fm:
-        m = re.search(r"\b(DIG|DAD|CON|ADE)\b", fm["tipo"])
+    re_tipo, re_id_tipo = _re_tipo(), _re_id_tipo()
+    if "tipo" in fm and re_tipo:
+        m = re_tipo.search(fm["tipo"])
         sigla = m.group(1) if m else None
-    if not sigla and "id" in fm:
-        m = re.search(r"-SB[CIZ]-(DIG|DAD|CON|ADE)-", fm["id"])
+    if not sigla and "id" in fm and re_id_tipo:
+        m = re_id_tipo.search(fm["id"])
         sigla = m.group(1) if m else None
     if not sigla or "id" not in fm:
         log_id, log_tipo = _ids_do_log().get(pasta.name, (None, None))
@@ -222,12 +260,14 @@ def _varrer(pasta: Path, curadoria: dict):
 
 
 def build_portfolio():
-    _LOG_CACHE.clear()  # o LOG muda entre reindexações; cache vale só dentro de uma build
+    _LOG_CACHE.clear()  # o registro muda entre reindexações; cache vale só dentro de uma build
+    cfg = config.atual()
     tabela = _tabela_projetos()
+    base = cfg.projetos_dir
+    tem_prefixo = cfg.projetos_prefixo_re is not None
     projetos = []
-    for item in sorted(ROOT.iterdir(), key=lambda p: p.name.lower()):
-        if not (item.is_dir() and PROJECT_RE.match(item.name)):
-            continue
+    for nome_pasta in sorted(indexer.pastas_de_projeto(), key=str.lower):
+        item = base / nome_pasta
         curadoria = {}
         pj = item / "portfolio.json"
         if pj.exists():
@@ -248,8 +288,9 @@ def build_portfolio():
         # nome exibido: a pasta não carrega acento (evita escape de caminho em git),
         # então `portfolio.json` pode declarar o nome de verdade — ex.: "Estação"
         nome = curadoria.get("nome") or (
-            item.name.split("-", 1)[1].replace("_", " ") if "-" in item.name else item.name)
-        prefixo = item.name.split("-", 1)[0]
+            item.name.split("-", 1)[1].replace("_", " ")
+            if tem_prefixo and "-" in item.name else item.name.replace("_", " "))
+        prefixo = item.name.split("-", 1)[0] if tem_prefixo else None
         contagens = {
             "no_ar": sum(1 for l in links if l["kind"] == "no-ar"),
             "roda_local": sum(1 for e in execs if e["kind"] in ("launcher", "binario", "servidor")),
@@ -296,6 +337,9 @@ def encontrar_exec(portfolio: dict, path: str):
 
 
 if __name__ == "__main__":
+    import sys
+
+    config.iniciar(sys.argv[1:])
     pf = build_portfolio()
     print(json.dumps(pf["totais"], ensure_ascii=False))
     for p in pf["projetos"]:

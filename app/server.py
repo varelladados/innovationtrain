@@ -23,6 +23,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote
 
+import config
 import indexer
 import search as search_mod
 import log_parser
@@ -42,52 +43,125 @@ import sys
 PORT = 8744
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-ROOT = PROJECT_DIR.parent
 TEMPLATE_PATH = APP_DIR / "templates" / "index.html"
 VENDOR_DIR = APP_DIR / "templates" / "vendor"
 CACHE_DIR = PROJECT_DIR / "cache"
 BACKUPS_DIR = CACHE_DIR / "backups"
 
 STATE_LOCK = threading.Lock()
-STATE = {"entries": [], "text_cache": {}, "portfolio": None, "metricas": None}
+#: `plataforma_ok` é falso quando a raiz resolvida não é uma plataforma (pasta
+#: vazia, marcador ausente, config inexistente). Nesse estado o servidor **sobe
+#: assim mesmo** e cada aba mostra o motivo em vez de estourar — é o que faz o
+#: Embarque poder existir: quem ainda não tem plataforma precisa abrir o app.
+STATE = {"entries": [], "text_cache": {}, "portfolio": None, "metricas": None,
+         "plataforma_ok": False, "plataforma_erro": None}
+
+
+def raiz():
+    return config.atual().raiz if config.definida() else None
 
 CHECKBOX_RE_UNCHECKED = "- [ ] "
 CHECKBOX_RE_CHECKED = "- [x] "
 
 
+def _estado_vazio(erro):
+    """Zera o STATE e registra por que a plataforma não pôde ser lida."""
+    with STATE_LOCK:
+        STATE["entries"] = []
+        STATE["text_cache"] = {}
+        STATE["portfolio"] = {"gerado_em": None, "projetos": [], "totais": {}}
+        STATE["metricas"] = {"erro": erro, "log": {}, "arquivos": {}, "nucleo": {}}
+        STATE["plataforma_ok"] = False
+        STATE["plataforma_erro"] = erro
+
+
 def reindex():
-    entries, text_cache = indexer.build_index()
-    indexer.save_index(entries)
-    pf = portfolio_mod.build_portfolio()
-    mt = metrics.compute_metrics()
+    """Reconstrói o índice. **Nunca levanta**: raiz que não é plataforma, pasta
+    vazia ou utilitário quebrado deixam o servidor no ar com `plataforma_ok`
+    falso, em vez de derrubar o boot."""
+    try:
+        entries, text_cache = indexer.build_index()
+    except Exception as e:
+        _estado_vazio(f"{type(e).__name__}: {e}")
+        return []
+
+    try:
+        indexer.save_index(entries)
+    except OSError:
+        pass  # cache é conveniência; não vale derrubar a indexação por ele
+
+    try:
+        pf = portfolio_mod.build_portfolio()
+    except Exception as e:
+        pf = {"gerado_em": None, "projetos": [], "totais": {},
+              "erro": f"{type(e).__name__}: {e}"}
+    try:
+        mt = metrics.compute_metrics()
+    except Exception as e:
+        mt = {"erro": f"{type(e).__name__}: {e}", "log": {}, "arquivos": {}, "nucleo": {}}
+
     with STATE_LOCK:
         STATE["entries"] = entries
         STATE["text_cache"] = text_cache
         STATE["portfolio"] = pf
         STATE["metricas"] = mt
+        STATE["plataforma_ok"] = True
+        STATE["plataforma_erro"] = None
     noar_mod.aquecer_em_background(pf)  # selo "no ar" fora do caminho do request
     return entries
 
 
-def _cached(key, build):
-    """Portfólio e métricas custam varredura de disco: calculados no reindex, servidos do STATE."""
+def _cached(key, build, vazio):
+    """Portfólio e métricas custam varredura de disco: calculados no reindex,
+    servidos do STATE. Se ainda não houver valor, reconstrói **dentro de
+    try/except** — antes disso um OSError aqui subia até o do_GET e virava
+    traceback com a plataforma vazia."""
     with STATE_LOCK:
         val = STATE[key]
-    if val is None:
+        ok = STATE["plataforma_ok"]
+    if val is not None:
+        return val
+    if not ok:
+        return vazio
+    try:
         val = build()
-        with STATE_LOCK:
-            STATE[key] = val
+    except Exception as e:
+        return dict(vazio, erro=f"{type(e).__name__}: {e}")
+    with STATE_LOCK:
+        STATE[key] = val
     return val
 
 
 def get_portfolio():
     """Portfólio do STATE, com o selo "no ar" que a thread de checagem já tiver
     preenchido (nunca faz rede aqui — ver noar.py)."""
-    return noar_mod.enriquecer(_cached("portfolio", portfolio_mod.build_portfolio))
+    vazio = {"gerado_em": None, "projetos": [], "totais": {}}
+    return noar_mod.enriquecer(_cached("portfolio", portfolio_mod.build_portfolio, vazio))
 
 
 def get_metrics():
-    return _cached("metricas", metrics.compute_metrics)
+    vazio = {"erro": None, "log": {}, "arquivos": {}, "nucleo": {}}
+    return _cached("metricas", metrics.compute_metrics, vazio)
+
+
+def plataformas_registradas():
+    """O que o seletor mostra: as plataformas do estacao.json mais a ativa."""
+    ativa = str(raiz()) if raiz() else None
+    saida = []
+    for r in config.plataformas():
+        caminho = str(Path(r.get("caminho", "")))
+        saida.append({
+            "nome": r.get("nome") or Path(caminho).name,
+            "caminho": caminho,
+            "ativa": caminho == ativa,
+            "existe": Path(caminho).exists() if caminho else False,
+        })
+    if ativa and not any(p["caminho"] == ativa for p in saida):
+        # aberta por --raiz ou ESTACAO_PLATAFORMA, sem registro no estacao.json
+        cfg = config.atual()
+        saida.insert(0, {"nome": cfg.nome, "caminho": ativa, "ativa": True,
+                         "existe": True, "avulsa": True})
+    return saida
 
 
 FILES_PREFIX = "/files/"
@@ -95,14 +169,18 @@ FILES_FORBIDDEN_PARTS = {".git", "node_modules", "__pycache__"}
 
 
 def resolver_arquivo_seguro(rel: str):
-    """Resolve um caminho relativo a C:\\Plataforma pra servir em /files/<path>. Só leitura,
-    só dentro da raiz, nunca .git/node_modules. Devolve Path ou None."""
+    """Resolve um caminho relativo à raiz da plataforma pra servir em
+    /files/<path>. Só leitura, só dentro da raiz, nunca .git/node_modules.
+    Devolve Path ou None."""
+    root = raiz()
+    if root is None:
+        return None
     rel = rel.replace("\\", "/").lstrip("/")
     if not rel or any(p in FILES_FORBIDDEN_PARTS for p in rel.split("/")):
         return None
     try:
-        full = (ROOT / rel).resolve()
-        full.relative_to(ROOT.resolve())
+        full = (root / rel).resolve()
+        full.relative_to(root.resolve())
     except (ValueError, OSError):
         return None
     if not full.is_file():
@@ -179,7 +257,16 @@ class Handler(BaseHTTPRequestHandler):
             if q:
                 ql = q.lower()
                 result = [e for e in result if ql in e["path"].lower() or ql in e["title"].lower()]
-            self._send_json({"count": len(result), "entries": result})
+            with STATE_LOCK:
+                ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
+            cfg = config.atual() if config.definida() else None
+            self._send_json({
+                "count": len(result),
+                "entries": result,
+                "plataforma_ok": ok,
+                "plataforma_erro": erro,
+                "plataforma": cfg.resumo() if cfg else None,
+            })
             return
 
         if path == "/api/file":
@@ -201,11 +288,15 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/log":
-            log_rel = "1-capturas/LOG/_log.md"
+            log_rel = config.atual().arquivo_rel("registro") or ""
             entries, text_cache = get_state()
             content = text_cache.get(log_rel, "")
             rows = log_parser.parse_log_tables(content)
             self._send_json({"rows": rows})
+            return
+
+        if path == "/api/plataformas":
+            self._send_json({"plataformas": plataformas_registradas()})
             return
 
         if path == "/api/metricas":
@@ -292,6 +383,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"count": len(entries)})
             return
 
+        if path == "/api/plataforma/ativar":
+            self._handle_plataforma_ativar(payload)
+            return
+
         if path == "/api/backlog/toggle":
             self._handle_backlog_toggle(payload)
             return
@@ -313,6 +408,40 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         self._send_json({"error": "not found"}, status=404)
+
+    def _handle_plataforma_ativar(self, payload):
+        """Troca plataforma ativa e reindexa. Não escreve em plataforma
+        nenhuma — só no `estacao.json` do hub, que é config do usuário, e é por
+        isso que não passa pela disciplina dos endpoints de escrita de corpus."""
+        caminho = (payload.get("caminho") or "").strip()
+        if not caminho:
+            self._send_json({"error": "informe o caminho da plataforma"}, status=400)
+            return
+        registro = next(
+            (r for r in config.plataformas() if str(Path(r.get("caminho", ""))) == str(Path(caminho))),
+            None)
+        if registro is None:
+            self._send_json({"error": "plataforma não registrada no estacao.json"}, status=400)
+            return
+        if not Path(caminho).exists():
+            self._send_json({"error": f"a pasta não existe: {caminho}"}, status=400)
+            return
+        try:
+            config.ativar(caminho)
+            config.aplicar(config.carregar(caminho, registro.get("taxonomia")))
+        except Exception as e:
+            self._send_json({"error": f"falha ao ativar: {type(e).__name__}: {e}"}, status=500)
+            return
+        entries = reindex()
+        with STATE_LOCK:
+            ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
+        self._send_json({
+            "ok": True,
+            "count": len(entries),
+            "plataforma_ok": ok,
+            "plataforma_erro": erro,
+            "plataforma": config.atual().resumo(),
+        })
 
     def _handle_projeto_anotar(self, payload):
         """Quinto endpoint de escrita: acrescenta uma linha de checkbox no backlog
@@ -347,7 +476,7 @@ class Handler(BaseHTTPRequestHandler):
             for e in STATE["entries"]:
                 if e["path"] == rel:
                     try:
-                        e["size_bytes"] = (ROOT / rel).stat().st_size
+                        e["size_bytes"] = (raiz() / rel).stat().st_size
                     except OSError:
                         pass
                     break
@@ -451,7 +580,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": "path não é um backlog conhecido"}, status=400)
             return
 
-        full_path = ROOT / rel_path
+        full_path = raiz() / rel_path
         if not full_path.exists():
             self._send_json({"error": "arquivo não existe"}, status=404)
             return
@@ -506,16 +635,30 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"ok": True, "new_line": new_line})
 
 
-def main():
-    reindex()
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    try:
+        cfg = config.iniciar(argv)
+    except config.RaizNaoResolvida as e:
+        print(str(e))
+        return 2
+
+    reindex()  # nunca levanta: ver o docstring dele
+    with STATE_LOCK:
+        ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
+
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    print(f"PRJ-Estacao rodando em http://127.0.0.1:{PORT}")
-    print(f"Indexando: {ROOT}")
+    print(f"Estacao rodando em http://127.0.0.1:{PORT}")
+    print(f"Plataforma: {cfg.nome} — {cfg.raiz}  ({cfg.origem})")
+    if not ok:
+        print(f"Atenção: a plataforma não pôde ser lida ({erro}).")
+        print("O servidor subiu assim mesmo — abra o app para configurar.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

@@ -48,6 +48,11 @@ th{background:var(--surface-2)}
 #sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 #sidebar-header{padding:12px;border-bottom:1px solid var(--border)}
 #sidebar-header h1{font-family:"Fraunces",serif;font-weight:600;font-size:17px;margin:0 0 8px}
+#plataforma-seletor{width:100%;margin:0 0 8px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);color:var(--text);font-family:inherit;font-size:13px;cursor:pointer}
+#plataforma-seletor:focus{outline:2px solid var(--accent);outline-offset:-1px}
+#plataforma-aviso{margin:0 12px 12px;padding:8px 10px;border:1px solid var(--warn);border-radius:6px;background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.45}
+#plataforma-aviso strong{display:block;margin-bottom:2px}
+#plataforma-aviso code{background:none;padding:0;color:inherit}
 #search-box{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:13px}
 #type-chips{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border)}
 .chip{font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;color:var(--text-2)}
@@ -299,8 +304,10 @@ th{background:var(--surface-2)}
   <div id="sidebar">
     <div id="sidebar-header">
       <h1>Estação</h1>
+      <select id="plataforma-seletor" title="A plataforma que esta Estação está operando"></select>
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
+    <div id="plataforma-aviso" hidden></div>
     <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por Projeto">🗂 Portfólio</button>
     <button id="tour-nav-btn" title="Trilha de leitura que explica todo o C:\Plataforma (_metodo/trilha.md)">🧭 Tour</button>
     <button id="dashboard-nav-btn">📊 Dashboard</button>
@@ -372,8 +379,77 @@ async function loadIndex(){
   const r = await fetch("/api/index");
   const data = await r.json();
   ENTRIES = data.entries;
+  renderPlataformaAviso(data);
   renderTypeChips();
   renderTree();
+}
+
+// ============================================================
+// Seletor de plataforma
+// ============================================================
+// A Estação opera N plataformas; esta é a única forma de trocar sem reiniciar.
+// Quando a raiz ativa não é uma plataforma (pasta vazia, marcador ausente), o
+// servidor sobe assim mesmo e o aviso abaixo diz o motivo — nenhuma aba estoura.
+function renderPlataformaAviso(data){
+  const box = document.getElementById("plataforma-aviso");
+  if (data.plataforma_ok === false){
+    const nome = data.plataforma ? data.plataforma.caminho : "(raiz não resolvida)";
+    box.innerHTML = "<strong>Nenhuma plataforma aberta</strong>" +
+      "Esta pasta não tem <code>" +
+      escapeHtml(data.plataforma ? data.plataforma.marcador : "_indice.md") +
+      "</code>, então não há o que indexar:<br><code>" + escapeHtml(nome) + "</code>";
+    box.hidden = false;
+  } else {
+    box.hidden = true;
+  }
+}
+
+async function carregarPlataformas(){
+  const sel = document.getElementById("plataforma-seletor");
+  let dados;
+  try {
+    dados = await (await fetch("/api/plataformas")).json();
+  } catch (e) {
+    sel.hidden = true;
+    return;
+  }
+  const lista = dados.plataformas || [];
+  sel.innerHTML = "";
+  lista.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.caminho;
+    opt.textContent = p.nome + (p.existe ? "" : " (pasta não encontrada)");
+    opt.title = p.caminho;
+    opt.selected = !!p.ativa;
+    opt.disabled = !p.existe;
+    sel.appendChild(opt);
+  });
+  // uma plataforma só: o seletor não decide nada, e ocupa espaço à toa
+  sel.hidden = lista.length < 2;
+}
+
+async function trocarPlataforma(caminho){
+  toast("Trocando de plataforma…");
+  let r;
+  try {
+    r = await (await fetch("/api/plataforma/ativar", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({caminho})
+    })).json();
+  } catch (e) {
+    toast("Falha ao trocar de plataforma");
+    return;
+  }
+  if (r.error){ toast(r.error); await carregarPlataformas(); return; }
+  ACTIVE_TYPE_FILTER = null;
+  document.getElementById("content").innerHTML = "";
+  document.getElementById("breadcrumb").textContent = "";
+  document.getElementById("meta-bar").innerHTML = "";
+  await carregarPlataformas();
+  await loadIndex();
+  toast(r.plataforma_ok ? `${r.plataforma.nome}: ${r.count} arquivos`
+                        : `${r.plataforma.nome}: nada a indexar`);
 }
 
 async function reindex(){
@@ -2011,6 +2087,11 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape") fecharBriefing();
 });
 
+document.getElementById("plataforma-seletor").addEventListener("change", (ev) => {
+  trocarPlataforma(ev.target.value);
+});
+
+carregarPlataformas();
 loadIndex();
 </script>
 </body>

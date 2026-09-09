@@ -25,13 +25,23 @@ from pathlib import Path
 
 import portfolio as portfolio_mod
 
+import config
+import indexer
+
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-ROOT = PROJECT_DIR.parent
-PERFIS_DIR = ROOT / "_metodo" / "portfolio" / "perfis"
 BACKUPS_DIR = PROJECT_DIR / "cache" / "backups"
 
-PASTA_RE = re.compile(r"^(PJ|PR)[A-Z]-[A-Za-z0-9_.\-À-ÿ]+$")
+
+
+def _pasta_valida(pasta):
+    """Allow-list de verdade: a pasta tem que ser uma das pastas de projeto que
+    o indexer enxerga na plataforma ativa. Substitui o regex de prefixo, que
+    deixou de existir na taxonomia nova — e é mais forte, porque valida contra
+    o disco em vez de contra um formato de nome."""
+    if not pasta or "/" in pasta or "\\" in pasta or pasta in (".", ".."):
+        return False
+    return pasta in indexer.pastas_de_projeto()
 CHECKBOX_LINHA_RE = re.compile(r"^\s*-\s*\[[ xX]\]")
 LINKS_HEADING_RE = re.compile(r"^##\s+Links\s*$", re.IGNORECASE)
 
@@ -60,7 +70,10 @@ def sha1(texto: str) -> str:
 
 
 def _perfil(pasta):
-    caminho = PERFIS_DIR / f"{pasta}.json"
+    perfis = config.atual().caminho("perfis")
+    if perfis is None:
+        return None
+    caminho = perfis / f"{pasta}.json"
     if not caminho.exists():
         return None
     try:
@@ -79,8 +92,8 @@ def _backlogs_do(entries, pasta):
 
 def detalhe(pasta, entries, text_cache, portfolio=None):
     """Tudo que a view de projeto precisa, numa chamada só."""
-    if not pasta or not PASTA_RE.match(pasta):
-        raise ProjetoError("pasta não é uma Projeto válida")
+    if not _pasta_valida(pasta):
+        raise ProjetoError("pasta não é um projeto desta plataforma")
 
     pf = portfolio or portfolio_mod.build_portfolio()
     projeto = next((p for p in pf.get("projetos", []) if p["pasta"] == pasta), None)
@@ -137,8 +150,8 @@ def _posicao_de_insercao(linhas):
 
 def anotar(pasta, backlog_path, texto, expected_sha1, entries, text_cache):
     """Acrescenta `- [ ] <texto> _(via console, AAAA-MM-DD)_` no backlog do projeto."""
-    if not pasta or not PASTA_RE.match(pasta):
-        raise ProjetoError("pasta não é uma Projeto válida")
+    if not _pasta_valida(pasta):
+        raise ProjetoError("pasta não é um projeto desta plataforma")
 
     permitidos = {b["path"] for b in _backlogs_do(entries, pasta)}
     if backlog_path not in permitidos:
@@ -154,7 +167,7 @@ def anotar(pasta, backlog_path, texto, expected_sha1, entries, text_cache):
     if limpo.startswith("- [") or limpo.startswith("#"):
         raise ProjetoError("escreva só o texto — o marcador de checkbox é acrescentado aqui")
 
-    caminho = ROOT / backlog_path
+    caminho = config.atual().raiz / backlog_path
     if not caminho.is_file():
         raise ProjetoError("backlog não existe no disco")
 

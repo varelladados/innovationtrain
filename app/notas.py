@@ -8,6 +8,7 @@ plataforma.py é chamado via subprocess, nunca importado direto: `novo-id` faz
 sys.exit() em erro, o que mataria o servidor inteiro se fosse import (mesmo
 motivo documentado em metrics.py para o import tardio).
 """
+import os
 import re
 import shutil
 import subprocess
@@ -18,12 +19,10 @@ import unicodedata
 from datetime import date
 from pathlib import Path
 
+import config
+
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-ROOT = PROJECT_DIR.parent  # C:\Plataforma
-PLATAFORMA_PY = ROOT / "_ferramentas" / "scripts" / "plataforma.py"
-PENDENTE_DIR = ROOT / "1-capturas" / ".pendente"
-LOG_PATH = ROOT / "1-capturas" / "LOG" / "_log.md"
 CACHE_DIR = PROJECT_DIR / "cache"
 BACKUPS_DIR = CACHE_DIR / "backups"
 
@@ -55,6 +54,31 @@ class NotaError(Exception):
     pass
 
 
+def _utilitario():
+    util = config.atual().caminho("utilitario")
+    if util is None:
+        raise NotaError(
+            "esta plataforma não declara o utilitário que gera identificadores "
+            "(chave 'utilitario' do plataforma.json)"
+        )
+    if not util.exists():
+        raise NotaError(f"utilitário declarado mas ausente: {util}")
+    return util
+
+
+def _entrada_dir():
+    """Onde nasce um item novo: a chave `entrada`, ou o primeiro estágio."""
+    cfg = config.atual()
+    return cfg.caminho("entrada") or cfg.estagio_dir(1)
+
+
+def _registro():
+    reg = config.atual().arquivo("registro")
+    if reg is None:
+        raise NotaError("esta plataforma não declara um arquivo de registro")
+    return reg
+
+
 def _slug_words(texto, max_words=5):
     norm = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
     palavras = re.findall(r"[a-zA-Z0-9]+", norm.lower())[:max_words]
@@ -64,9 +88,11 @@ def _slug_words(texto, max_words=5):
 def _gerar_id(texto):
     slug = _slug_words(texto)
     try:
+        cfg = config.atual()
         proc = subprocess.run(
-            [sys.executable, str(PLATAFORMA_PY), "novo-id", "--etapa", "SBC", "--slug", slug],
-            capture_output=True, text=True, timeout=10, cwd=str(ROOT),
+            [sys.executable, str(_utilitario()), "novo-id",
+             "--etapa", cfg.siglas[0], "--slug", slug],
+            capture_output=True, text=True, timeout=10, cwd=str(cfg.raiz),
         )
     except Exception as e:
         raise NotaError(f"falha ao chamar plataforma.py: {e}")
@@ -79,8 +105,9 @@ def _gerar_id(texto):
 
 
 def _escrever_arquivo_sbc(id_, texto):
-    PENDENTE_DIR.mkdir(parents=True, exist_ok=True)
-    caminho = PENDENTE_DIR / f"{id_}.md"
+    destino = _entrada_dir()
+    destino.mkdir(parents=True, exist_ok=True)
+    caminho = destino / f"{id_}.md"
     if caminho.exists():
         raise NotaError(f"arquivo já existe: {caminho.name} (colisão de ID)")
     conteudo = TEMPLATE.format(id=id_, data_iso=date.today().isoformat(), texto=texto.strip())
@@ -127,10 +154,17 @@ def _append_log(id_, texto):
     o padrão (LF/CRLF) já usado no arquivo — mesmo cuidado documentado em
     server.py::_handle_backlog_toggle, pra nunca reescrever o arquivo inteiro só por
     causa da quebra de linha. Faz backup antes de gravar."""
-    if not LOG_PATH.exists():
-        raise NotaError(f"LOG central não encontrado: {LOG_PATH}")
+    cfg = config.atual()
+    registro = _registro()
+    if not registro.exists():
+        raise NotaError(f"registro não encontrado: {registro}")
 
-    with LOG_PATH.open(encoding="utf-8", newline="") as f:
+    # Caminho da pasta de entrada relativo ao registro — é o que vai na coluna
+    # Local e no link. Naquela plataforma dá `../.pendente`; numa plataforma nova, o
+    # próprio nome do estágio 1.
+    rel_entrada = os.path.relpath(_entrada_dir(), registro.parent).replace("\\", "/")
+
+    with registro.open(encoding="utf-8", newline="") as f:
         original = f.read()
     eol = "\r\n" if "\r\n" in original else "\n"
 
@@ -139,8 +173,8 @@ def _append_log(id_, texto):
     header_tabela = "| ID | Data | Etapa/Tipo | Local | Resumo | Link |"
     separador = "|---|---|---|---|---|---|"
     resumo = _resumo_curto(texto)
-    link = f"[arquivo](<../.pendente/{id_}.md>)"
-    linha = f"| {id_} | {hoje} | SBC | `../.pendente/` | {resumo} | {link} |"
+    link = f"[arquivo](<{rel_entrada}/{id_}.md>)"
+    linha = f"| {id_} | {hoje} | {cfg.siglas[0]} | `{rel_entrada}/` | {resumo} | {link} |"
 
     if heading in original:
         novo_texto = _append_row_to_section(original, heading, linha, eol)
@@ -156,17 +190,19 @@ def _append_log(id_, texto):
             novo_texto = antes + eol * 2 + nova_secao + eol * 2 + depois
 
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
-    backup_name = f"1-capturas_LOG__log.md-{int(time.time())}.bak"
-    shutil.copy2(LOG_PATH, BACKUPS_DIR / backup_name)
-    with LOG_PATH.open("w", encoding="utf-8", newline="") as f:
+    rel_registro = cfg.arquivo_rel("registro").replace("/", "_")
+    backup_name = f"{rel_registro}-{int(time.time())}.bak"
+    shutil.copy2(registro, BACKUPS_DIR / backup_name)
+    with registro.open("w", encoding="utf-8", newline="") as f:
         f.write(novo_texto)
 
 
 def _sincronizar_pendentes():
     try:
+        cfg = config.atual()
         subprocess.run(
-            [sys.executable, str(PLATAFORMA_PY), "gerar-pendentes"],
-            capture_output=True, text=True, timeout=15, cwd=str(ROOT),
+            [sys.executable, str(_utilitario()), "gerar-pendentes"],
+            capture_output=True, text=True, timeout=15, cwd=str(cfg.raiz),
         )
     except Exception:
         pass  # nunca derruba a criação da nota por isso — pendentes.md só fica atrasado
@@ -190,4 +226,4 @@ def criar_captura_crua(texto):
             raise
         _sincronizar_pendentes()
 
-    return {"id": id_, "path": str(caminho.relative_to(ROOT)).replace("\\", "/")}
+    return {"id": id_, "path": str(caminho.relative_to(config.atual().raiz)).replace("\\", "/")}

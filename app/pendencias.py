@@ -20,11 +20,16 @@ import threading
 import time
 from pathlib import Path
 
+import config
+
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
-ROOT = PROJECT_DIR.parent  # C:\Plataforma
-EXECUCAO_DIR = ROOT / "_ferramentas" / "skills" / "rotina-de-avanco" / "execucao"
 BACKUPS_DIR = PROJECT_DIR / "cache" / "backups"
+
+
+def _execucao_dir():
+    """Pasta das pendências da plataforma ativa, ou None se ela não declara uma."""
+    return config.atual().caminho("pendencias")
 
 NOME_RE = re.compile(r"^pendencia-ativa-(\d{4}-\d{2}-\d{2})-(.+)\.md$")
 REF_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9._-]*$", re.IGNORECASE)
@@ -63,10 +68,10 @@ class ConflitoError(PendenciaError):
 
 
 def _rel(caminho: Path):
-    """Caminho relativo à raiz da plataforma de origem; devolve o absoluto se estiver fora dela
-    (acontece só em teste, com fixture em pasta temporária)."""
+    """Caminho relativo à raiz da plataforma; devolve o absoluto se estiver fora
+    dela (acontece só em teste, com fixture em pasta temporária)."""
     try:
-        return str(caminho.relative_to(ROOT)).replace("\\", "/")
+        return str(caminho.relative_to(config.atual().raiz)).replace("\\", "/")
     except ValueError:
         return str(caminho).replace("\\", "/")
 
@@ -250,9 +255,12 @@ def parse_pendencia(caminho: Path):
 def listar_pendencias_ativas():
     """Contrato consumido por workflow.py: {cards, erro}. Nunca levanta."""
     try:
-        if not EXECUCAO_DIR.exists():
-            return {"cards": [], "erro": f"pasta não encontrada: {EXECUCAO_DIR}"}
-        cards = [parse_pendencia(p) for p in sorted(EXECUCAO_DIR.glob("pendencia-ativa-*.md"))]
+        execucao = _execucao_dir()
+        if execucao is None:
+            return {"cards": [], "erro": "esta plataforma não declara uma pasta de pendências"}
+        if not execucao.exists():
+            return {"cards": [], "erro": f"pasta não encontrada: {execucao}"}
+        cards = [parse_pendencia(p) for p in sorted(execucao.glob("pendencia-ativa-*.md"))]
         cards = [c for c in cards if c]
         cards.sort(key=lambda c: (-c["adiada"], c["ref"]))
         return {"cards": cards, "erro": None}
@@ -266,9 +274,12 @@ def listar_pendencias_ativas():
 def _caminho_de(ref):
     if not ref or not REF_RE.match(ref):
         raise PendenciaError("ref inválido")
-    caminho = EXECUCAO_DIR / f"pendencia-ativa-{ref}.md"
+    execucao = _execucao_dir()
+    if execucao is None:
+        raise PendenciaError("esta plataforma não declara uma pasta de pendências")
+    caminho = execucao / f"pendencia-ativa-{ref}.md"
     try:
-        caminho.resolve().relative_to(EXECUCAO_DIR.resolve())
+        caminho.resolve().relative_to(execucao.resolve())
     except ValueError:
         raise PendenciaError("ref fora da pasta de execução")
     if not caminho.is_file():
