@@ -69,9 +69,25 @@ BACKLOG = """# Backlog — Teste
 
 
 class TestGuardrails(unittest.TestCase):
-    REGRAS = ["append-only", "Nunca pule etapa", "Nunca commite automaticamente",
+    # A regra de salvar mudou de sentido no Trecho 8 (doutrina, regra 6): o que
+    # o briefing tem que mandar agora é commitar sozinho e pedir autorização só
+    # para o push. O teste cobra as duas metades, porque afirmar só uma deixaria
+    # passar exatamente a versão antiga.
+    REGRAS = ["append-only", "Nunca pule etapa",
+              "Salvar é automático; publicar é decisão",
+              "sem me pedir autorização",
+              "Push só com autorização explícita e separada",
+              "nunca `git add .`",
               "por inferência", "Apagar é sempre lógico", "novo-id",
               "vive no repositório", ".Biblioteca"]
+
+    def test_nao_manda_mais_esperar_autorizacao_pra_commitar(self):
+        """O erro que custou trabalho perdido não pode voltar por descuido."""
+        for texto in (briefing.briefing_pendencias()["texto"],
+                      briefing.briefing_classificar("1-capturas/x.md")["texto"],
+                      briefing.briefing_avancar("projeto-de-teste", [], {})["texto"]):
+            self.assertNotIn("Nunca commite automaticamente", texto)
+            self.assertNotIn("só commite depois", texto.lower())
 
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-brf-gr-"))

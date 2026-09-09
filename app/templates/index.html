@@ -191,8 +191,40 @@ th{background:var(--surface-2)}
 .type-dot.t-other-pertinent{background:var(--tipo-other-pertinent)}
 #reindex-btn{margin:var(--sp-2) var(--sp-3);padding:var(--sp-1);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);cursor:pointer;font-size:var(--fs-1);color:var(--text-2)}
 #reindex-btn:hover{background:var(--border)}
-#embarque-nav-btn,#portfolio-nav-btn,#tour-nav-btn,#dashboard-nav-btn,#workflow-nav-btn,#nota-nav-btn,#fluxo-nav-btn{margin:0 var(--sp-3) var(--sp-3);padding:var(--sp-2);border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-bg);cursor:pointer;font-size:var(--fs-2);font-weight:600;color:var(--accent);font-family:"Fraunces",serif}
-#embarque-nav-btn:hover,#portfolio-nav-btn:hover,#tour-nav-btn:hover,#dashboard-nav-btn:hover,#workflow-nav-btn:hover,#nota-nav-btn:hover,#fluxo-nav-btn:hover{background:var(--accent);color:var(--bg)}
+#embarque-nav-btn,#versoes-nav-btn,#portfolio-nav-btn,#tour-nav-btn,#dashboard-nav-btn,#workflow-nav-btn,#nota-nav-btn,#fluxo-nav-btn{margin:0 var(--sp-3) var(--sp-3);padding:var(--sp-2);border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-bg);cursor:pointer;font-size:var(--fs-2);font-weight:600;color:var(--accent);font-family:"Fraunces",serif}
+#embarque-nav-btn:hover,#versoes-nav-btn:hover,#portfolio-nav-btn:hover,#tour-nav-btn:hover,#dashboard-nav-btn:hover,#workflow-nav-btn:hover,#nota-nav-btn:hover,#fluxo-nav-btn:hover{background:var(--accent);color:var(--bg)}
+.vs-repo{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-4);margin-bottom:var(--sp-4)}
+.vs-repo h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-1);display:flex;align-items:center;gap:var(--sp-2)}
+.vs-repo .caminho{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-3);word-break:break-all}
+.vs-sinal{display:inline-block;width:var(--sp-2);height:var(--sp-2);border-radius:50%;flex-shrink:0}
+.vs-sinal.verde{background:var(--success)}
+.vs-sinal.ambar{background:var(--warn)}
+.vs-sinal.vermelho{background:var(--danger)}
+.vs-sinal.cinza{background:var(--stub)}
+.vs-resposta{border-left:3px solid var(--border);padding:0 0 0 var(--sp-3);margin:0 0 var(--sp-3)}
+.vs-resposta.verde{border-color:var(--success)}
+.vs-resposta.ambar{border-color:var(--warn)}
+.vs-resposta.vermelho{border-color:var(--danger)}
+.vs-resposta.cinza{border-color:var(--stub)}
+.vs-resposta .pergunta{font-size:var(--fs-1);color:var(--text-2);margin:0 0 2px}
+.vs-resposta .valor{font-size:var(--fs-3);font-weight:600;margin:0}
+.vs-resposta .obs{font-size:var(--fs-1);color:var(--text-2);margin:2px 0 0;line-height:1.5}
+.vs-arquivos{margin:var(--sp-2) 0 0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2)}
+.vs-arquivos li{margin-bottom:2px;list-style:none}
+.vs-arquivos li .marca{color:var(--danger)}
+.vs-commits{margin:var(--sp-3) 0 0;border-top:1px solid var(--border);padding-top:var(--sp-3)}
+.vs-commits h3{font-size:var(--fs-2);margin:0 0 var(--sp-2);color:var(--text-2);font-weight:600}
+.vs-commit{display:grid;grid-template-columns:96px 1fr auto;gap:var(--sp-2);font-size:var(--fs-1);padding:3px 0;border-bottom:1px solid var(--border)}
+.vs-commit:last-child{border-bottom:0}
+.vs-commit .quando{color:var(--text-2);font-family:"IBM Plex Mono",ui-monospace,monospace}
+.vs-commit .n{color:var(--stub);text-align:right;white-space:nowrap}
+.vs-acoes{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-3)}
+.vs-rede{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-4);margin-bottom:var(--sp-4)}
+.vs-rede h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-2)}
+.vs-camada{display:grid;grid-template-columns:auto 1fr;gap:var(--sp-2);align-items:baseline;font-size:var(--fs-2);margin-bottom:var(--sp-2)}
+.vs-camada .nome{font-weight:600;white-space:nowrap}
+.vs-camada .desc{color:var(--text-2);font-size:var(--fs-1);line-height:1.5}
+.vs-foto{font-size:var(--fs-1);color:var(--text-2);display:flex;align-items:center;gap:var(--sp-2);margin:0 0 var(--sp-4)}
 #embarque-nav-btn{border-width:2px}
 .eb-parada{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-4);margin-bottom:var(--sp-4);max-width:640px}
 .eb-parada h3{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-2)}
@@ -463,6 +495,7 @@ th{background:var(--surface-2)}
     </div>
     <div id="plataforma-aviso" hidden></div>
     <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira plataforma">🚂 Embarque</button>
+    <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem">📦 Versões</button>
     <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto">🗂 Portfólio</button>
     <button id="tour-nav-btn" title="A leitura guiada desta plataforma, uma parada por vez">🧭 Tour</button>
     <button id="dashboard-nav-btn">📊 Dashboard</button>
@@ -1813,6 +1846,176 @@ async function copiarBriefing(){
 }
 
 // ============================================================
+// Versões — o que está salvo e o que não está (GET /api/versoes)
+// ============================================================
+// NÃO é um cliente de git: é um painel de respostas a quatro perguntas, nesta
+// ordem de importância. Se o automatismo do commit está funcionando, esta aba
+// quase sempre mostra tudo verde — e é exatamente esse o valor dela: dar a ver
+// que a rede está lá.
+//
+// Tudo aqui é FOTO DO MOMENTO DA CONSULTA. A automação do usuário commita, o
+// editor mexe, outra sessão salva: o estado pode ter mudado entre a consulta e
+// a leitura. Por isso a hora fica visível e existe um botão de atualizar.
+async function openVersoesView(){
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Versões";
+  document.getElementById("meta-bar").innerHTML =
+    `<span class="badge badge-type">versões</span><span id="meta-path">foto do momento da consulta — a Estação lê o git, nunca o executa</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<h1>Versões</h1><p class="dash-lead">Carregando…</p>`;
+
+  let dados;
+  try {
+    dados = await (await fetch("/api/versoes")).json();
+  } catch(e){
+    content.innerHTML = `<h1>Versões</h1><p class="dash-lead">Não consegui ler o estado: ${escapeHtml(String(e))}</p>`;
+    return;
+  }
+
+  content.innerHTML = `<h1>Versões</h1>
+    <p class="dash-lead">O que está guardado, o que ainda não está, e o que ainda não saiu do seu computador.</p>`;
+
+  const foto = document.createElement("p");
+  foto.className = "vs-foto";
+  const quando = (dados.repositorios[0] || {}).consultado_em || "";
+  foto.innerHTML = `<span>Foto de <strong>${escapeHtml(quando)}</strong> — pode ter mudado desde então.</span>`;
+  const atualizar = document.createElement("button");
+  atualizar.className = "brf-btn";
+  atualizar.textContent = "↻ atualizar";
+  atualizar.onclick = openVersoesView;
+  foto.appendChild(atualizar);
+  content.appendChild(foto);
+
+  content.appendChild(vsRede(dados.backups, dados.repositorios));
+  dados.repositorios.forEach(r => content.appendChild(vsRepo(r)));
+}
+
+// As três camadas nomeadas, porque proteção invisível não tranquiliza ninguém.
+function vsRede(backups, repos){
+  const el = document.createElement("div");
+  el.className = "vs-rede";
+  const comRemoto = repos.filter(r => r.tem_remoto).length;
+  const salvos = repos.filter(r => r.e_repo).length;
+  el.innerHTML = `<h2>A rede de proteção</h2>
+    <div class="vs-camada"><span class="nome">1. Backup automático</span>
+      <span class="desc">A Estação copia o arquivo antes de toda escrita.
+        ${backups.quantos ? `<strong>${backups.quantos} cópia(s)</strong> guardadas${backups.desde ? `, desde ${escapeHtml(backups.desde)}` : ""}.`
+                          : "Nenhuma cópia ainda — ela nasce na primeira vez que o app escreve."}
+        Protege do erro <em>de agora</em>.</span></div>
+    <div class="vs-camada"><span class="nome">2. Ponto salvo</span>
+      <span class="desc">O commit. <strong>${salvos} de ${repos.length}</strong> repositório(s) versionados.
+        Protege do erro <em>de ontem</em>.</span></div>
+    <div class="vs-camada"><span class="nome">3. Cópia na nuvem</span>
+      <span class="desc">O remoto. <strong>${comRemoto} de ${repos.length}</strong> com cópia fora daqui.
+        Protege do computador que <em>morreu</em>.</span></div>
+    <p class="desc" style="margin:var(--sp-2) 0 0;font-size:var(--fs-1);color:var(--text-2)">
+      Uma não substitui a outra.</p>`;
+  return el;
+}
+
+function vsResposta(cor, pergunta, valor, obs){
+  return `<div class="vs-resposta ${cor}">
+    <p class="pergunta">${pergunta}</p>
+    <p class="valor">${valor}</p>
+    ${obs ? `<p class="obs">${obs}</p>` : ""}</div>`;
+}
+
+function vsRepo(r){
+  const el = document.createElement("div");
+  el.className = "vs-repo";
+  const s = r.semaforo || {cor: "cinza", titulo: "—", texto: ""};
+  el.innerHTML = `<h2><span class="vs-sinal ${s.cor}"></span>${escapeHtml(r.rotulo)}</h2>
+    <p class="caminho">${escapeHtml(r.pasta)}</p>`;
+
+  if (!r.e_repo){
+    el.innerHTML += vsResposta("cinza", "Esta pasta está sendo versionada?",
+      "Não", escapeHtml(r.erro || "") +
+      " — o que está aqui não tem ponto salvo nenhum. Uma sessão de IA cria o repositório num comando, quando você quiser.");
+    return el;
+  }
+
+  // 1. a pergunta que importa
+  let lista = "";
+  if (r.sujos.length){
+    lista = `<ul class="vs-arquivos">` + r.sujos.slice(0, 12).map(a =>
+      `<li><span class="marca">${escapeHtml(a.estado.trim() || "·")}</span> ${escapeHtml(a.caminho)} <span style="opacity:.7">— ${escapeHtml(a.rotulo)}</span></li>`).join("") +
+      (r.sujos.length > 12 ? `<li>… e mais ${r.sujos.length - 12}</li>` : "") + `</ul>`;
+  }
+  el.innerHTML += vsResposta(s.cor, "Tem trabalho meu que ainda não está salvo em lugar nenhum?",
+    escapeHtml(s.titulo), escapeHtml(s.texto)) + lista;
+
+  // 2. quando foi a última vez
+  const u = r.ultimo;
+  el.innerHTML += vsResposta(u ? "verde" : "ambar", "Quando foi a última vez que salvei?",
+    u ? escapeHtml(u.ha_quanto || u.data) : "Nunca",
+    u ? escapeHtml(u.mensagem) : "Este repositório ainda não tem nenhum ponto salvo.");
+
+  // 3. o que não subiu
+  let corNuvem = "verde", valorNuvem, obsNuvem;
+  if (!r.tem_remoto){
+    corNuvem = "ambar"; valorNuvem = "Não há cópia na nuvem";
+    obsNuvem = "Este repositório não tem remoto configurado. Se o computador morrer, o histórico morre junto.";
+  } else if (r.nao_enviados === null){
+    corNuvem = "ambar"; valorNuvem = "Nada foi enviado ainda";
+    obsNuvem = "Existe um remoto, mas esta linha de trabalho ainda não tem par lá.";
+  } else if (r.nao_enviados > 0){
+    corNuvem = "ambar"; valorNuvem = `${r.nao_enviados} ponto(s) salvo(s) só aqui`;
+    obsNuvem = "Estão guardados no seu computador, mas não em outro lugar.";
+  } else {
+    valorNuvem = "Tudo já subiu";
+    obsNuvem = escapeHtml(r.remoto || "");
+  }
+  el.innerHTML += vsResposta(corNuvem, "Tem ponto salvo que ainda não subiu pra nuvem?",
+    valorNuvem, obsNuvem);
+
+  // 4. onde eu estou
+  el.innerHTML += vsResposta("verde", "Onde eu estou?",
+    escapeHtml(r.branch || "—"),
+    r.tem_remoto ? `nuvem: <code>${escapeHtml(r.remoto || "")}</code>` : "sem cópia na nuvem");
+
+  if (r.commits && r.commits.length){
+    const c = document.createElement("div");
+    c.className = "vs-commits";
+    c.innerHTML = `<h3>Últimos pontos salvos</h3>` + r.commits.map(x =>
+      `<div class="vs-commit"><span class="quando">${escapeHtml(x.ha_quanto || "")}</span>` +
+      `<span title="${escapeHtml((x.arquivos || []).join("\n"))}">${escapeHtml(x.mensagem)}</span>` +
+      `<span class="n">${x.quantos_arquivos} arq.</span></div>`).join("");
+    el.appendChild(c);
+  }
+
+  const acoes = document.createElement("div");
+  acoes.className = "vs-acoes";
+  [["salvar", "Salvar um ponto"], ["nuvem", "Mandar pra nuvem"], ["linha", "Começar uma linha nova"]]
+    .forEach(([tipo, rotulo], i) => {
+      const b = document.createElement("button");
+      b.className = "brf-btn" + (i === 0 ? " prim" : "");
+      b.textContent = rotulo + " →";
+      b.onclick = () => vsPrompt(tipo, r.chave, rotulo);
+      acoes.appendChild(b);
+    });
+  el.appendChild(acoes);
+
+  const nota = document.createElement("p");
+  nota.style.cssText = "font-size:var(--fs-1);color:var(--text-2);margin:var(--sp-2) 0 0";
+  nota.textContent = "Estes botões geram o texto para você colar numa sessão de IA. A Estação nunca executa git.";
+  el.appendChild(nota);
+  return el;
+}
+
+async function vsPrompt(tipo, repo, rotulo){
+  try {
+    const d = await (await fetch(`/api/versoes/prompt?tipo=${encodeURIComponent(tipo)}&repo=${encodeURIComponent(repo)}`)).json();
+    if (d.error){ toast(d.error); return; }
+    mostrarPrompt(d.texto, {
+      titulo: rotulo,
+      sub: `Cole numa sessão de IA com a pasta <code>${escapeHtml(d.pasta)}</code> aberta. O estado real do git já vai no texto.`,
+    });
+  } catch(e){ toast("Falha ao gerar: " + e); }
+}
+
+// ============================================================
 // Embarque — os primeiros passos (POST /api/embarque/prompt)
 // ============================================================
 // Cinco paradas. As respostas ficam no localStorage com o mesmo try/catch
@@ -2351,6 +2554,7 @@ document.getElementById("reindex-btn").addEventListener("click", reindex);
 document.getElementById("dashboard-nav-btn").addEventListener("click", openDashboardView);
 document.getElementById("tour-nav-btn").addEventListener("click", openTourView);
 document.getElementById("embarque-nav-btn").addEventListener("click", openEmbarqueView);
+document.getElementById("versoes-nav-btn").addEventListener("click", openVersoesView);
 document.getElementById("portfolio-nav-btn").addEventListener("click", openPortfolioView);
 document.getElementById("workflow-nav-btn").addEventListener("click", openWorkflowView);
 document.getElementById("nota-nav-btn").addEventListener("click", openNotaView);

@@ -51,7 +51,7 @@ def guardrails():
 - **Nunca pule etapa:** {cadeia} em ordem, cada uma com ID próprio e linha própria no registro, mesmo que aconteçam na mesma sessão.
 - **IDs só via {comando_id}** — nunca monte o ID à mão, e grave a linha do registro antes de pedir o próximo (senão dois itens nascem com o mesmo SEQ).
 - **Nunca fecha pendência por inferência** — só o campo `## Resposta` explícito fecha; "Deixar para depois" incrementa `**Adiada:**` e mantém ativa.
-- **Nunca commite automaticamente**, e nunca dê push sem autorização explícita e separada.
+- **Salvar é automático; publicar é decisão.** Commite local ao terminar, sem me pedir autorização — me **avise** o que entrou, não pergunte. `git add` **nominal**, nunca `git add .`. Mudança que não é sua fica de fora. **Push só com autorização explícita e separada.**
 - **Artefato de sessão vive no repositório**: plano, relatório ou análise substancial é copiado pra raiz do projeto com a convenção local (`plano-<assunto>-<AAAA-MM-DD>.md`) e commitado na mesma sessão.
 - `.Biblioteca` fica de fora de tudo isso — nunca entra em stage automático."""
 

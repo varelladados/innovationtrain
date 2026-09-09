@@ -38,6 +38,7 @@ import projetos as projetos_mod
 import noar as noar_mod
 import briefing as briefing_mod
 import embarque as embarque_mod
+import versoes as versoes_mod
 import mimetypes
 import subprocess
 import sys
@@ -144,6 +145,24 @@ def get_portfolio():
 def get_metrics():
     vazio = {"erro": None, "log": {}, "arquivos": {}, "nucleo": {}}
     return _cached("metricas", metrics.compute_metrics, vazio)
+
+
+def repositorios():
+    """Os três repositórios que a aba Versões mostra lado a lado.
+
+    São três desde o Trecho 3, e é fácil salvar um e esquecer os outros — é
+    exatamente por isso que eles aparecem juntos.
+    """
+    hub = config.hub_dir()
+    saida = [
+        {"chave": "app", "rotulo": "A aplicação", "pasta": PROJECT_DIR},
+        {"chave": "metodo", "rotulo": "O método", "pasta": hub / "metodo"},
+    ]
+    if config.definida():
+        cfg = config.atual()
+        saida.insert(0, {"chave": "plataforma",
+                         "rotulo": f"Plataforma: {cfg.nome}", "pasta": cfg.raiz})
+    return saida
 
 
 def plataformas_registradas():
@@ -309,6 +328,38 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/plataformas":
             self._send_json({"plataformas": plataformas_registradas()})
+            return
+
+        if path == "/api/versoes":
+            quais = qs.get("repo", [None])[0]
+            repos = [r for r in repositorios() if not quais or r["chave"] == quais]
+            saida = []
+            for r in repos:
+                e = versoes_mod.estado(r["pasta"])
+                e["chave"], e["rotulo"] = r["chave"], r["rotulo"]
+                e["semaforo"] = versoes_mod.semaforo(e)
+                saida.append(e)
+            self._send_json({
+                "repositorios": saida,
+                "backups": versoes_mod.backups(CACHE_DIR),
+            })
+            return
+
+        if path == "/api/versoes/prompt":
+            tipo = qs.get("tipo", [""])[0]
+            chave = qs.get("repo", ["app"])[0]
+            alvo = next((r for r in repositorios() if r["chave"] == chave), None)
+            if alvo is None:
+                self._send_json({"error": "repositório desconhecido"}, status=400)
+                return
+            try:
+                e = versoes_mod.estado(alvo["pasta"])
+                texto = versoes_mod.prompt(tipo, e)
+            except ValueError as err:
+                self._send_json({"error": str(err)}, status=400)
+                return
+            self._send_json({"texto": texto, "tipo": tipo, "repo": chave,
+                             "pasta": str(alvo["pasta"])})
             return
 
         if path == "/api/metricas":
