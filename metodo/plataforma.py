@@ -8,7 +8,10 @@ estágios saem do `plataforma.json`, não são três siglas fixas) e o tamanho �
 aqui ficaram os três comandos que qualquer plataforma precisa.
 
 **A raiz vem por argumento.** Este script não sabe onde ele mora nem assume que
-está dentro da plataforma: `--raiz` é obrigatório em todos os comandos.
+está dentro da plataforma. `--raiz` vale para todos os comandos; quando omitido,
+vale a pasta atual — é assim que a Estação o chama, com o `cwd` já na raiz da
+plataforma (e é o que deixa o mesmo código servir para o utilitário legado, que
+não conhece esse argumento).
 
 **A taxonomia vem do `plataforma.json` da raiz**, e só de lá. Não há padrão
 embutido aqui de propósito: um segundo lugar com os nomes dos estágios seria
@@ -352,7 +355,8 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     def com_raiz(p):
-        p.add_argument("--raiz", required=True, help="pasta da plataforma")
+        p.add_argument("--raiz", default=".",
+                       help="pasta da plataforma (padrão: a pasta atual)")
         return p
 
     p_id = com_raiz(sub.add_parser("novo-id", help="gera o próximo identificador"))
