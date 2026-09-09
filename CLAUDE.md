@@ -247,12 +247,26 @@ Estação nunca commita em nome de ninguém.
   `.claude/launch.json` é o único lugar que repete o número, porque é JSON lido
   pelo harness — e um teste cobra que os dois concordem.
 - **Este repositório é público, e nenhum nome de plataforma de ninguém entra
-  nele.** `estacao.json` (a configuração de quem usa, com os caminhos dela) e
-  `pendencias/` ficam fora do versionamento; `tests/test_publicacao.py` falha o
-  build se papel de trabalho, configuração local, nome de pasta de projeto de
-  terceiro ou vocabulário de uma plataforma privada entrar. Ele cobra a **forma**,
-  não uma lista de nomes — um teste que listasse o que é privado publicaria
-  exatamente o que deveria proteger.
+  nele.** São **quatro camadas**, e a ordem importa — cada uma pega o que a
+  anterior deixou passar:
+
+  | # | Camada | Onde | Pega o quê |
+  |---|---|---|---|
+  | 1 | **Não está na pasta** | `estacao.json` e `pendencias/` fora do versionamento | o que nunca entra não vaza |
+  | 2 | **`.gitignore`** | os padrões de papel de trabalho | o `git add` distraído |
+  | 3 | **`.githooks/pre-commit`** | roda o guarda-corpo contra o índice | barra **antes de o commit existir** |
+  | 4 | **`tests/test_publicacao.py` + CI** | Linux e Windows a cada push | o hook não instalado, e a história inteira |
+
+  O guarda-corpo cobra a **forma**, nunca uma lista de nomes — um teste que
+  listasse o que é privado publicaria exatamente o que deveria proteger. Por isso
+  o vocabulário proibido está lá em **hash**, e as mensagens de falha devolvem
+  hash, não palavra. Os testes de histórico existem porque um `git revert`
+  traria de volta o commit que o teste do topo deveria ter barrado.
+
+  **Reescrever história não é camada** — é o conserto de emergência de quando as
+  quatro falharam, e ele não desfaz o que já foi publicado: `push --force` só
+  desreferencia o objeto no GitHub. Para remover de verdade, apagar e recriar o
+  repositório.
 - **Aba nova exige três pontos**, e esquecer o segundo é silencioso: o botão no
   `<aside>`, o id nas **duas** regras compartilhadas do CSS (a de estilo e a de
   `:hover`), e o wiring no bloco final de `addEventListener`. Ver

@@ -1,0 +1,40 @@
+# A camada que roda longe da máquina de quem escreveu.
+#
+# `fetch-depth: 0` não é detalhe: `tests/test_publicacao.py` varre o histórico
+# inteiro, e num clone raso (o padrão do actions/checkout) ele passaria sem ter
+# olhado nada — o pior tipo de teste verde.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # o guarda-corpo precisa do histórico inteiro
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compila tudo
+        run: python -m compileall -q app metodo tests
+
+      - name: A suíte inteira
+        run: python -m unittest discover tests -v
+
+      - name: O guarda-corpo da publicação, em separado e alto
+        run: python -m unittest tests.test_publicacao -v

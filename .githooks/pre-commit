@@ -1,0 +1,25 @@
+#!/bin/sh
+# Guarda-corpo da publicação, antes de o commit existir.
+#
+# Roda contra o ÍNDICE (`git ls-files`), então cobra exatamente o que você
+# acabou de preparar — não o que está no disco. Custa ~2s.
+#
+# Instale com:  git config core.hooksPath .githooks
+# Pule uma vez: git commit --no-verify   (e saiba o que está fazendo)
+
+if ! command -v python >/dev/null 2>&1; then
+    echo "pre-commit: python não encontrado no PATH — guarda-corpo NÃO rodou." >&2
+    exit 0
+fi
+
+saida=$(python -m unittest tests.test_publicacao 2>&1)
+if [ $? -ne 0 ]; then
+    echo "$saida" >&2
+    echo "" >&2
+    echo "──────────────────────────────────────────────────────────────" >&2
+    echo " O guarda-corpo da publicação barrou este commit." >&2
+    echo " Este repositório é público: papel de trabalho, configuração" >&2
+    echo " local ou vocabulário de plataforma privada não entram nele." >&2
+    echo "──────────────────────────────────────────────────────────────" >&2
+    exit 1
+fi

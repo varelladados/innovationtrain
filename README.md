@@ -116,6 +116,22 @@ quando der ruim.
 - **Todo endpoint de escrita** tem allow-list, trava de concorrência por
   conteúdo (409) e backup antes de gravar.
 
+## Se você for mexer no código
+
+Instale o hook uma vez — ele roda o guarda-corpo antes de cada commit:
+
+```
+git config core.hooksPath .githooks
+```
+
+A suíte é stdlib pura, sem instalar nada:
+
+```
+python -m unittest discover tests
+```
+
+O mesmo roda no CI, em Linux e Windows, a cada push.
+
 ## Licença
 
 [Apache 2.0](LICENSE).
