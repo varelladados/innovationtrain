@@ -27,15 +27,20 @@ passagem para Nota faz. Quem arruma na hora de capturar acaba não capturando �
 e a captura é a operação que precisa ser barata, porque é a que acontece com
 pressa.
 
-## Parada 3 — A trilha, três passos
+## Parada 3 — A trilha, cinco passos
 
-Na barra lateral tem um painel: **trilha de exemplo, passo 0 de 3**. Clique em
+Na barra lateral tem um painel: **trilha de exemplo, passo 0 de 5**. Clique em
 **▶** e a plataforma passa para o estado seguinte.
 
-O passo 1 pega a captura `ideia-no-onibus` — aquela de voltar da feira pensando
-em cozinhar com o que já tem — e a transforma na nota **app de receitas pela
-despensa**. O passo 2 leva a nota a virar ideia. O passo 3 faz a ideia virar
-projeto, com pasta, `CLAUDE.md` e backlog.
+Os passos 1 a 3 seguem um grão: a captura `ideia-no-onibus` — aquela de voltar
+da feira pensando em cozinhar com o que já tem — vira a nota **app de receitas
+pela despensa**, depois ideia, depois o projeto `exemplo-app-de-receitas`, com
+pasta, `CLAUDE.md` e backlog.
+
+Os passos 4 e 5 fazem um **segundo** grão andar, o da `conversa-sobre-curso`, e
+é aí que fica interessante: com dois projetos na mesa, disputando as mesmas
+noites da mesma pessoa, nasce a primeira **pendência**. Uma plataforma com um
+projeto só não tem decisão nenhuma para tomar.
 
 **Nada é calculado.** Cada passo é uma pasta com a plataforma inteira já naquele
 estado, e o botão só a restaura. É um slideshow, não um motor.
@@ -73,13 +78,18 @@ retrato honesto do que ainda está por tratar, e ele muda sozinho a cada passo.
 
 ## Parada 6 — Quando aparecer uma dúvida de verdade
 
-Em algum ponto você vai travar numa escolha: isto é projeto próprio ou vira item
-de backlog de outro? É aí que nasce uma pendência, em `_pendencias/`, e ela
-aparece como carta na aba **🔀 Workflow**.
+A pasta `_pendencias/` está vazia no passo 0, de propósito: uma plataforma com
+um projeto só não tem decisão para tomar.
 
-A pasta está vazia agora, de propósito. Um exemplo preenchido está em
-`plataformas/exemplo-precos/_pendencias/` — e lá a pendência trava uma ideia de
-verdade, com a ideia dizendo isso no próprio texto.
+Chegue ao **passo 5** e ela deixa de estar. Com o app de receitas e o curso na
+mesa ao mesmo tempo, aparece a pergunta que o braindump do ônibus já tinha feito
+sem perceber: *"eu fico planejando as seis semanas / as 50 telas em vez de fazer
+a primeira"*. Qual dos dois recebe as próximas duas semanas?
+
+A pendência vira carta na aba **🔀 Workflow**, e você responde ali mesmo.
+
+Outro exemplo, de outro tipo, está em `plataformas/exemplo-precos/_pendencias/`:
+lá a decisão **trava uma ideia**, e a ideia diz isso no próprio texto.
 
 Ninguém fecha uma pendência por inferência: só a resposta explícita fecha.
 

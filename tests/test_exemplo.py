@@ -276,6 +276,27 @@ class _Crua:
         ativos = [a for a in primeiro.glob("*.md")]
         self.assertGreaterEqual(len(ativos), 5, f"só {len(ativos)} capturas para avançar")
 
+    def test_o_trem_conta_so_conteudo(self):
+        """Arquivo de sistema não é carta.
+
+        O `_` do começo do nome significa "maquinário, não conteúdo seu"
+        (`metodo/taxonomia.md`, parada 5). Quando os `_leia-me.md` foram
+        acrescentados aos `_historico/` — para as pastas sobreviverem a um clone
+        — eles viraram carta no trem, e a primeira coluna passou a dizer 10 onde
+        havia 9. Contagem errada num painel é pior que painel nenhum.
+        """
+        cfg = config.atual()
+        wf = workflow.build_workflow(self.entries)
+        primeiro = cfg.estagios[0]["pasta"]
+        itens = [a for a in (self.RAIZ / primeiro).glob("*.md")
+                 if not a.name.startswith("_")]
+        self.assertEqual(wf["totais"][primeiro], len(itens),
+                         "a coluna do primeiro estágio não bate com os arquivos")
+        for coluna in wf["colunas"].values():
+            for carta in coluna:
+                self.assertFalse(Path(carta["path"]).name.startswith("_"),
+                                 f"arquivo de sistema virou carta: {carta['path']}")
+
     def test_a_trilha_tem_passos(self):
         """Sem passos, a plataforma crua não ensina nada — fica só vazia."""
         import trilha

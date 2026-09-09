@@ -28,11 +28,11 @@ nada organizado. A parte difícil não é capturar — é a primeira passagem.
 Dentro de cada uma, `_historico/` guarda o que já avançou dali. Estão todos
 vazios — ainda não avançou nada.
 
-## A trilha — três passos, no painel da barra lateral
+## A trilha — cinco passos, no painel da barra lateral
 
-Esta plataforma vem com uma **trilha**: três estados sucessivos dela mesma,
-seguindo um grão do começo ao fim. Clique em **▶** e a plataforma inteira passa
-para o estado seguinte.
+Esta plataforma vem com uma **trilha**: cinco estados sucessivos dela mesma,
+seguindo dois grãos do começo ao fim. Clique em **▶** e a plataforma inteira
+passa para o estado seguinte.
 
 | Passo | O que acontece |
 |---|---|
@@ -40,10 +40,18 @@ para o estado seguinte.
 | 1 | `ideia-no-onibus` vira a nota **app de receitas pela despensa** |
 | 2 | a nota vira a ideia **receita pela despensa** |
 | 3 | a ideia vira o projeto **`exemplo-app-de-receitas`**, com backlog |
+| 4 | um segundo grão anda: `conversa-sobre-curso` vira nota e depois ideia |
+| 5 | o curso vira projeto — e com **dois** na mesa, nasce a primeira decisão |
 
 Em cada passo, repare em três coisas: o item some da pasta ativa e reaparece no
 `_historico/` com um rodapé apontando para frente; a linha dele no `_registro.md`
 ganha o marcador `→`; e o `_sem-destino.md` para de cobrá-lo.
+
+O passo 5 mostra a coisa mais parecida com a vida real que este exemplo tem:
+dois projetos nasceram em três dias, são da mesma pessoa e disputam as mesmas
+noites — e isso vira uma **pendência** em `_pendencias/`, que aparece como carta
+na aba **🔀 Workflow**. Decisão não se resolve sozinha, e ninguém a fecha por
+inferência.
 
 **Não há mágica nem inteligência aqui.** Cada passo é uma pasta com a plataforma
 inteira já naquele estado, e o botão só a restaura. Numa plataforma sua a
@@ -55,14 +63,15 @@ fica**, não como se automatiza.
 
 ## Depois da trilha, dirija você
 
-Sobram oito capturas que a trilha não toca. Os fios estão todos aqui dentro:
+Sobram sete capturas que a trilha não toca. Os fios estão todos aqui dentro:
 
 | Comece por | Onde isso costuma dar |
 |---|---|
 | `geladeira-cheia-e-nada-pra-comer` | o desperdício tem padrão → comprar pelo cardápio |
-| `conversa-sobre-curso` + `anotacoes-da-aula-de-luz` | um curso de fotografia que cabe em seis semanas |
-| `recado-da-feira` + `print-do-grupo-de-fotografia` | o que o feirante sabe que a lista não sabe; qual lente primeiro |
+| `recado-da-feira` | o que o feirante sabe que uma lista escrita em casa não sabe |
+| `print-do-grupo-de-fotografia` + `anotacoes-da-aula-de-luz` | qual lente primeiro; e o que dá pra fazer só com luz de janela |
 | `braindump-do-onibus` | é o caso real: três assuntos misturados num texto só. Separar é o trabalho |
+| `export-do-caderno-de-receitas` | texto exportado com a formatação da ferramenta ainda grudada |
 
 Para essas, o caminho é o de sempre: leia os critérios em **🧩 Fluxo**, e peça o
 roteiro à aba **📋** — ela gera o briefing pronto para colar numa sessão de IA,

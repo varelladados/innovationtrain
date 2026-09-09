@@ -8,6 +8,7 @@ frente 2): só leitura. Decidir uma pendência continua sendo uma sessão do Cla
 Code — esta view mostra, não decide.
 """
 import re
+from pathlib import Path
 
 import config
 import pendencias
@@ -56,6 +57,12 @@ def build_workflow(entries):
         else:
             stage = e["path"].split("/", 1)[0] if "/" in e["path"] else None
         if stage not in colunas:
+            continue
+        # O `_` do começo do nome significa "isto é maquinário, não conteúdo
+        # seu" (metodo/taxonomia.md, parada 5). O trem só mostra conteúdo: sem
+        # isto, um `_leia-me.md` dentro de `_historico/` vira carta e a coluna
+        # mente na contagem.
+        if Path(e["path"]).name.startswith("_"):
             continue
         etapa = _etapa_de(e["path"])
         colunas[stage].append({

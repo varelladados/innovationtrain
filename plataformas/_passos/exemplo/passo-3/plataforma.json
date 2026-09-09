@@ -74,6 +74,14 @@
       {
         "pasta": "../_passos/exemplo/passo-3",
         "rotulo": "A ideia vira projeto"
+      },
+      {
+        "pasta": "../_passos/exemplo/passo-4",
+        "rotulo": "Um segundo grão anda: o curso"
+      },
+      {
+        "pasta": "../_passos/exemplo/passo-5",
+        "rotulo": "O curso vira projeto, e nasce a primeira decisão"
       }
     ]
   }

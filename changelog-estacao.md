@@ -1,5 +1,24 @@
 # Changelog — Estação
 
+## 0.8.5 — 2026-09-09
+
+**A trilha do exemplo vai a cinco passos**, e o quinto é o que ela não tinha:
+uma decisão.
+
+Os passos 4 e 5 fazem um **segundo grão** andar — a `conversa-sobre-curso` vira
+nota, depois ideia, depois o projeto `exemplo-curso-de-fotografia`. E aí, com
+dois projetos na mesa disputando as mesmas noites da mesma pessoa, nasce a
+primeira **pendência**: qual dos dois recebe as próximas duas semanas? Uma
+plataforma com um projeto só não tem decisão para tomar, e era isso que faltava
+para a trilha mostrar o ciclo inteiro.
+
+**Arquivo de sistema deixou de virar carta no trem.** Os `_leia-me.md`
+acrescentados na 0.8.4 — para os `_historico/` sobreviverem a um clone — passaram
+a ser contados como itens, e a primeira coluna dizia 10 onde havia 9.
+`workflow.py` passa a pular nome começado com `_`, que é o que o prefixo já
+significa na taxonomia ("maquinário, não conteúdo seu"). Contagem errada num
+painel é pior que painel nenhum, e agora há teste.
+
 ## 0.8.4 — 2026-09-09
 
 **As duas plataformas de exemplo viram duas trilhas**, e elas passam a se
