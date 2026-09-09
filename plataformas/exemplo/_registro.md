@@ -93,3 +93,9 @@
 |---|---|---|---|---|---|
 | 26.09.08-CAP-001-braindump-do-onibus-9e14 | 2026-09-08 | CAP | `1-capturas/` | texto colado inteiro, sem tratamento nenhum — o caso real | [arquivo](<1-capturas/26.09.08-CAP-001-braindump-do-onibus-9e14.md>) |
 | 26.09.08-CAP-002-export-do-caderno-de-receitas-5a3c | 2026-09-08 | CAP | `1-capturas/` | exportação de um caderno antigo, ainda com a formatação da ferramenta | [arquivo](<1-capturas/26.09.08-CAP-002-export-do-caderno-de-receitas-5a3c.md>) |
+
+## Entradas 2026-09-09
+
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.09.09-CAP-001-testar-o-salvar-tudo-7d28 | 2026-09-09 | CAP | `1-capturas/` | captura de teste do automatismo de salvar | [arquivo](<1-capturas/26.09.09-CAP-001-testar-o-salvar-tudo-7d28.md>) |
