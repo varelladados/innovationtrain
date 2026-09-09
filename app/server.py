@@ -37,6 +37,7 @@ import pendencias as pendencias_mod
 import projetos as projetos_mod
 import noar as noar_mod
 import briefing as briefing_mod
+import embarque as embarque_mod
 import mimetypes
 import subprocess
 import sys
@@ -398,6 +399,14 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_plataforma_ativar(payload)
             return
 
+        if path == "/api/embarque/prompt":
+            self._handle_embarque_prompt(payload)
+            return
+
+        if path == "/api/embarque/registrar":
+            self._handle_embarque_registrar(payload)
+            return
+
         if path == "/api/backlog/toggle":
             self._handle_backlog_toggle(payload)
             return
@@ -419,6 +428,40 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         self._send_json({"error": "not found"}, status=404)
+
+    def _handle_embarque_prompt(self, payload):
+        """Gera o texto que a pessoa cola numa sessão de IA para criar a
+        primeira plataforma.
+
+        **É POST porque a entrada é um objeto de respostas do cliente, não
+        porque escreve.** Este endpoint NÃO toca em disco — nem aqui, nem na
+        pasta que a pessoa escolheu. Quem cria plataforma é a sessão de IA
+        onde o texto é colado, com a pessoa olhando. Ver `embarque.py`.
+        """
+        try:
+            resultado = embarque_mod.gerar(payload)
+        except ValueError as e:
+            self._send_json({"error": str(e)}, status=400)
+            return
+        except Exception as e:
+            self._send_json({"error": f"falha ao gerar: {type(e).__name__}: {e}"}, status=500)
+            return
+        self._send_json(resultado)
+
+    def _handle_embarque_registrar(self, payload):
+        """Registra plataforma nova no estacao.json do hub, para que ela já
+        apareça no seletor assim que a estrutura existir. Escreve só no config
+        do hub — nunca dentro de plataforma nenhuma."""
+        try:
+            reg = embarque_mod.registrar(payload.get("caminho"), payload.get("nome"))
+        except ValueError as e:
+            self._send_json({"error": str(e)}, status=400)
+            return
+        except OSError as e:
+            self._send_json({"error": f"não consegui escrever o estacao.json: {e}"}, status=500)
+            return
+        self._send_json({"ok": True, "plataforma": reg,
+                         "plataformas": plataformas_registradas()})
 
     def _handle_plataforma_ativar(self, payload):
         """Troca plataforma ativa e reindexa. Não escreve em plataforma

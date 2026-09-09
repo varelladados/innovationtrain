@@ -191,8 +191,24 @@ th{background:var(--surface-2)}
 .type-dot.t-other-pertinent{background:var(--tipo-other-pertinent)}
 #reindex-btn{margin:var(--sp-2) var(--sp-3);padding:var(--sp-1);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);cursor:pointer;font-size:var(--fs-1);color:var(--text-2)}
 #reindex-btn:hover{background:var(--border)}
-#portfolio-nav-btn,#tour-nav-btn,#dashboard-nav-btn,#workflow-nav-btn,#nota-nav-btn,#fluxo-nav-btn{margin:0 var(--sp-3) var(--sp-3);padding:var(--sp-2);border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-bg);cursor:pointer;font-size:var(--fs-2);font-weight:600;color:var(--accent);font-family:"Fraunces",serif}
-#portfolio-nav-btn:hover,#tour-nav-btn:hover,#dashboard-nav-btn:hover,#workflow-nav-btn:hover,#nota-nav-btn:hover,#fluxo-nav-btn:hover{background:var(--accent);color:var(--bg)}
+#embarque-nav-btn,#portfolio-nav-btn,#tour-nav-btn,#dashboard-nav-btn,#workflow-nav-btn,#nota-nav-btn,#fluxo-nav-btn{margin:0 var(--sp-3) var(--sp-3);padding:var(--sp-2);border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-bg);cursor:pointer;font-size:var(--fs-2);font-weight:600;color:var(--accent);font-family:"Fraunces",serif}
+#embarque-nav-btn:hover,#portfolio-nav-btn:hover,#tour-nav-btn:hover,#dashboard-nav-btn:hover,#workflow-nav-btn:hover,#nota-nav-btn:hover,#fluxo-nav-btn:hover{background:var(--accent);color:var(--bg)}
+#embarque-nav-btn{border-width:2px}
+.eb-parada{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-4);margin-bottom:var(--sp-4);max-width:640px}
+.eb-parada h3{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-2)}
+.eb-parada p{font-size:var(--fs-2);color:var(--text-2);line-height:1.55;margin:0 0 var(--sp-3)}
+.eb-parada label.campo{display:block;font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-1)}
+.eb-parada input[type=text]{width:100%;padding:var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);color:var(--text);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-2)}
+.eb-opcao{display:flex;gap:var(--sp-2);align-items:flex-start;padding:var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);margin-bottom:var(--sp-1);cursor:pointer;font-size:var(--fs-2)}
+.eb-opcao:hover{border-color:var(--accent)}
+.eb-opcao.sim{border-color:var(--accent);background:var(--accent-bg)}
+.eb-opcao small{display:block;color:var(--text-2);font-size:var(--fs-1);margin-top:2px}
+.eb-passos{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-4)}
+.eb-passo-dot{flex:1;height:var(--sp-1);border-radius:var(--r-pill);background:var(--surface-2)}
+.eb-passo-dot.feita{background:var(--estagio-2)}
+.eb-passo-dot.agora{background:var(--accent)}
+.eb-acoes{display:flex;gap:var(--sp-2);align-items:center;max-width:640px}
+.eb-erro{color:var(--danger);font-size:var(--fs-1);margin:var(--sp-2) 0 0}
 
 /* ---------- dashboard view ---------- */
 .dash-lead{color:var(--text-2);font-size:var(--fs-2);margin:-var(--sp-2) 0 var(--sp-4)}
@@ -446,6 +462,7 @@ th{background:var(--surface-2)}
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="plataforma-aviso" hidden></div>
+    <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira plataforma">🚂 Embarque</button>
     <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto">🗂 Portfólio</button>
     <button id="tour-nav-btn" title="A leitura guiada desta plataforma, uma parada por vez">🧭 Tour</button>
     <button id="dashboard-nav-btn">📊 Dashboard</button>
@@ -470,7 +487,7 @@ th{background:var(--surface-2)}
 <div id="toast"></div>
 <div id="brf-overlay">
   <div id="brf-box">
-    <h2>Briefing pra IA</h2>
+    <h2 id="brf-titulo">Briefing pra IA</h2>
     <p class="sub" id="brf-sub-cwd">Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da plataforma. Os guardrails do método já vão junto.</p>
     <textarea id="brf-texto" readonly></textarea>
     <div id="brf-acoes">
@@ -556,6 +573,12 @@ function renderBoasVindas(data){
 
 function renderPlataformaAviso(data){
   const box = document.getElementById("plataforma-aviso");
+  // Sem plataforma, o app não tem nada a mostrar — e a única coisa útil que ele
+  // pode fazer é ajudar a criar a primeira. Por isso o Embarque abre sozinho.
+  if (data.plataforma_ok === false && !EB_JA_ABRIU){
+    EB_JA_ABRIU = true;
+    setTimeout(openEmbarqueView, 0);
+  }
   if (data.plataforma_ok === false){
     const nome = data.plataforma ? data.plataforma.caminho : "(raiz não resolvida)";
     box.innerHTML = "<strong>Nenhuma plataforma aberta</strong>" +
@@ -1747,15 +1770,29 @@ async function recarregarPendencias(){
 // ============================================================
 // O app não tem IA dentro: ele prepara o texto com os caminhos reais e os
 // guardrails do método, e o humano cola na sessão. Ver app/briefing.py.
+// O modal do prompt serve a dois donos: o briefing (que precisa de uma
+// plataforma pronta) e o Embarque (que existe justamente porque ela não
+// existe). Título e subtítulo eram hardcoded no HTML e o fetch estava embutido
+// no abrirBriefing — extraídos daqui para que o segundo dono não precise de uma
+// segunda cópia do modal.
+function mostrarPrompt(texto, opcoes){
+  const o = opcoes || {};
+  document.getElementById("brf-titulo").textContent = o.titulo || "Briefing pra IA";
+  document.getElementById("brf-sub-cwd").innerHTML = o.sub ||
+    "Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da plataforma. Os guardrails do método já vão junto.";
+  const ta = document.getElementById("brf-texto");
+  ta.value = texto;
+  document.getElementById("brf-overlay").classList.add("open");
+  ta.scrollTop = 0;
+}
+
 async function abrirBriefing(tipo, params){
   const qs = new URLSearchParams(Object.assign({tipo}, params || {}));
   try{
     const r = await fetch("/api/briefing?" + qs.toString());
     const data = await r.json();
     if (!r.ok){ toast("Erro: " + (data.error || r.status)); return; }
-    document.getElementById("brf-texto").value = data.texto;
-    document.getElementById("brf-overlay").classList.add("open");
-    document.getElementById("brf-texto").scrollTop = 0;
+    mostrarPrompt(data.texto);
   } catch(err){ toast("Falha ao gerar briefing: " + err); }
 }
 
@@ -1773,6 +1810,207 @@ async function copiarBriefing(){
     ta.setAttribute("readonly", "");
     toast("Briefing copiado");
   }
+}
+
+// ============================================================
+// Embarque — os primeiros passos (POST /api/embarque/prompt)
+// ============================================================
+// Cinco paradas. As respostas ficam no localStorage com o mesmo try/catch
+// defensivo do Tour: navegador em modo privado ou dados de site bloqueados não
+// podem derrubar a única tela que serve a quem ainda não tem plataforma.
+const EB_KEY = "estacao.embarque.v1";
+let EB_JA_ABRIU = false;
+let EB_PASSO = 0;
+let EB = {caminho: "", nome: "", usos: ["notas"], tem_conteudo: "vazia", destino: "claude-code"};
+
+function ebCarregar(){
+  try {
+    const cru = localStorage.getItem(EB_KEY);
+    if (cru) EB = Object.assign(EB, JSON.parse(cru));
+  } catch(e){}
+}
+function ebSalvar(){
+  try { localStorage.setItem(EB_KEY, JSON.stringify(EB)); } catch(e){}
+}
+
+const EB_USOS = [
+  {id: "notas", rotulo: "Guardar e organizar ideias", sub: "o básico: capturar sem fricção e arrumar depois. Não dá pra desmarcar — é o motor.", fixo: true},
+  {id: "decisoes", rotulo: "Registrar decisões que dependem de mim", sub: "acrescenta uma pasta de pendências: cada dúvida vira uma pergunta com opções, que espera por você."},
+  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta o quarto estágio. Sem issa plataforma de origem tem três, e funciona igual."},
+  {id: "portfolio", rotulo: "Ver num só lugar tudo que já roda", sub: "cada projeto declara o que publica; o app monta o Portfólio a partir disso. Precisa de \u201cprojetos\u201d."},
+];
+
+const EB_DESTINOS = [
+  {id: "claude-code", rotulo: "Claude Code"},
+  {id: "codex", rotulo: "Codex"},
+  {id: "outro", rotulo: "Outra ferramenta"},
+];
+
+function ebParadas(){
+  return [
+    {
+      titulo: "1 — O que é isto",
+      corpo: `<p>A <strong>Estação</strong> é este app. Ela não pensa por você e não tem IA dentro: ela organiza o que você guarda, e prepara o texto que você cola numa sessão de IA quando quiser que algo seja feito.</p>
+        <p>Uma <strong>plataforma</strong> é um espaço de trabalho seu — uma pasta no seu computador, com as suas ideias. A Estação pode operar várias; você ainda não tem nenhuma.</p>
+        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria a primeira plataforma. A Estação não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
+      valido: () => true,
+    },
+    {
+      titulo: "2 — Onde ela vai ficar",
+      corpo: `<label class="campo" for="eb-caminho">Caminho completo da pasta (ela pode nem existir ainda)</label>
+        <input type="text" id="eb-caminho" value="${escapeHtml(EB.caminho)}" placeholder="C:\\Users\\voce\\MinhasIdeias" spellcheck="false">
+        <label class="campo" for="eb-nome" style="margin-top:var(--sp-3)">Como você chama isso</label>
+        <input type="text" id="eb-nome" value="${escapeHtml(EB.nome)}" placeholder="Minhas ideias">
+        <p style="margin-top:var(--sp-3)">Escolha uma pasta que seja <strong>sua</strong> e que você vá lembrar. Ela não precisa estar vazia — a próxima parada trata disso.</p>`,
+      montar: (el) => {
+        el.querySelector("#eb-caminho").oninput = (e) => { EB.caminho = e.target.value; ebSalvar(); };
+        el.querySelector("#eb-nome").oninput = (e) => { EB.nome = e.target.value; ebSalvar(); };
+      },
+      valido: () => (EB.caminho || "").trim().length >= 3,
+      erro: "Preencha o caminho da pasta para seguir.",
+    },
+    {
+      titulo: "3 — O que você vai usar",
+      corpo: `<p>Cada escolha acrescenta pastas ao pedido. Você pode mudar de ideia depois — nada aqui é definitivo.</p>` +
+        EB_USOS.map(u => {
+          const marcado = EB.usos.indexOf(u.id) >= 0;
+          return `<label class="eb-opcao${marcado ? " sim" : ""}" data-uso="${u.id}">
+            <input type="checkbox" ${marcado ? "checked" : ""} ${u.fixo ? "disabled" : ""}>
+            <span><strong>${escapeHtml(u.rotulo)}</strong><small>${u.sub}</small></span></label>`;
+        }).join(""),
+      montar: (el) => {
+        el.querySelectorAll(".eb-opcao").forEach(lab => {
+          const id = lab.dataset.uso;
+          const cb = lab.querySelector("input");
+          cb.onchange = () => {
+            if (cb.checked){ if (EB.usos.indexOf(id) < 0) EB.usos.push(id); }
+            else EB.usos = EB.usos.filter(x => x !== id);
+            // portfólio sem projetos não faz sentido: um depende do outro
+            if (id === "projetos" && !cb.checked) EB.usos = EB.usos.filter(x => x !== "portfolio");
+            if (id === "portfolio" && cb.checked && EB.usos.indexOf("projetos") < 0) EB.usos.push("projetos");
+            ebSalvar(); ebDesenhar();
+          };
+        });
+      },
+      valido: () => true,
+    },
+    {
+      titulo: "4 — Já tem coisa nessa pasta?",
+      corpo: [
+        {id: "vazia", rotulo: "Está vazia, ou nem existe ainda", sub: "o caso normal."},
+        {id: "tem", rotulo: "Já tem trabalho começado lá dentro", sub: "o pedido vai mandar a sessão parar e te mostrar o que tem antes de criar qualquer coisa."},
+      ].map(o => `<label class="eb-opcao${EB.tem_conteudo === o.id ? " sim" : ""}" data-v="${o.id}">
+          <input type="radio" name="eb-conteudo" ${EB.tem_conteudo === o.id ? "checked" : ""}>
+          <span><strong>${escapeHtml(o.rotulo)}</strong><small>${o.sub}</small></span></label>`).join("") +
+        `<p style="margin-top:var(--sp-3)">Em qualquer um dos dois casos o pedido proíbe apagar e sobrescrever. Esta resposta só muda o tom do aviso.</p>`,
+      montar: (el) => {
+        el.querySelectorAll(".eb-opcao").forEach(lab => {
+          lab.querySelector("input").onchange = () => { EB.tem_conteudo = lab.dataset.v; ebSalvar(); ebDesenhar(); };
+        });
+      },
+      valido: () => true,
+    },
+    {
+      titulo: "5 — Onde você vai colar",
+      corpo: `<p>Muda só o jeito de falar do texto — o conteúdo é o mesmo.</p>` +
+        EB_DESTINOS.map(d => `<label class="eb-opcao${EB.destino === d.id ? " sim" : ""}" data-v="${d.id}">
+          <input type="radio" name="eb-destino" ${EB.destino === d.id ? "checked" : ""}>
+          <span><strong>${escapeHtml(d.rotulo)}</strong></span></label>`).join(""),
+      montar: (el) => {
+        el.querySelectorAll(".eb-opcao").forEach(lab => {
+          lab.querySelector("input").onchange = () => { EB.destino = lab.dataset.v; ebSalvar(); ebDesenhar(); };
+        });
+      },
+      valido: () => true,
+    },
+  ];
+}
+
+async function openEmbarqueView(){
+  ebCarregar();
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = "Estação / Embarque";
+  document.getElementById("meta-bar").innerHTML =
+    `<span class="badge badge-type">embarque</span><span id="meta-path">primeiros passos</span>`;
+  ebDesenhar();
+}
+
+function ebDesenhar(){
+  const paradas = ebParadas();
+  const p = paradas[EB_PASSO];
+  const content = document.getElementById("content");
+  content.innerHTML = `<h1>Embarque</h1>
+    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria a sua primeira plataforma.</p>`;
+
+  const dots = document.createElement("div");
+  dots.className = "eb-passos";
+  dots.style.maxWidth = "640px";
+  paradas.forEach((_, i) => {
+    const d = document.createElement("div");
+    d.className = "eb-passo-dot" + (i < EB_PASSO ? " feita" : (i === EB_PASSO ? " agora" : ""));
+    dots.appendChild(d);
+  });
+  content.appendChild(dots);
+
+  const box = document.createElement("div");
+  box.className = "eb-parada";
+  box.innerHTML = `<h3>${escapeHtml(p.titulo)}</h3>` + p.corpo;
+  content.appendChild(box);
+  if (p.montar) p.montar(box);
+
+  const acoes = document.createElement("div");
+  acoes.className = "eb-acoes";
+  if (EB_PASSO > 0){
+    const voltar = document.createElement("button");
+    voltar.className = "brf-btn";
+    voltar.textContent = "← Voltar";
+    voltar.onclick = () => { EB_PASSO--; ebDesenhar(); };
+    acoes.appendChild(voltar);
+  }
+  const seguir = document.createElement("button");
+  seguir.className = "brf-btn prim";
+  seguir.textContent = EB_PASSO === paradas.length - 1 ? "Gerar o texto →" : "Avançar →";
+  seguir.onclick = () => {
+    if (!p.valido()){
+      const e = document.createElement("p");
+      e.className = "eb-erro";
+      e.textContent = p.erro || "Falta responder esta parada.";
+      acoes.parentNode.insertBefore(e, acoes.nextSibling);
+      return;
+    }
+    if (EB_PASSO === paradas.length - 1) ebGerar();
+    else { EB_PASSO++; ebDesenhar(); }
+  };
+  acoes.appendChild(seguir);
+  content.appendChild(acoes);
+}
+
+async function ebGerar(){
+  let data;
+  try {
+    const r = await fetch("/api/embarque/prompt", {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(EB)});
+    data = await r.json();
+    if (data.error){ toast(data.error); return; }
+  } catch(err){ toast("Falha ao gerar: " + err); return; }
+
+  mostrarPrompt(data.texto, {
+    titulo: "Crie a sua primeira plataforma",
+    sub: `Cole numa sessão de IA <strong>com a pasta aberta</strong>. Este texto não criou nada — quem cria é a sessão, com você olhando.`,
+  });
+
+  // registra no estacao.json para que a plataforma já apareça no seletor assim
+  // que a estrutura existir. Falhar aqui não pode atrapalhar: o texto, que é o
+  // que importa, já está na tela.
+  try {
+    const r = await fetch("/api/embarque/registrar", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({caminho: data.caminho, nome: data.nome})});
+    const reg = await r.json();
+    if (reg.ok) await carregarPlataformas();
+  } catch(e){}
 }
 
 // ============================================================
@@ -2112,6 +2350,7 @@ document.getElementById("search-box").addEventListener("keydown", (ev) => {
 document.getElementById("reindex-btn").addEventListener("click", reindex);
 document.getElementById("dashboard-nav-btn").addEventListener("click", openDashboardView);
 document.getElementById("tour-nav-btn").addEventListener("click", openTourView);
+document.getElementById("embarque-nav-btn").addEventListener("click", openEmbarqueView);
 document.getElementById("portfolio-nav-btn").addEventListener("click", openPortfolioView);
 document.getElementById("workflow-nav-btn").addEventListener("click", openWorkflowView);
 document.getElementById("nota-nav-btn").addEventListener("click", openNotaView);
