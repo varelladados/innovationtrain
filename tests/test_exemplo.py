@@ -68,20 +68,35 @@ class TestExemplo(unittest.TestCase):
         """Um mesmo grão do primeiro estágio até um projeto. Se isto quebrar, a
         plataforma deixa de cumprir o propósito dela."""
         cfg = config.atual()
-        capturas = list((EXEMPLO / "1-capturas" / cfg.historico).glob("*.md"))
-        inicio = next((c for c in capturas
-                       if self._frontmatter(c).get("avancou_para")), None)
-        self.assertIsNotNone(inicio, "nenhuma captura no histórico aponta para frente")
+        inicios = sorted((c for c in (EXEMPLO / "1-capturas" / cfg.historico).glob("*.md")
+                          if self._frontmatter(c).get("avancou_para")), key=lambda c: c.name)
+        self.assertTrue(inicios, "nenhuma captura no histórico aponta para frente")
 
+        # Percorre TODAS as capturas que apontam para frente, não a primeira que o
+        # `glob` devolver: a ordem dele muda entre sistemas de arquivos, e a
+        # versão anterior deste teste passava no Windows e falhava no Linux por
+        # começar numa cadeia curta. O que a plataforma promete é ter **uma**
+        # cadeia inteira, não que toda captura tenha uma.
+        cadeias = [self._percorrer(c) for c in inicios]
+        inteiras = [c for c in cadeias if len(c) >= 4]
+        self.assertTrue(inteiras,
+                        f"nenhuma cadeia chega ao quarto estágio: {cadeias}")
+        for visitados in inteiras:
+            self.assertTrue(visitados[0].startswith(("26.", "25.")))
+            siglas = [v.split("-")[1] for v in visitados if len(v.split("-")) > 1]
+            self.assertEqual(siglas[:3], ["CAP", "NOT", "IDE"], visitados)
+
+    def _percorrer(self, inicio):
+        """Segue `avancou_para` do começo até onde a linhagem levar."""
         atual, visitados = inicio, [inicio.stem]
         for _ in range(5):
             destino_id = self._frontmatter(atual).get("avancou_para")
             if not destino_id:
                 break
-            achados = list(EXEMPLO.rglob(f"{destino_id}.md"))
+            achados = sorted(EXEMPLO.rglob(f"{destino_id}.md"))
             if not achados:
                 # o último salto é para uma PASTA de projeto, não um .md
-                pasta = next((p for p in (EXEMPLO / "4-projetos").iterdir()
+                pasta = next((p for p in sorted((EXEMPLO / "4-projetos").iterdir())
                               if p.is_dir() and (p / "CLAUDE.md").exists()
                               and destino_id in (p / "CLAUDE.md").read_text(encoding="utf-8")),
                              None)
@@ -90,11 +105,7 @@ class TestExemplo(unittest.TestCase):
                 break
             atual = achados[0]
             visitados.append(atual.stem)
-        self.assertGreaterEqual(len(visitados), 4,
-                                f"a cadeia parou cedo demais: {visitados}")
-        self.assertTrue(visitados[0].startswith(("26.", "25.")))
-        siglas = [v.split("-")[1] for v in visitados if "-" in v and len(v.split("-")) > 1]
-        self.assertEqual(siglas[:3], ["CAP", "NOT", "IDE"], visitados)
+        return visitados
 
     def test_todo_link_de_linhagem_aponta_para_arquivo_que_existe(self):
         import re

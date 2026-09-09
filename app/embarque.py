@@ -58,6 +58,17 @@ GUARDRAILS = """## Guardrails deste setup — leia antes de criar qualquer coisa
   alguma coisa, me diga em vez de criar."""
 
 
+def _barra_normal(caminho):
+    """Caminho com barra normal, venha de onde vier.
+
+    `Path.as_posix()` NAO serve aqui: em POSIX ele nao reconhece `\` como
+    separador e devolve o caminho do Windows intacto, com as barras invertidas
+    que este texto existe para eliminar. O comando abaixo e' colado em
+    PowerShell, cmd ou shell POSIX, e em um deles `\` vira escape.
+    """
+    return str(caminho).replace("\\", "/")
+
+
 def _slug(texto, limite=40):
     t = re.sub(r"[^A-Za-z0-9\-_ ]", "", texto or "").strip()
     t = re.sub(r"\s+", "-", t).lower()
@@ -299,7 +310,7 @@ def gerar(respostas):
     L += ["## Passo 4 — confira o que você fez", "",
           "Rode isto e me mostre a saída inteira:", "",
           "```",
-          f"python {util.as_posix()} verificar --raiz {p.as_posix()}",
+          f"python {_barra_normal(util)} verificar --raiz {_barra_normal(p)}",
           "```", "",
           "O esperado é `tudo certo.` — ou, no máximo, avisos sobre pasta de "
           "estágio que não existe, se a sua ferramenta não criou pasta vazia.",
