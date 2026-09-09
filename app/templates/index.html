@@ -405,11 +405,18 @@ th{background:var(--surface-2)}
   font-family:inherit;cursor:pointer;white-space:nowrap}
 .btn-avancar:hover{filter:brightness(1.1)}
 .btn-avancar[disabled]{opacity:.5;cursor:progress}
-#trilha-painel{margin:0 0 var(--sp-3);padding:var(--sp-2);border:1px solid var(--border);
-  border-radius:var(--r-1);background:var(--surface-2)}
-#trilha-onde{font-size:var(--fs-1);color:var(--text-2);margin-bottom:var(--sp-1);line-height:1.35}
-#trilha-painel .btn-avancar{width:100%;margin-bottom:var(--sp-1);padding:var(--sp-1) var(--sp-2)}
-#btn-reiniciar{width:100%;margin:0;padding:var(--sp-1) var(--sp-2);
+/* A trilha mora na tela inicial, NAO na barra lateral. O motivo fica escrito
+   porque foi medido: na barra ela custava 84px, empurrava a árvore para 8px de
+   altura e fazia o menu rolar. **Menu com rolagem está proibido até segunda
+   ordem** — só com autorização expressa do operador. Aqui ela ocupa espaço que
+   já estava vazio. A posição definitiva é assunto da revisão de UX; isto é o
+   desfazer do estrago, não o desenho. */
+#trilha-painel{margin:var(--sp-4) 0 0;padding:var(--sp-3);border:1px solid var(--border);
+  border-radius:var(--r-1);background:var(--surface-2);max-width:34rem}
+#trilha-onde{font-size:var(--fs-2);color:var(--text-2);margin-bottom:var(--sp-2);line-height:1.4}
+#trilha-botoes{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+#trilha-painel .btn-avancar{padding:var(--sp-1) var(--sp-3)}
+#btn-reiniciar{margin:0;padding:var(--sp-1) var(--sp-3);
   border:1px dashed var(--border);border-radius:var(--r-1);background:transparent;
   color:var(--text-2);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
 #btn-reiniciar:hover{border-style:solid;color:var(--text)}
@@ -503,11 +510,6 @@ th{background:var(--surface-2)}
     <div id="sidebar-header">
       <h1>Estação</h1>
       <select id="plataforma-seletor" title="A plataforma que esta Estação está operando"></select>
-      <div id="trilha-painel" hidden>
-        <div id="trilha-onde"></div>
-        <button id="btn-trilha" class="btn-avancar"></button>
-        <button id="btn-reiniciar">↺ voltar ao início</button>
-      </div>
       <select id="tema-seletor" title="A identidade visual da Estação">
         <option value="">Tema padrão</option>
         <option value="areia">Areia</option>
@@ -534,6 +536,13 @@ th{background:var(--surface-2)}
       <div id="welcome">
         <p id="welcome-lead">Carregando…</p>
         <p>Escolha um arquivo na árvore à esquerda, ou use a busca.</p>
+        <div id="trilha-painel" hidden>
+          <div id="trilha-onde"></div>
+          <div id="trilha-botoes">
+            <button id="btn-trilha" class="btn-avancar"></button>
+            <button id="btn-reiniciar">↺ voltar ao início</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
