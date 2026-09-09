@@ -64,16 +64,27 @@ cp estacao.exemplo.json estacao.json      # no Windows: copy
 python app/server.py --abrir
 ```
 
-Ela tem os quatro estágios povoados e uma cadeia inteira navegável clicando:
-começa com *"comprei coentro de novo"* rabiscado num ônibus e termina num projeto
-com backlog.
+São **duas**, e elas usam o mesmo método em assuntos opostos de propósito:
+
+| Plataforma | Do que trata |
+|---|---|
+| `plataformas/exemplo` | cozinha e fotografia — doméstico, sem prazo. Começa com *"comprei coentro de novo"* rabiscado num ônibus e termina num projeto com backlog |
+| `plataformas/exemplo-precos` | preços, concorrência e lojas clone — trabalho, com dinheiro e advogada envolvidos |
+
+A segunda mostra a metade que um exemplo costuma esconder: das cinco cadeias
+dela, **duas chegam a projeto e três empacam pelo caminho** — uma na nota, duas
+na ideia — e há uma captura de julho, nunca tratada, que bloqueia uma delas.
+É o estado normal de qualquer plataforma de verdade.
+
+Troque entre elas pelo seletor no topo da barra lateral, sem reiniciar.
 
 ## O que tem aqui
 
 ```
-app/                   o servidor e a interface (stdlib puro, zero dependência)
-metodo/                as regras, a taxonomia, os templates e o utilitário
-plataformas/exemplo/   uma plataforma povoada, para ver como fica funcionando
+app/                       o servidor e a interface (stdlib puro, zero dependência)
+metodo/                    as regras, a taxonomia, os templates e o utilitário
+plataformas/exemplo/       cozinha e fotografia — uma cadeia inteira, do ônibus ao backlog
+plataformas/exemplo-precos/ preços e lojas clone — e o que ficou pelo caminho
 docs/design-system.md  tokens, temas, fontes e a regra de ouro do CSS
 tests/                 137 testes, stdlib, sem dependência
 ```

@@ -19,17 +19,34 @@ import config  # noqa: E402
 import indexer  # noqa: E402
 import workflow  # noqa: E402
 
-EXEMPLO = Path(__file__).resolve().parent.parent / "plataformas" / "exemplo"
-TEM_EXEMPLO = (EXEMPLO / "plataforma.json").exists()
-PRECISA = unittest.skipUnless(TEM_EXEMPLO, "plataformas/exemplo não está ao lado do app")
+PLATAFORMAS = Path(__file__).resolve().parent.parent / "plataformas"
+EXEMPLO = PLATAFORMAS / "exemplo"
+PRECOS = PLATAFORMAS / "exemplo-precos"
 
 
-@PRECISA
-class TestExemplo(unittest.TestCase):
+def _existe(raiz):
+    return unittest.skipUnless((raiz / "plataforma.json").exists(),
+                               f"{raiz.name} não está ao lado do app")
+
+
+class _Exemplo:
+    """A mesma bateria, contra qualquer plataforma de exemplo.
+
+    Isto é um mixin de propósito: sem herdar de `TestCase` ele não é coletado
+    sozinho, e cada plataforma vira uma subclasse que declara só a própria
+    `RAIZ`. Um exemplo novo entra com três linhas e ganha a bateria inteira —
+    que é o ponto: exemplo não coberto por teste apodrece em silêncio, porque
+    ninguém roda um exemplo.
+
+    Nada aqui pode presumir nomes de estágio: tudo sai de `config.atual()`.
+    """
+
+    RAIZ = None
+
     @classmethod
     def setUpClass(cls):
         cls._anterior = config._ATUAL
-        config.aplicar(config.carregar(EXEMPLO))
+        config.aplicar(config.carregar(cls.RAIZ))
         cls.entries, cls.cache = indexer.build_index()
 
     @classmethod
@@ -46,15 +63,15 @@ class TestExemplo(unittest.TestCase):
         cfg = config.atual()
         self.assertEqual(len(cfg.estagios), 4)
         for e in cfg.estagios:
-            self.assertTrue((EXEMPLO / e["pasta"]).is_dir(), e["pasta"])
-            self.assertTrue((EXEMPLO / e["pasta"] / cfg.historico).is_dir(),
+            self.assertTrue((self.RAIZ / e["pasta"]).is_dir(), e["pasta"])
+            self.assertTrue((self.RAIZ / e["pasta"] / cfg.historico).is_dir(),
                             f"{e['pasta']}/{cfg.historico}")
 
     def test_cada_estagio_tem_pelo_menos_dois_itens_ativos(self):
         """É o que o itinerário pede: 2 por estágio, contados e não afirmados."""
         cfg = config.atual()
         for e in cfg.estagios[:3]:
-            ativos = [p for p in (EXEMPLO / e["pasta"]).glob("*.md")]
+            ativos = [p for p in (self.RAIZ / e["pasta"]).glob("*.md")]
             self.assertGreaterEqual(len(ativos), 2, f"{e['pasta']} tem {len(ativos)}")
         projetos = indexer.pastas_de_projeto()
         self.assertGreaterEqual(len(projetos), 2, projetos)
@@ -68,7 +85,8 @@ class TestExemplo(unittest.TestCase):
         """Um mesmo grão do primeiro estágio até um projeto. Se isto quebrar, a
         plataforma deixa de cumprir o propósito dela."""
         cfg = config.atual()
-        inicios = sorted((c for c in (EXEMPLO / "1-capturas" / cfg.historico).glob("*.md")
+        primeiro = cfg.estagios[0]["pasta"]
+        inicios = sorted((c for c in (self.RAIZ / primeiro / cfg.historico).glob("*.md")
                           if self._frontmatter(c).get("avancou_para")), key=lambda c: c.name)
         self.assertTrue(inicios, "nenhuma captura no histórico aponta para frente")
 
@@ -93,10 +111,10 @@ class TestExemplo(unittest.TestCase):
             destino_id = self._frontmatter(atual).get("avancou_para")
             if not destino_id:
                 break
-            achados = sorted(EXEMPLO.rglob(f"{destino_id}.md"))
+            achados = sorted(self.RAIZ.rglob(f"{destino_id}.md"))
             if not achados:
                 # o último salto é para uma PASTA de projeto, não um .md
-                pasta = next((p for p in sorted((EXEMPLO / "4-projetos").iterdir())
+                pasta = next((p for p in sorted(config.atual().projetos_dir.iterdir())
                               if p.is_dir() and (p / "CLAUDE.md").exists()
                               and destino_id in (p / "CLAUDE.md").read_text(encoding="utf-8")),
                              None)
@@ -110,7 +128,7 @@ class TestExemplo(unittest.TestCase):
     def test_todo_link_de_linhagem_aponta_para_arquivo_que_existe(self):
         import re
         quebrados = []
-        for arq in EXEMPLO.rglob("*.md"):
+        for arq in self.RAIZ.rglob("*.md"):
             if ".git" in arq.parts:
                 continue
             for m in re.finditer(r"\]\(<([^>]+)>\)", arq.read_text(encoding="utf-8")):
@@ -123,7 +141,7 @@ class TestExemplo(unittest.TestCase):
         cfg = config.atual()
         registro = cfg.arquivo("registro").read_text(encoding="utf-8")
         for e in cfg.estagios:
-            for arq in (EXEMPLO / e["pasta"]).rglob("*.md"):
+            for arq in (self.RAIZ / e["pasta"]).rglob("*.md"):
                 if cfg.id_re.match(arq.stem):
                     self.assertIn(arq.stem, registro, f"sem linha no registro: {arq.name}")
 
@@ -163,8 +181,20 @@ class TestExemplo(unittest.TestCase):
 
     def test_a_trilha_do_tour_existe(self):
         trilha = config.atual().caminho("trilha")
-        self.assertIsNotNone(trilha, "a plataforma de exemplo não declara trilha")
+        self.assertIsNotNone(trilha, f"{self.RAIZ.name} não declara trilha")
         self.assertTrue(trilha.exists())
+
+
+@_existe(EXEMPLO)
+class TestExemploCozinha(_Exemplo, unittest.TestCase):
+    """A plataforma doméstica: cozinha e fotografia."""
+    RAIZ = EXEMPLO
+
+
+@_existe(PRECOS)
+class TestExemploPrecos(_Exemplo, unittest.TestCase):
+    """A plataforma de trabalho: preços, concorrência e lojas clone."""
+    RAIZ = PRECOS
 
 
 if __name__ == "__main__":

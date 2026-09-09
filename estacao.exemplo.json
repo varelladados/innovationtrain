@@ -7,6 +7,12 @@
       "caminho": "plataformas/exemplo",
       "ativa": true,
       "observacao": "A plataforma de exemplo que vem junto: quatro estagios povoados e a cadeia 1-2-3-4 navegavel. O caminho e' relativo a' raiz do repositorio; a sua sera' um caminho absoluto, em qualquer lugar do seu computador."
+    },
+    {
+      "nome": "Exemplo - precos, concorrencia e lojas clone",
+      "caminho": "plataformas/exemplo-precos",
+      "ativa": false,
+      "observacao": "A segunda plataforma de exemplo: mesma estrutura, assunto de trabalho. Cinco cadeias, duas chegando a projeto e tres que empacaram pelo caminho — que e' o estado normal de uma plataforma de verdade. Troque a `ativa` para ver esta em vez da outra, ou use o seletor no topo da barra lateral."
     }
   ]
 }

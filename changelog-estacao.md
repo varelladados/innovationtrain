@@ -1,5 +1,41 @@
 # Changelog — Estação
 
+## 0.8.3 — 2026-09-09
+
+**Uma segunda plataforma de exemplo**, e o teste que impede as duas de
+apodrecerem.
+
+`plataformas/exemplo-precos` — preços, concorrência e lojas clone. Mesma
+estrutura da primeira, assunto oposto de propósito: a de cozinha é doméstica e
+sem prazo, esta tem dinheiro, prazo e decisão jurídica. Tudo nela é inventado; os
+domínios usam os sufixos reservados pela RFC 2606 (`.example`, `.invalid`,
+`.test`), que não resolvem para lugar nenhum.
+
+**O que ela mostra e a primeira não mostrava: o que não avança.** São cinco
+cadeias, e só duas chegam a projeto —
+
+| Cadeia | Para onde foi |
+|---|---|
+| cliente reclamou de preço | **projeto** `exemplo-monitor-de-precos` |
+| cliente comprou numa cópia | **projeto** `exemplo-radar-de-clones` |
+| planilha de coleta manual | parou **na nota**: dado sujo não vira ideia |
+| conversa com a advogada | parou **na ideia**: espera uma decisão em `_pendencias/` |
+| a margem do mês encolheu | parou **na ideia**: depende de custo cadastrado |
+
+Mais três capturas cruas — uma delas de **julho**, com os números do reajuste do
+fornecedor, que é justamente o que bloqueia a última cadeia. Uma captura não
+tratada travando um projeto, visível sem ninguém escrever lembrete: é para isso
+que o `_sem-destino.md` existe, e o exemplo antigo não tinha como mostrar.
+
+**`tests/test_exemplo.py` virou bateria parametrizada.** A classe virou mixin e
+cada plataforma é uma subclasse de três linhas — 11 testes viraram 22, e um
+exemplo novo entra ganhando a bateria inteira. Nenhum teste presume mais nome de
+estágio: tudo sai de `config.atual()`. O motivo é direto: exemplo sem teste
+apodrece em silêncio, porque ninguém *roda* um exemplo.
+
+`estacao.exemplo.json` passa a registrar as duas, com a de cozinha ativa. Trocar
+é pelo seletor, sem reiniciar.
+
 ## 0.8.2 — 2026-09-09
 
 **Nenhum nome de plataforma de ninguém dentro do produto.** A publicação tinha

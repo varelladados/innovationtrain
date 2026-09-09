@@ -1,0 +1,10 @@
+cache/
+__pycache__/
+*.pyc
+.env
+*.log
+
+# temporários de editor
+*~
+.DS_Store
+Thumbs.db

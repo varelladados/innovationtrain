@@ -109,7 +109,8 @@ estacao/                  ← a raiz do repositório É o hub
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
 ├── metodo/               regras, taxonomia, templates e plataforma.py (o utilitário)
 ├── plataformas/
-│   └── exemplo/          plataforma povoada, com a cadeia 1→2→3→4 navegável
+│   ├── exemplo/          cozinha e fotografia — a cadeia 1→2→3→4 navegável
+│   └── exemplo-precos/   preços e lojas clone — e três cadeias que empacaram
 ├── tests/                a suíte, stdlib, sem dependência
 ├── docs/                 design-system.md e os mockups de aprovação
 ├── cache/                index.json + backups/, gitignored
