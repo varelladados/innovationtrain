@@ -16,6 +16,7 @@ concorrência otimista, backup antes de gravar, preserva LF/CRLF):
 POST /api/launch abre executável local (efeito colateral, não escreve arquivo).
 """
 import json
+import re
 import shutil
 import threading
 import time
@@ -245,6 +246,16 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/app/templates/vendor/mermaid.min.js":
             self._send_file(VENDOR_DIR / "mermaid.min.js", "application/javascript; charset=utf-8")
+            return
+
+        # fontes vendorizadas (Trecho 4): allow-list por nome, nunca caminho
+        # arbitrário — a pasta é fixa e o nome não pode ter separador.
+        if path.startswith("/app/templates/vendor/fonts/"):
+            nome = path.rsplit("/", 1)[-1]
+            if re.fullmatch(r"[A-Za-z0-9_.-]+\.woff2", nome or ""):
+                self._send_file(VENDOR_DIR / "fonts" / nome, "font/woff2")
+            else:
+                self._send_json({"error": "not found"}, status=404)
             return
 
         if path == "/api/index":
