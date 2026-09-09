@@ -137,7 +137,7 @@ def _metricas_arquivos():
 def _metricas_nucleo():
     """Conta o marcador de núcleo que a plataforma declarar em `frontmatter`.
 
-    Só faz sentido onda plataforma de origem declara **as duas coisas** — o campo e as
+    Só faz sentido onde a plataforma declara **as duas coisas** — o campo e as
     `metricas_pastas` onde procurá-lo. Sem isso a métrica sai do dashboard, em
     vez de contar zero como se fosse informação.
     """

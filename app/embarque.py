@@ -236,7 +236,7 @@ def gerar(respostas):
     respostas = respostas or {}
     caminho = (respostas.get("caminho") or "").strip()
     if not caminho:
-        raise ValueError("informe onda plataforma de origem vai ficar")
+        raise ValueError("informe onde a plataforma vai ficar")
     if len(caminho) < 3:
         raise ValueError("o caminho parece curto demais para ser uma pasta de verdade")
 

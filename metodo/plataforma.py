@@ -362,7 +362,7 @@ def main(argv=None):
     p_id = com_raiz(sub.add_parser("novo-id", help="gera o próximo identificador"))
     p_id.add_argument("--etapa", required=True, help="a sigla do estágio")
     p_id.add_argument("--slug", required=True, help="duas ou três palavras do assunto")
-    p_id.add_argument("--tipo", help="tipo do projeto, quanda plataforma de origem usa tipos")
+    p_id.add_argument("--tipo", help="tipo do projeto, quando a plataforma usa tipos")
     p_id.add_argument("--data", help="AA.MM.DD (padrão: hoje)")
     p_id.add_argument("--verbose", action="store_true")
     p_id.set_defaults(func=cmd_novo_id)

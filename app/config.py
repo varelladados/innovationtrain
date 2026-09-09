@@ -139,7 +139,7 @@ class Config:
         """Nome do campo de frontmatter `qual`, como esta plataforma o chama.
 
         `processado` sempre devolve algo (o padrão); `nucleo` devolve `None`
-        quanda plataforma de origem não tem esse conceito, e quem chama some com a
+        quando a plataforma não tem esse conceito, e quem chama some com a
         métrica em vez de contar zero como se fosse informação; `origem`
         devolve uma lista, possivelmente vazia.
         """

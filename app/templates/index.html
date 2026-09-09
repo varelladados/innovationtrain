@@ -1418,7 +1418,7 @@ async function openDashboardView(){
     {num: data.arquivos.total_arquivos, label: "Arquivos na plataforma"},
     {num: data.arquivos.total_md, label: "Arquivos .md"},
     {num: data.arquivos.linhas_codigo, label: "Linhas de código"});
-  // só aparece quanda plataforma de origem declara um campo de núcleo; o rótulo é o
+  // só aparece quando a plataforma declara um campo de núcleo; o rótulo é o
   // nome que ELA dá ao campo, não um escrito aqui.
   if (data.nucleo && data.nucleo.marcados_nucleo !== undefined){
     kpis.push({num: data.nucleo.marcados_nucleo,
@@ -2041,7 +2041,7 @@ function ebSalvar(){
 const EB_USOS = [
   {id: "notas", rotulo: "Guardar e organizar ideias", sub: "o básico: capturar sem fricção e arrumar depois. Não dá pra desmarcar — é o motor.", fixo: true},
   {id: "decisoes", rotulo: "Registrar decisões que dependem de mim", sub: "acrescenta uma pasta de pendências: cada dúvida vira uma pergunta com opções, que espera por você."},
-  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta o quarto estágio. Sem issa plataforma de origem tem três, e funciona igual."},
+  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta o quarto estágio. Sem isso a plataforma tem três, e funciona igual."},
   {id: "portfolio", rotulo: "Ver num só lugar tudo que já roda", sub: "cada projeto declara o que publica; o app monta o Portfólio a partir disso. Precisa de \u201cprojetos\u201d."},
 ];
 
