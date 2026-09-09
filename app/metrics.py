@@ -1,15 +1,16 @@
 """Métricas do dashboard Método — GET /api/metricas.
 
-Reaproveita a lógica de contagem já existente em _ferramentas/scripts/plataforma.py
-(ler_log_texto, parse_tabelas_do_log) e em indexer.py (is_excluded), em vez
-de duplicar regex/varredura. Mesmo formato de saída do protótipo standalone
-em .design/mockups/gerar_metricas_dashboard.py — ver esse arquivo pra
-contexto de como os números foram validados manualmente contra o LOG.
+Lê o registro da plataforma ativa e reaproveita `indexer.is_excluded` para a
+varredura de arquivos, em vez de duplicar regex. Até o Trecho 6 isto dependia do
+utilitário do `plataforma de origem` (`plataforma.ler_log_texto`), o que fazia o Dashboard sumir em
+qualquer outra plataforma; a regra de reconhecer uma linha de registro é a mesma
+de lá, agora com o identificador vindo do config. Mesmo formato de saída do
+protótipo em `.design/mockups/gerar_metricas_dashboard.py`, contra o qual os
+números foram validados à mão.
 """
 import datetime
 import os
 import re
-import sys
 from collections import Counter
 from pathlib import Path
 
@@ -19,38 +20,66 @@ import indexer
 APP_DIR = Path(__file__).resolve().parent
 
 
-def _plataforma():
-    """Import tardio do utilitário da plataforma — só o dashboard precisa dele.
-    Se ele não compilar (aconteceu em 2026-09-04, merge com marcadores de
-    conflito) ou a plataforma não declarar nenhum, o erro fica restrito a
-    /api/metricas em vez de derrubar o servidor inteiro no import."""
-    util = config.atual().caminho("utilitario")
-    if util is None:
-        raise RuntimeError("esta plataforma não declara um utilitário (chave 'utilitario')")
-    if not util.exists():
-        raise FileNotFoundError(f"utilitário declarado mas ausente: {util}")
-    pasta = str(util.parent)
-    if pasta not in sys.path:
-        sys.path.insert(0, pasta)
-    return __import__(util.stem)
+TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$")
+
+
+def _linhas_do_registro():
+    """As linhas de tabela do registro da plataforma ativa.
+
+    Antes isto era `plataforma.parse_tabelas_do_log()`, importado do utilitário do
+    `plataforma de origem` — o que fazia o Dashboard depender de um script que só existe
+    naquela plataforma. A regra é a mesma de lá (seis colunas, a primeira
+    contendo um identificador), agora com o identificador vindo do config.
+    """
+    cfg = config.atual()
+    registro = cfg.arquivo("registro")
+    if registro is None:
+        raise RuntimeError("esta plataforma não declara um arquivo de registro")
+    if not registro.exists():
+        raise FileNotFoundError(f"registro não encontrado: {registro}")
+    ident = cfg.identificador_re
+    linhas = []
+    for line in registro.read_text(encoding="utf-8", errors="replace").splitlines():
+        m = TABLE_ROW_RE.match(line.strip())
+        if not m:
+            continue
+        cols = [c.strip() for c in m.group(1).split("|")]
+        if len(cols) != 6:
+            continue
+        if cols[0] in ("ID", "---") or set(cols[0]) <= {"-"}:
+            continue
+        if not ident.search(cols[0]):
+            continue
+        linhas.append({"id": cols[0], "data": cols[1], "etapa_tipo": cols[2],
+                       "local": cols[3], "resumo": cols[4], "link": cols[5]})
+    return linhas
 
 
 def _tipo_re():
-    tipos = config.atual().tipos
-    if not tipos:
+    """Casa o tipo do item na coluna Etapa/Tipo — **ancorado no início**.
+
+    A versão herdada procurava o tipo em qualquer lugar da coluna, e por isso
+    contava o tipo do DESTINO em toda linha que já tinha avançado: uma entrada
+    crua (que não tem tipo nenhum) aparecia como `DIG` só porque a seta dela
+    apontava para um item `SBI-DIG`. No `plataforma de origem` isso inflava a contagem em 8
+    linhas. A coluna começa com a sigla do estágio, e o tipo, quando existe, vem
+    logo depois — é só isso que conta.
+    """
+    cfg = config.atual()
+    if not cfg.tipos:
         return None
-    return re.compile(r"-(" + "|".join(re.escape(x) for x in tipos) + r")\b")
+    siglas = "|".join(re.escape(s) for s in cfg.siglas)
+    tipos = "|".join(re.escape(x) for x in cfg.tipos)
+    return re.compile(r"^(?:" + siglas + r")-(" + tipos + r")\b")
 
 
 EXTS_CODIGO = {".py", ".js", ".html", ".css"}
 
 
 def _metricas_log():
-    plataforma = _plataforma()
     etapa_re = config.atual().etapa_re
     tipo_re = _tipo_re()
-    texto = plataforma.ler_log_texto()
-    linhas = plataforma.parse_tabelas_do_log(texto)
+    linhas = _linhas_do_registro()
     por_etapa = Counter()
     por_tipo = Counter()
     sem_destino_por_etapa = Counter()

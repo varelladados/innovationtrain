@@ -200,8 +200,10 @@ def _append_log(id_, texto):
 def _sincronizar_pendentes():
     try:
         cfg = config.atual()
+        # o nome do subcomando muda com o utilitário: `gerar-pendentes` no
+        # plataforma.py da plataforma de origem, `gerar-sem-destino` no plataforma.py do hub.
         subprocess.run(
-            [sys.executable, str(_utilitario()), "gerar-pendentes"],
+            [sys.executable, str(_utilitario()), cfg.get("comando_sem_destino")],
             capture_output=True, text=True, timeout=15, cwd=str(cfg.raiz),
         )
     except Exception:

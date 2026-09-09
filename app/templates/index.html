@@ -281,7 +281,7 @@ th{background:var(--surface-2)}
 .fx-veredito.sbi{background:var(--success-bg);color:var(--success)}
 .fx-veredito.fica{background:var(--warn-bg);color:var(--warn)}
 
-/* ---------- projeto (view por Projeto) ---------- */
+/* ---------- projeto (view de um projeto) ---------- */
 .pj-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--sp-2);margin-bottom:var(--sp-1)}
 .pj-head h1{margin:0;border:0;padding:0}
 .pj-git{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2);display:flex;gap:var(--sp-3);flex-wrap:wrap;margin:var(--sp-1) 0 var(--sp-4)}
@@ -446,11 +446,11 @@ th{background:var(--surface-2)}
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="plataforma-aviso" hidden></div>
-    <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por Projeto">🗂 Portfólio</button>
-    <button id="tour-nav-btn" title="Trilha de leitura que explica todo o C:\Plataforma (_metodo/trilha.md)">🧭 Tour</button>
+    <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto">🗂 Portfólio</button>
+    <button id="tour-nav-btn" title="A leitura guiada desta plataforma, uma parada por vez">🧭 Tour</button>
     <button id="dashboard-nav-btn">📊 Dashboard</button>
-    <button id="workflow-nav-btn" title="Pipeline SBC→SBI→SBZ + pendências ativas, numa view só">🔀 Workflow</button>
-    <button id="nota-nav-btn" title="Captura rápida de ideia crua (Captura), sem abrir sessão do Claude Code">📝 Nota</button>
+    <button id="workflow-nav-btn" title="Os estágios da plataforma e as decisões abertas, numa view só">🔀 Workflow</button>
+    <button id="nota-nav-btn" title="Captura rápida de ideia crua, sem abrir sessão do Claude Code">📝 Nota</button>
     <button id="fluxo-nav-btn" title="O método na tela: Passo 0/1/2/3 e os 4 critérios de promoção">🧩 Fluxo</button>
     <div id="type-chips"></div>
     <div id="tree"></div>
@@ -461,7 +461,7 @@ th{background:var(--surface-2)}
     <div id="meta-bar"></div>
     <div id="content">
       <div id="welcome">
-        <p>Navegador local do corpus inteiro de <code>C:\Plataforma</code> — orquestras, backlogs, LOG central e demais arquivos pertinentes.</p>
+        <p id="welcome-lead">Carregando…</p>
         <p>Escolha um arquivo na árvore à esquerda, ou use a busca.</p>
       </div>
     </div>
@@ -471,7 +471,7 @@ th{background:var(--surface-2)}
 <div id="brf-overlay">
   <div id="brf-box">
     <h2>Briefing pra IA</h2>
-    <p class="sub">Cole numa sessão do Claude Code / Codex com <code>cwd</code> em <code>C:\Plataforma</code>. Os guardrails do método já vão junto.</p>
+    <p class="sub" id="brf-sub-cwd">Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da plataforma. Os guardrails do método já vão junto.</p>
     <textarea id="brf-texto" readonly></textarea>
     <div id="brf-acoes">
       <button type="button" id="brf-fechar">Fechar</button>
@@ -487,6 +487,17 @@ th{background:var(--surface-2)}
 // Estado global
 // ============================================================
 let ENTRIES = [];
+// Resumo da plataforma ativa (nome, caminho, estágios, tipos), vindo do
+// /api/index. Tudo que a interface escreve sobre estágio, sigla ou caminho sai
+// daqui — nada de nome de plataforma escrito à mão na tela.
+let PLAT = null;
+const plEstagios = () => (PLAT && PLAT.estagios) || [];
+const plEstagio = (n) => plEstagios()[n - 1] || null;
+const plNome = (n, plural) => { const e = plEstagio(n); return e ? (plural ? (e.plural || e.nome) : e.nome) : ""; };
+const plSigla = (n) => { const e = plEstagio(n); return e ? e.sigla : ""; };
+const plUltimo = () => plEstagios().length;
+const plCadeia = () => plEstagios().map(e => e.sigla).join("→");
+const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Estação") + " / ";
 let ACTIVE_TYPE_FILTER = null;
 let SELECTED_PATH = null;
 
@@ -511,7 +522,11 @@ async function loadIndex(){
   const r = await fetch("/api/index");
   const data = await r.json();
   ENTRIES = data.entries;
+  PLAT = data.plataforma || null;
   renderPlataformaAviso(data);
+  renderBoasVindas(data);
+  TOUR_PATH = (data.plataforma && data.plataforma.trilha) || null;
+  document.getElementById("tour-nav-btn").hidden = !TOUR_PATH;
   renderTypeChips();
   renderTree();
 }
@@ -522,6 +537,23 @@ async function loadIndex(){
 // A Estação opera N plataformas; esta é a única forma de trocar sem reiniciar.
 // Quando a raiz ativa não é uma plataforma (pasta vazia, marcador ausente), o
 // servidor sobe assim mesmo e o aviso abaixo diz o motivo — nenhuma aba estoura.
+// A tela inicial diz qual plataforma está aberta e onde ela fica — antes ela
+// afirmava ser "o corpus inteiro de C:\Plataforma", que virou mentira no momento em
+// que a Estação passou a operar mais de uma.
+function renderBoasVindas(data){
+  const el = document.getElementById("welcome-lead");
+  if (!el) return;
+  const p = data.plataforma;
+  if (!p || data.plataforma_ok === false){
+    el.textContent = "Nenhuma plataforma aberta.";
+    return;
+  }
+  const estagios = (p.estagios || []).map(e => e.plural || e.nome).join(" · ");
+  el.innerHTML = `Plataforma <strong>${escapeHtml(p.nome)}</strong>, em ` +
+    `<code>${escapeHtml(p.caminho)}</code> — ${data.count} arquivos indexados` +
+    (estagios ? `, em ${(p.estagios || []).length} estágios: ${escapeHtml(estagios)}.` : ".");
+}
+
 function renderPlataformaAviso(data){
   const box = document.getElementById("plataforma-aviso");
   if (data.plataforma_ok === false){
@@ -695,7 +727,7 @@ function escapeHtml(s){
 async function openFile(path){
   SELECTED_PATH = path;
   renderTree();
-  if (path === "1-capturas/LOG/_log.md"){
+  if (PLAT && PLAT.registro && path === PLAT.registro){
     await openLogView();
     return;
   }
@@ -717,7 +749,7 @@ function renderBreadcrumb(path){
     acc += (i>0?"/":"") + p;
     return `<span>${escapeHtml(p)}</span>`;
   });
-  bc.innerHTML = "C:\\Plataforma\\ " + segs.join(" / ");
+  bc.innerHTML = escapeHtml(plPrefixo()) + segs.join(" / ");
 }
 
 function renderMetaBar(entry){
@@ -730,7 +762,7 @@ function renderMetaBar(entry){
     badges += `<span class="badge badge-raw">cru</span>`;
   }
   if (entry.orphaned){
-    badges += `<span class="badge badge-orphan" title="Pasta com CLAUDE.md mas sem linha em _indice-projetos.md">não listado em _indice-projetos.md</span>`;
+    badges += `<span class="badge badge-orphan" title="Pasta de projeto que o índice canônico da plataforma não lista">fora do índice</span>`;
   }
   if (entry.lifecycle_stage){
     const stageLabel = {"entrada": "entrada — ninguém viu ainda", "pendente": "pendente — sem destino", "historico": "histórico — já seguiu"}[entry.lifecycle_stage] || entry.lifecycle_stage;
@@ -837,8 +869,8 @@ async function toggleBacklogCheckbox(path, lineNumber, expectedText, inputEl){
 // ============================================================
 async function openLogView(){
   document.getElementById("content").classList.remove("pf-wide");
-  renderBreadcrumb("1-capturas/LOG/_log.md");
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">log central</span>`;
+  renderBreadcrumb((PLAT && PLAT.registro) || "");
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">registro</span>`;
   const r = await fetch("/api/log");
   const data = await r.json();
   const content = document.getElementById("content");
@@ -892,7 +924,7 @@ async function openLogView(){
 
 
 // ============================================================
-// Tour — _metodo/trilha.md renderizada por parada
+// Tour — a trilha declarada pela plataforma, renderizada uma parada por vez
 // ============================================================
 // A trilha é um .md comum (fonte única de verdade, editável fora daqui).
 // Esta view só a fatia por "## " (uma parada por seção de nível 2), mostra
@@ -901,7 +933,9 @@ async function openLogView(){
 // como em qualquer outro arquivo. Blocos ```mermaid são renderizados pelo
 // mermaid.min.js vendorizado (vendor/, carregado no <head>); erro de
 // sintaxe ou lib ausente caem em modo fonte — ver renderMermaidBlocks.
-const TOUR_PATH = "_metodo/trilha.md";
+// o caminho da trilha vem do config da plataforma ativa (chave `trilha`).
+// Plataforma que nao declara uma simplesmente nao tem aba Tour.
+let TOUR_PATH = null;
 const TOUR_DONE_KEY = "estacao.tour.done";
 let TOUR_STEPS = [];
 let TOUR_CURRENT = 0;
@@ -983,7 +1017,13 @@ async function renderMermaidBlocks(container){
 }
 
 async function openTourView(){
-  SELECTED_PATH = TOUR_PATH; // faz os links relativos resolverem a partir de _metodo/
+  if (!TOUR_PATH){
+    document.getElementById("content").innerHTML =
+      `<p class="dash-lead">Esta plataforma nao declara uma trilha de leitura ` +
+      `(chave <code>trilha</code> do <code>plataforma.json</code>).</p>`;
+    return;
+  }
+  SELECTED_PATH = TOUR_PATH; // faz os links relativos resolverem a partir da pasta da trilha
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
   renderBreadcrumb(TOUR_PATH);
@@ -994,7 +1034,7 @@ async function openTourView(){
   const r = await fetch("/api/file?path=" + encodeURIComponent(TOUR_PATH));
   const data = await r.json();
   if (data.error){
-    content.innerHTML = `<p class="dash-lead">A trilha não está no índice (${escapeHtml(data.error)}). Ela deveria existir em <code>${TOUR_PATH}</code> — ver plano-trilha.md.</p>`;
+    content.innerHTML = `<p class="dash-lead">A trilha não está no índice (${escapeHtml(data.error)}). O <code>plataforma.json</code> aponta para <code>${escapeHtml(TOUR_PATH)}</code>.</p>`;
     return;
   }
   const stripped = data.raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
@@ -1051,7 +1091,7 @@ function drawTourStep(){
 }
 
 // ============================================================
-// Portfólio — hub de tudo que "roda", por Projeto (GET /api/portfolio)
+// Portfólio — hub de tudo que "roda", por projeto (GET /api/portfolio)
 // ============================================================
 // Dados vêm de app/portfolio.py (curadoria em portfolio.json por projeto).
 // Filtros são estado de tela, não de servidor. Links locais (/files/…,
@@ -1074,8 +1114,8 @@ function pfStatusClass(status){
 async function openPortfolioView(){
   SELECTED_PATH = null;
   renderTree();
-  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Portfólio";
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">portfólio</span><span id="meta-path">tudo que roda, por Projeto · links, launchers, protótipos, docs</span>`;
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Portfólio";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">portfólio</span><span id="meta-path">tudo que roda, por projeto · links, launchers, protótipos, docs</span>`;
   const content = document.getElementById("content");
   content.classList.add("pf-wide");
   content.innerHTML = `<p class="dash-lead">Carregando portfólio…</p>`;
@@ -1124,7 +1164,7 @@ function drawPortfolio(){
   head.innerHTML = `<div><h1>Portfólio</h1><p class="dash-lead" style="margin:4px 0 0">Gerado ${escapeHtml(PF.gerado_em.replace("T"," "))} · curadoria por <code>portfolio.json</code> em cada projeto</p></div>`;
   const kpis = document.createElement("div");
   kpis.className = "pf-kpis";
-  [[t.projetos, "projetos"], [t.no_ar, "no ar"], [t.roda_local, "rodam local"], [t.prototipos, "protótipos"], [t.docs, "docs & design"], [t.com_repo, "com repo"]]
+  [[t.projetos, plNome(plUltimo(), true).toLowerCase() || "projetos"], [t.no_ar, "no ar"], [t.roda_local, "rodam local"], [t.prototipos, "protótipos"], [t.docs, "docs & design"], [t.com_repo, "com repo"]]
     .forEach(([n, l]) => { const k = document.createElement("div"); k.className = "pf-kpi"; k.innerHTML = `<div class="n">${n}</div><div class="l">${l}</div>`; kpis.appendChild(k); });
   head.appendChild(kpis);
   content.appendChild(head);
@@ -1217,7 +1257,7 @@ function drawPortfolioGrid(){
   grid.innerHTML = "";
   const projetos = PF.projetos.filter(pfProjetoPassa).sort((a, b) => a.ordem - b.ordem || a.pasta.localeCompare(b.pasta));
   if (!projetos.length){
-    grid.innerHTML = `<p class="pf-vazio-msg">Nenhuma projeto bate com esse filtro.</p>`;
+    grid.innerHTML = `<p class="pf-vazio-msg">Nenhum projeto bate com esse filtro.</p>`;
     return;
   }
   projetos.forEach(p => {
@@ -1226,7 +1266,7 @@ function drawPortfolioGrid(){
     const card = document.createElement("div");
     card.className = "pf-card" + (nada ? " vazio" : "");
     const pills = [`<span class="pill pill-tipo">${escapeHtml(p.tipo)}</span>`, `<span class="pill ${pfStatusClass(p.status)}">${escapeHtml(p.status)}</span>`];
-    if (!p.listada) pills.push(`<span class="pill pill-sem" title="pasta não está em _indice-projetos.md">não listada</span>`);
+    if (!p.listada) pills.push(`<span class="pill pill-sem" title="a pasta não está no índice canônico de projetos da plataforma">fora do índice</span>`);
     card.innerHTML = `<div class="pf-card-top"><h2>${escapeHtml(p.nome)}<small>${escapeHtml(p.pasta)}</small></h2><div class="pf-pills">${pills.join("")}</div></div>`;
     if (p.resumo){ const r = document.createElement("p"); r.className = "pf-resumo"; r.title = p.resumo; r.textContent = p.resumo; card.appendChild(r); }
     if (p.nota){ const n = document.createElement("p"); n.className = "pf-nota"; n.textContent = p.nota; card.appendChild(n); }
@@ -1261,7 +1301,7 @@ function drawPortfolioGrid(){
     pfSecao(card, "Docs e design", execs.filter(e => ["doc", "design"].includes(e.kind)), p.pasta + ":doc", 3);
     if (nada){
       const v = document.createElement("p"); v.className = "pf-vazio-msg";
-      v.textContent = p.tem_claude ? "Nada executável ainda — só a orquestra e o backlog." : "Sem CLAUDE.md — pasta ainda não é uma projeto completa.";
+      v.textContent = p.tem_claude ? "Nada executável ainda — só o índice e o backlog." : "Sem CLAUDE.md — a pasta ainda não é um projeto completo.";
       card.appendChild(v);
     }
     const foot = document.createElement("div");
@@ -1281,7 +1321,7 @@ async function openDashboardView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Dashboard";
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Dashboard";
   document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">dashboard</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `<p class="dash-lead">Carregando métricas…</p>`;
@@ -1299,20 +1339,32 @@ async function openDashboardView(){
   content.innerHTML = "";
 
   const header = document.createElement("div");
-  header.innerHTML = `<h1>Dashboard Método</h1><p class="dash-lead">Gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do LOG central e do disco.</p>`;
+  header.innerHTML = `<h1>Dashboard</h1><p class="dash-lead">${escapeHtml(PLAT ? PLAT.nome : "")} · gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do registro e do disco.</p>`;
   content.appendChild(header);
 
   // KPIs
+  const ultimo = plUltimo();
   const kpis = [
-    {num: data.log.total_linhas_log, label: "Entradas no LOG central"},
-    {num: data.log.sem_destino_por_etapa.SBC || 0, label: "Capturas cruas sem destino"},
-    {num: data.log.sem_destino_por_etapa.SBI || 0, label: "Candidatos a Projeto (SBI sem destino)"},
-    {num: data.log.por_etapa.SBZ || 0, label: "Projetos já registradas"},
-    {num: data.arquivos.total_arquivos, label: "Arquivos no repositório"},
-    {num: data.arquivos.total_md, label: "Arquivos .md"},
-    {num: data.arquivos.linhas_codigo, label: "Linhas de código"},
-    {num: data.nucleo.marcados_parte_do_nucleo, label: "Marcados parte_do_nucleo"}
+    {num: data.log.total_linhas_log, label: "Linhas no registro"},
   ];
+  // um cartão por estágio, com o nome que a plataforma declara: "quantos ainda
+  // não avançaram daqui". O último estágio não avança pra lugar nenhum — dele o
+  // que interessa é o total.
+  plEstagios().forEach((e, i) => {
+    const n = i + 1;
+    kpis.push(n < ultimo
+      ? {num: (data.log.sem_destino_por_etapa || {})[e.sigla] || 0,
+         label: `${e.plural || e.nome} sem destino`}
+      : {num: (data.log.por_etapa || {})[e.sigla] || 0,
+         label: `${e.plural || e.nome} no registro`});
+  });
+  kpis.push(
+    {num: data.arquivos.total_arquivos, label: "Arquivos na plataforma"},
+    {num: data.arquivos.total_md, label: "Arquivos .md"},
+    {num: data.arquivos.linhas_codigo, label: "Linhas de código"});
+  if (data.nucleo && data.nucleo.marcados_parte_do_nucleo !== undefined){
+    kpis.push({num: data.nucleo.marcados_parte_do_nucleo, label: "Marcados parte_do_nucleo"});
+  }
   const kpiSection = document.createElement("div");
   kpiSection.className = "dash-section";
   kpiSection.innerHTML = "<h2>Visão geral</h2>";
@@ -1331,7 +1383,7 @@ async function openDashboardView(){
   const etapaSection = document.createElement("div");
   etapaSection.className = "dash-section";
   etapaSection.innerHTML = "<h2>Distribuição por etapa</h2>";
-  const ordemEtapa = ["SBC", "SBI", "SBZ"];
+  const ordemEtapa = plEstagios().map(e => e.sigla);
   const maxEtapa = Math.max(...ordemEtapa.map(e => data.log.por_etapa[e] || 0), 1);
   ordemEtapa.forEach(etapa => {
     const v = data.log.por_etapa[etapa] || 0;
@@ -1350,7 +1402,7 @@ async function openDashboardView(){
   let tipoRows = Object.keys(data.log.por_tipo).sort().map(t =>
     `<tr><td>${t}</td><td>${significados[t]||"—"}</td><td>${fmt(data.log.por_tipo[t])}</td></tr>`
   ).join("");
-  tipoSection.innerHTML = `<h2>Distribuição por tipo de Projeto</h2><table><thead><tr><th>Tipo</th><th>Significado</th><th>Contagem</th></tr></thead><tbody>${tipoRows}</tbody></table>`;
+  tipoSection.innerHTML = `<h2>Distribuição por tipo de projeto</h2><table><thead><tr><th>Tipo</th><th>Significado</th><th>Contagem</th></tr></thead><tbody>${tipoRows}</tbody></table>`;
   content.appendChild(tipoSection);
 
   // Notas/ideias por dia
@@ -1380,7 +1432,7 @@ async function openDashboardView(){
 }
 
 // ============================================================
-// Workflow — pipeline SBC→SBI→SBZ + pendências ativas (GET /api/workflow, /api/avanco)
+// Workflow — os estágios da plataforma + decisões abertas (GET /api/workflow, /api/avanco)
 // ============================================================
 // v1: só leitura. Resolver uma pendência continua sendo uma sessão do Claude
 // Code — ver plano-console-operacional-2026-09-06.md, frente 2 (decisão em aberto
@@ -1393,8 +1445,8 @@ async function openWorkflowView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Workflow";
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">workflow</span><span id="meta-path">pipeline SBC→SBI→SBZ + pendências ativas — responda aqui, o avanço encaminha na próxima rodada</span>`;
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Workflow";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">workflow</span><span id="meta-path">${escapeHtml(plCadeia())} + decisões abertas — responda aqui, a próxima rodada encaminha</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `<p class="dash-lead">Carregando workflow…</p>`;
 
@@ -1411,7 +1463,8 @@ async function openWorkflowView(){
   content.innerHTML = "";
 
   const header = document.createElement("div");
-  header.innerHTML = `<h1>Workflow</h1><p class="dash-lead">O que ainda está em trânsito no pipeline Captura→Ideia→Projeto, e as decisões que só você resolve.</p>`;
+  const nomes = plEstagios().map(e => (e.plural || e.nome).toLowerCase()).join(" → ");
+  header.innerHTML = `<h1>Workflow</h1><p class="dash-lead">O que ainda está em trânsito entre ${escapeHtml(nomes)}, e as decisões que só você resolve.</p>`;
   content.appendChild(header);
 
   if (av && !av.erro){
@@ -1725,74 +1778,133 @@ async function copiarBriefing(){
 // ============================================================
 // Fluxo — o método na tela (só leitura; classificar continua sendo da skill)
 // ============================================================
-// Os 4 critérios do Passo 1 do checklist-classificacao.md como checklist ao
-// vivo: 2+ "sim" promovem a Ideia. Não grava veredito — a classificação
-// formal é trabalho da skill; daqui sai o briefing pra ela.
-const FX_CRITERIOS = [
-  "Tem forma definida — é um documento estruturado, não um fragmento solto?",
-  "Poderia ser usado como input de outra coisa sem precisar reprocessar?",
-  "Representa uma decisão, um v1, ou um resumo com próximos passos?",
-  "Deixou de ser ambíguo sobre o que é e pra que serve?",
+// Uma passagem por par de estágios consecutivos, com os critérios de
+// metodo/classificar.md. Não grava veredito: daqui sai o briefing pra sessão
+// de IA fazer o registro.
+//
+// Os conjuntos abaixo são alinhados pelo FIM da lista de estágios. Uma
+// plataforma de quatro estágios usa os três; uma de três usa os dois últimos —
+// que é o checklist que a plataforma de origem sempre teve. Ficam hardcoded de propósito, como
+// os guardrails do briefing: parsear a prosa do método para montar esta tela a
+// deixaria quebrar em silêncio a cada edição de texto.
+const FX_SETS = [
+  {
+    pergunta: "já foi lido e organizado?",
+    regra: 2,
+    criterios: [
+      "Alguém leu isto inteiro — não é mais um \u201cvou ver depois\u201d?",
+      "Tem título e alguma estrutura: parágrafos, tópicos, seções?",
+      "Dá para entender do que se trata sem reler três vezes?",
+      "O que era ruído (assinatura, timestamp, repetição) saiu?",
+    ],
+  },
+  {
+    pergunta: "serve de insumo para outra coisa, sem reprocessar?",
+    regra: 2,
+    criterios: [
+      "Tem forma definida — é um documento, não um fragmento?",
+      "Poderia ser usado como entrada de outro trabalho sem reprocessamento?",
+      "Representa uma decisão, uma v1, ou um resumo com próximos passos?",
+      "Deixou de ser ambíguo sobre o que é e para que serve?",
+    ],
+  },
+  {
+    pergunta: "tem corpo próprio?",
+    regra: "todos",
+    criterios: [
+      "Tem pasta própria dentro da pasta de projetos?",
+      "Tem CLAUDE.md dizendo o que é, para quem, e em que estado está?",
+      "Tem backlog com pelo menos um item aberto de verdade?",
+      "É um repositório git próprio?",
+    ],
+  },
 ];
-let FX_MARCADOS = new Set();
+let FX_MARCADOS = {};   // índice da passagem -> Set de critérios marcados
+let FX_ABERTA = 0;      // qual passagem está com o checklist aberto
+
+function fxPassagens(){
+  const est = plEstagios();
+  if (est.length < 2) return [];
+  const sets = FX_SETS.slice(-(est.length - 1));
+  return est.slice(0, -1).map((de, i) => ({
+    de, para: est[i + 1], set: sets[i] || FX_SETS[FX_SETS.length - 1],
+  }));
+}
 
 async function openFluxoView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Fluxo";
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">método</span><span id="meta-path">fluxo.v2 — nenhuma entrada pula etapa</span>`;
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Fluxo";
+  document.getElementById("meta-bar").innerHTML =
+    `<span class="badge badge-type">método</span>` +
+    `<span id="meta-path">${escapeHtml(plCadeia())} — nenhum item pula estágio</span>`;
   const content = document.getElementById("content");
+  const passagens = fxPassagens();
   content.innerHTML = `<h1>Fluxo</h1>
-    <p class="dash-lead">O caminho que toda entrada percorre naquela plataforma. Esta tela não classifica nada — ela ajuda você a decidir e gera o briefing pra sessão de IA fazer o registro.</p>`;
+    <p class="dash-lead">O caminho que toda entrada percorre nesta plataforma. Esta tela não classifica nada — ela ajuda você a decidir, e gera o briefing para a sessão de IA fazer o registro.</p>`;
 
-  const passos = [
-    ["Passo 0 — tudo vira Captura crua (SBC)", "Sem exceção, mesmo o que já nasce maduro: ID via <code>plataforma.py novo-id</code>, linha no LOG central, arquivo em <code>1-capturas/.pendente/</code>. Pela interface, é o botão <strong>📝 Nota</strong>."],
-    ["Passo 1 — vale promover a Ideia (SBI)?", null],
-    ["Passo 2 — ganhou corpo próprio? Vira Projeto (SBZ)", "Pasta na raiz com <code>CLAUDE.md</code> (<code>origem_nota:</code>), backlog e git próprio, mais a linha em <code>4-projetos/_indice-projetos.md</code>."],
-    ["Passo 3 — dúvida genuína vai pro Refinar", "<code>1-capturas/REFINAR/</code>. Item novo no saco vira pendência-formulário na rodada seguinte do avanço — não fica esperando contexto aparecer sozinho."],
-  ];
+  if (!passagens.length){
+    content.innerHTML += `<p class="dash-lead">Esta plataforma declara menos de dois estágios: não há passagem para mostrar.</p>`;
+    return;
+  }
 
-  passos.forEach(([titulo, corpo], i) => {
+  // a entrada: todo item nasce no primeiro estágio, sem exceção
+  const zero = document.createElement("div");
+  zero.className = "fx-passo";
+  zero.innerHTML = `<h3>Entrada — tudo vira ${escapeHtml(plNome(1))} (${escapeHtml(plSigla(1))})</h3>` +
+    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0">Sem exceção, mesmo o que já nasce maduro: identificador pelo utilitário, linha no registro, arquivo no primeiro estágio. Pela interface, é o botão <strong>📝 Nota</strong>.</p>`;
+  content.appendChild(zero);
+
+  passagens.forEach((p, i) => {
     const el = document.createElement("div");
     el.className = "fx-passo";
-    el.innerHTML = `<h3>${escapeHtml(titulo)}</h3>` + (corpo ? `<p class="ctx" style="font-size:12.5px;color:var(--text-2);margin:0">${corpo}</p>` : "");
-    if (i === 1){
-      const nota = document.createElement("p");
-      nota.style.cssText = "font-size:12.5px;color:var(--text-2);margin:0 0 6px";
-      nota.textContent = "Marque os critérios que valem para o item — 2 ou mais promovem:";
-      el.appendChild(nota);
-      FX_CRITERIOS.forEach((texto, idx) => {
-        const lab = document.createElement("label");
-        lab.className = "fx-crit" + (FX_MARCADOS.has(idx) ? " sim" : "");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = FX_MARCADOS.has(idx);
-        cb.onchange = () => {
-          cb.checked ? FX_MARCADOS.add(idx) : FX_MARCADOS.delete(idx);
-          openFluxoView();
-        };
-        lab.appendChild(cb);
-        const sp = document.createElement("span");
-        sp.textContent = texto;
-        lab.appendChild(sp);
-        el.appendChild(lab);
-      });
-      const ver = document.createElement("div");
-      const n = FX_MARCADOS.size;
-      ver.className = "fx-veredito " + (n >= 2 ? "sbi" : "fica");
-      ver.textContent = n >= 2
-        ? `${n} de 4 → promove a Ideia (SBI)`
-        : `${n} de 4 → fica como Captura crua em .pendente/ (ou vai pro Refinar, se a dúvida for genuína)`;
-      el.appendChild(ver);
+    const marcados = FX_MARCADOS[i] || (FX_MARCADOS[i] = new Set());
+    const total = p.set.criterios.length;
+    const minimo = p.set.regra === "todos" ? total : p.set.regra;
+
+    el.innerHTML = `<h3>${escapeHtml(plNome(i + 1))} → ${escapeHtml(plNome(i + 2))} — ${escapeHtml(p.set.pergunta)}</h3>`;
+
+    const nota = document.createElement("p");
+    nota.style.cssText = "font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-1)";
+    nota.textContent = p.set.regra === "todos"
+      ? "Aqui a régua é mais alta: os quatro precisam valer, não a maioria."
+      : `Marque os critérios que valem para o item — ${minimo} ou mais promovem:`;
+    el.appendChild(nota);
+
+    p.set.criterios.forEach((texto, idx) => {
+      const lab = document.createElement("label");
+      lab.className = "fx-crit" + (marcados.has(idx) ? " sim" : "");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = marcados.has(idx);
+      cb.onchange = () => { cb.checked ? marcados.add(idx) : marcados.delete(idx); FX_ABERTA = i; openFluxoView(); };
+      lab.appendChild(cb);
+      const sp = document.createElement("span");
+      sp.textContent = texto;
+      lab.appendChild(sp);
+      el.appendChild(lab);
+    });
+
+    const n = marcados.size;
+    const promove = n >= minimo;
+    const ver = document.createElement("div");
+    ver.className = "fx-veredito " + (promove ? "sbi" : "fica");
+    ver.textContent = promove
+      ? `${n} de ${total} → promove a ${plNome(i + 2)} (${plSigla(i + 2)})`
+      : `${n} de ${total} → fica como ${plNome(i + 1)}. Se a dúvida for genuína, vire pendência em vez de forçar.`;
+    el.appendChild(ver);
+
+    if (i === 0){
       const btn = document.createElement("button");
       btn.className = "brf-btn";
-      btn.style.marginTop = "10px";
+      btn.style.marginTop = "var(--sp-2)";
       btn.textContent = "Briefing de classificação →";
       btn.onclick = () => {
-        const alvo = ENTRIES.find(e => e.path === SELECTED_PATH && e.path.includes("1-capturas"))
-          || ENTRIES.find(e => e.lifecycle_stage === "pendente" && e.path.endsWith(".md"));
-        if (!alvo){ toast("Abra uma Captura de .pendente/ antes"); return; }
+        const pasta = (plEstagio(1) || {}).pasta || "";
+        const alvo = ENTRIES.find(e => e.path === SELECTED_PATH && e.path.startsWith(pasta))
+          || ENTRIES.find(e => e.path.startsWith(pasta + "/") && !e.path.includes("/" + (PLAT && PLAT.historico || "_historico") + "/") && e.path.endsWith(".md"));
+        if (!alvo){ toast(`Abra ${plNome(1, true).toLowerCase()} antes`); return; }
         abrirBriefing("classificar", {path: alvo.path});
       };
       el.appendChild(btn);
@@ -1800,226 +1912,15 @@ async function openFluxoView(){
     content.appendChild(el);
   });
 
-  const rodape = document.createElement("p");
-  rodape.className = "dash-lead";
-  rodape.style.marginTop = "18px";
-  rodape.innerHTML = `Fonte do método: <a href="#" data-abrir="_metodo/fluxo.v2.md">fluxo.v2.md</a> · <a href="#" data-abrir="_metodo/templates/checklist-classificacao.md">checklist-classificacao.md</a> · <a href="#" data-abrir="_metodo/doutrina.md">doutrina.md</a>`;
-  rodape.querySelectorAll("[data-abrir]").forEach(a => {
-    a.onclick = (ev) => { ev.preventDefault(); tryOpenTarget(a.dataset.abrir); };
-  });
-  content.appendChild(rodape);
+  const fim = document.createElement("div");
+  fim.className = "fx-passo";
+  fim.innerHTML = `<h3>Ao avançar</h3>` +
+    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0">O item é <strong>copiado</strong> para o estágio seguinte com identificador novo, o original vai para o <code>${escapeHtml((PLAT && PLAT.historico) || "_historico")}/</code> do estágio de onde saiu, e o registro ganha uma linha nova com o marcador de linhagem. A linha antiga nunca é editada nem apagada.</p>`;
+  content.appendChild(fim);
 }
 
 // ============================================================
-// Projeto — uma Projeto por vez (GET /api/projeto, POST /api/projeto/anotar)
-// ============================================================
-// Junta portfólio + perfil da rodada de portfólio + backlogs (com os toggles
-// que já existiam) e deixa anotar direto no backlog do projeto — no formato
-// que o avanço já lê, pra IA pegar na rodada seguinte.
-let PJ = null;
-const PJ_MAT_ROTULOS = {produto: "produto", codigo: "código", docs: "docs", ux: "ux", dados: "dados", operacao: "operação"};
-
-async function openProjetoView(pasta){
-  SELECTED_PATH = null;
-  renderTree();
-  document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ " + pasta;
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">projeto</span><span id="meta-path">${escapeHtml(pasta)}</span>`;
-  const content = document.getElementById("content");
-  content.innerHTML = `<p class="dash-lead">Carregando projeto…</p>`;
-  try{
-    const r = await fetch("/api/projeto?pasta=" + encodeURIComponent(pasta));
-    PJ = await r.json();
-    if (!r.ok){ content.innerHTML = `<p class="dash-lead">${escapeHtml(PJ.error || "erro")}</p>`; return; }
-  } catch(err){
-    content.innerHTML = `<p class="dash-lead">Falha ao carregar: ${escapeHtml(String(err))}</p>`;
-    return;
-  }
-  drawProjeto();
-}
-
-function drawProjeto(){
-  const content = document.getElementById("content");
-  const p = PJ.projeto;
-  content.innerHTML = "";
-
-  const head = document.createElement("div");
-  head.className = "pj-head";
-  head.innerHTML = `<h1>${escapeHtml(p.nome)}</h1>
-    <span class="pill pill-tipo">${escapeHtml(p.tipo)}</span>
-    <span class="pill ${pfStatusClass(p.status)}">${escapeHtml(p.status)}</span>`;
-  const brf = document.createElement("button");
-  brf.className = "brf-btn";
-  brf.style.marginLeft = "auto";
-  brf.textContent = "Briefing pra IA →";
-  brf.title = "Texto pronto pra colar numa sessão do Claude Code avançar este projeto";
-  brf.onclick = () => abrirBriefing("avancar", {pasta: PJ.pasta});
-  head.appendChild(brf);
-  content.appendChild(head);
-
-  if (p.resumo){
-    const r = document.createElement("p");
-    r.className = "dash-lead";
-    r.textContent = p.resumo;
-    content.appendChild(r);
-  }
-
-  const g = p.git || {};
-  const git = document.createElement("div");
-  git.className = "pj-git";
-  git.innerHTML = (g.ultimo_commit
-      ? `<span>último commit ${escapeHtml(g.ultimo_commit)}</span><span>${g.commits} commit(s)</span>`
-      : `<span>sem git</span>`)
-    + (PJ.perfil && PJ.perfil.versao ? `<span>versão ${escapeHtml(String(PJ.perfil.versao))}</span>` : "");
-  content.appendChild(git);
-
-  // links no ar / repositório
-  if ((p.links || []).length){
-    const sec = document.createElement("div");
-    sec.className = "pj-sec";
-    sec.innerHTML = "<h2>Na internet</h2>";
-    const wrap = document.createElement("div");
-    wrap.className = "pf-links";
-    p.links.forEach(l => {
-      const a = document.createElement("a");
-      a.className = "pf-link" + (l.kind === "no-ar" ? " noar" : "");
-      a.href = l.url; a.target = "_blank"; a.rel = "noopener";
-      const host = l.url.replace(/^https?:\/\//, "").split("/")[0];
-      let selo = "";
-      if (l.noar) selo = l.noar.ok
-        ? `<span class="pill pill-noar-ok">no ar</span>`
-        : `<span class="pill pill-noar-fora">fora (${escapeHtml(String(l.noar.status || "?"))})</span>`;
-      a.innerHTML = `${l.kind === "no-ar" ? "🌐 " : "⌥ "}<span class="nm">${escapeHtml(l.label)} · ${escapeHtml(host)}</span>${selo}`;
-      a.title = l.url;
-      wrap.appendChild(a);
-    });
-    sec.appendChild(wrap);
-    content.appendChild(sec);
-  }
-
-  // maturidade (perfil da rodada de portfólio)
-  if (PJ.maturidade){
-    const sec = document.createElement("div");
-    sec.className = "pj-sec";
-    sec.innerHTML = `<h2>Maturidade <span style="font-size:12px;font-weight:400;color:var(--text-2)">média ${PJ.maturidade.media ?? "—"}/5 · medida no disco em 2026-09-05</span></h2>`;
-    Object.keys(PJ_MAT_ROTULOS).forEach(k => {
-      const v = PJ.maturidade[k];
-      if (v === undefined) return;
-      const row = document.createElement("div");
-      row.className = "pj-mat";
-      row.innerHTML = `<div class="rot">${PJ_MAT_ROTULOS[k]}</div>
-        <div class="pj-mat-track"><div class="pj-mat-fill" style="width:${(v/5)*100}%"></div></div>
-        <div class="val">${v}/5</div>`;
-      sec.appendChild(row);
-    });
-    content.appendChild(sec);
-  }
-
-  // backlogs com os toggles que já existiam + anotação
-  (PJ.backlogs || []).forEach(b => {
-    const sec = document.createElement("div");
-    sec.className = "pj-sec";
-    sec.innerHTML = `<h2>${escapeHtml(b.title)} <span style="font-size:12px;font-weight:400;color:var(--text-2)">${b.abertos} aberto(s)</span></h2>`;
-    const corpo = document.createElement("div");
-    const entry = ENTRIES.find(e => e.path === b.path) || {path: b.path, type: "backlog"};
-    renderBacklogBody(corpo, entry, b.raw);
-    sec.appendChild(corpo);
-    sec.appendChild(pjFormAnotar(b));
-    content.appendChild(sec);
-  });
-
-  if ((PJ.lacunas || []).length) content.appendChild(pjListaSec("Lacunas (perfil de 2026-09-05)", PJ.lacunas));
-  if ((PJ.ligacoes || []).length) content.appendChild(pjListaSec("Ligações com outros projetos",
-    PJ.ligacoes.map(l => `${l.projeto} — ${l.relacao}: ${l.detalhe || ""}`)));
-
-  if ((PJ.documentos_chave || []).length){
-    const sec = document.createElement("div");
-    sec.className = "pj-sec";
-    sec.innerHTML = "<h2>Documentos-chave</h2>";
-    PJ.documentos_chave.forEach(d => {
-      const el = document.createElement("span");
-      el.className = "pj-doc";
-      el.textContent = (d.path || "").split("/").pop();
-      el.title = `${d.path} — ${d.funcao || ""}`;
-      el.onclick = () => tryOpenTarget(d.path, PJ.pasta + "/");
-      sec.appendChild(el);
-    });
-    content.appendChild(sec);
-  }
-
-  if (PJ.claude_path){
-    const sec = document.createElement("div");
-    sec.className = "pj-sec";
-    sec.innerHTML = `<h2>Orquestra (CLAUDE.md)</h2>`;
-    const btn = document.createElement("button");
-    btn.className = "pj-doc";
-    btn.textContent = "abrir CLAUDE.md →";
-    btn.onclick = () => openFile(PJ.claude_path);
-    sec.appendChild(btn);
-    content.appendChild(sec);
-  }
-}
-
-function pjListaSec(titulo, itens){
-  const sec = document.createElement("div");
-  sec.className = "pj-sec";
-  sec.innerHTML = `<h2>${escapeHtml(titulo)}</h2>`;
-  const ul = document.createElement("ul");
-  ul.className = "pj-lista";
-  itens.forEach(t => {
-    const li = document.createElement("li");
-    li.textContent = t;
-    ul.appendChild(li);
-  });
-  sec.appendChild(ul);
-  return sec;
-}
-
-function pjFormAnotar(backlog){
-  const wrap = document.createElement("div");
-  const form = document.createElement("div");
-  form.className = "pj-anotar";
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = "anotar no backlog deste projeto…";
-  input.maxLength = 500;
-  const btn = document.createElement("button");
-  btn.textContent = "Anotar";
-  const enviar = async () => {
-    const texto = input.value.trim();
-    if (texto.length < 3){ toast("Escreva a anotação primeiro"); input.focus(); return; }
-    btn.disabled = true;
-    try{
-      const r = await fetch("/api/projeto/anotar", {
-        method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({pasta: PJ.pasta, backlog_path: backlog.path, texto, expected_sha1: backlog.sha1}),
-      });
-      const data = await r.json();
-      if (!r.ok){
-        toast(r.status === 409 ? "O backlog mudou por fora — recarregando" : "Erro: " + (data.error || r.status));
-        await openProjetoView(PJ.pasta);
-        return;
-      }
-      input.value = "";
-      toast("Anotado — a IA lê isso na próxima rodada");
-      await openProjetoView(PJ.pasta);
-    } catch(err){ toast("Falha de rede: " + err); }
-    finally { btn.disabled = false; }
-  };
-  btn.onclick = enviar;
-  input.onkeydown = (ev) => { if (ev.key === "Enter") enviar(); };
-  form.appendChild(input);
-  form.appendChild(btn);
-  wrap.appendChild(form);
-  const hint = document.createElement("p");
-  hint.className = "pj-hint";
-  hint.textContent = "Vira uma linha `- [ ] … _(via console, data)_` no backlog — formato que o avanço já lê.";
-  wrap.appendChild(hint);
-  return wrap;
-}
-
-// ============================================================
-// Nota — captura crua de Captura pela UI (POST /api/nota/nova)
+// Nota — captura crua pela UI, no primeiro estágio (POST /api/nota/nova)
 // ============================================================
 // Só cria SBC crua, sem classificar (opção default enquanto a decisão de escopo
 // não é respondida — ver plano-console-operacional-2026-09-06.md, frente 1).
@@ -2030,14 +1931,14 @@ async function openNotaView(){
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
   document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Nova nota";
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">captura</span><span id="meta-path">vira Captura crua (SBC) em 1-capturas/.pendente/ — sem classificação, sem IA</span>`;
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">captura</span><span id="meta-path">vira ${escapeHtml(plNome(1))} (${escapeHtml(plSigla(1))}) no primeiro estágio — sem classificação, sem IA</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `
     <h1>Nova nota</h1>
-    <p class="dash-lead">Cole ou escreva o que quiser guardar. Vira uma Captura crua com ID, arquivo e linha no LOG — classificar (Ideia/Projeto) continua sendo trabalho de uma sessão do Claude Code depois.</p>
+    <p class="dash-lead">Cole ou escreva o que quiser guardar. Vira ${escapeHtml(plNome(1, false).toLowerCase())} com identificador, arquivo e linha no registro — organizar e promover continua sendo trabalho de uma sessão de IA depois.</p>
     <textarea id="nota-texto" rows="10" placeholder="Cole aqui o texto cru..."></textarea>
     <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
-      <button id="nota-salvar-btn">Salvar como Captura crua</button>
+      <button id="nota-salvar-btn">Salvar</button>
       <span id="nota-status" style="font-size:12.5px;color:var(--text-2)"></span>
     </div>
     <div id="nota-recentes" style="margin-top:24px"></div>

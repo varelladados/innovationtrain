@@ -65,6 +65,7 @@ PADROES = {
     "indice_projetos": None,    # índice canônico de projetos, se houver
     "indice_prefixo": None,     # prefixo que marca "isto é um índice de pasta"
     "entrada": None,            # onde nasce um item novo (padrão: estágio 1)
+    "comando_sem_destino": "gerar-sem-destino",  # subcomando do utilitário
     "metricas_pastas": None,    # pastas contadas no Dashboard (padrão: os estágios)
     "ciclo_vida": [],           # subpastas de triagem dentro de um estágio
     "doutrina": None,           # documentos citados pelo briefing
@@ -161,9 +162,22 @@ class Config:
 
     @property
     def id_re(self):
-        """Regex que reconhece um nome de arquivo já identificado."""
+        """Regex que reconhece um nome de arquivo já identificado (prefixo)."""
         siglas = "|".join(re.escape(s) for s in self.siglas)
         return re.compile(r"^\d{2}\.\d{2}\.\d{2}-(?:" + siglas + r")(?:-[A-Z]{3})?-\d+-")
+
+    @property
+    def identificador_re(self):
+        """Regex do identificador inteiro, para achar dentro de um texto.
+
+        Mesma forma que o utilitário gera — data, sigla, tipo opcional,
+        sequência do dia, slug e hash. É por ela que as métricas reconhecem uma
+        linha de registro de verdade.
+        """
+        siglas = "|".join(re.escape(s) for s in self.siglas)
+        return re.compile(
+            r"\b(\d{2}\.\d{2}\.\d{2})-(" + siglas + r")(?:-([A-Z]{2,4}))?"
+            r"-(\d{3})-([a-z0-9-]+)-([a-f0-9]{4,5})\b")
 
     def ok(self):
         """A raiz aponta mesmo para uma plataforma?"""
@@ -177,6 +191,9 @@ class Config:
             "marcador": self.marcador,
             "estagios": self.estagios,
             "tipos": self.tipos,
+            "trilha": self.get("trilha"),
+            "registro": self.arquivo_rel("registro"),
+            "historico": self.historico,
             "ok": self.ok(),
         }
 
