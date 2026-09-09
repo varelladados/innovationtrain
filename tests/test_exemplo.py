@@ -20,6 +20,7 @@ import indexer  # noqa: E402
 import workflow  # noqa: E402
 
 PLATAFORMAS = Path(__file__).resolve().parent.parent / "plataformas"
+RAIZ_REPO = Path(__file__).resolve().parent.parent
 EXEMPLO = PLATAFORMAS / "exemplo"
 PRECOS = PLATAFORMAS / "exemplo-precos"
 
@@ -58,6 +59,31 @@ class _Exemplo:
     def test_o_indexer_sobe(self):
         self.assertTrue(config.atual().ok())
         self.assertGreater(len(self.entries), 8)
+
+    def test_toda_pasta_declarada_sobrevive_a_um_clone(self):
+        """Git não versiona pasta vazia — e uma plataforma de exemplo com
+        `_historico/` vazio chega **quebrada** na máquina de quem clonar.
+
+        O teste anterior conferia as pastas em disco, e por isso passava aqui e
+        falhava no CI, que parte de um clone. Este confere o que o git realmente
+        guarda: cada pasta declarada precisa ter ao menos um arquivo versionado.
+        """
+        import subprocess
+        r = subprocess.run(["git", "-C", str(RAIZ_REPO), "ls-files", str(self.RAIZ)],
+                           capture_output=True, text=True, encoding="utf-8",
+                           errors="replace")
+        if r.returncode != 0:
+            self.skipTest("não é um repositório git, ou git fora do PATH")
+        versionados = [l.strip() for l in r.stdout.splitlines() if l.strip()]
+        if not versionados:
+            self.skipTest("esta plataforma não está versionada")
+        rel_raiz = self.RAIZ.relative_to(RAIZ_REPO).as_posix()
+        cfg = config.atual()
+        for e in cfg.estagios:
+            for pasta in (e["pasta"], f"{e['pasta']}/{cfg.historico}"):
+                prefixo = f"{rel_raiz}/{pasta}/"
+                self.assertTrue(any(v.startswith(prefixo) for v in versionados),
+                                f"{pasta}/ não tem arquivo versionado: some no clone")
 
     def _frontmatter(self, caminho):
         """Usado pelos dois lados — por isso mora no mixin comum, não no da
