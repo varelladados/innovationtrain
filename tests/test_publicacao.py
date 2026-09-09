@@ -33,6 +33,8 @@ PERMITIDOS = {
     "PRJ-Estacao",        # o nome da pasta deste projeto antes do fork
     "PRJ-Explorer",       # um nome antigo deste projeto
     "PRJ-Teste_Console",  # fixture de teste
+    "PRJ-Teste_X",        # fixture de teste (histórico)
+    "PRJ-Qualquer",       # exemplo genérico (histórico)
     "PRJ-Outro",          # exemplo genérico em documentação
 }
 #: A sigla do quarto estágio combinada com um tipo declarado (`PRJ-app`) ou com
@@ -94,6 +96,23 @@ class TestNadaPrivadoRastreado(unittest.TestCase):
 class TestNenhumNomeDeProjetoAlheio(unittest.TestCase):
     """A forma `PJx-Nome`/`PRx-Nome` só pode aparecer para coisas deste projeto."""
 
+    def _fora(self, texto):
+        return {m for m in FORMA_PROJETO.findall(texto)
+                if m not in PERMITIDOS and not PERMITIDO_RE.match(m)}
+
+    def test_historico_inteiro(self):
+        """A árvore de hoje não basta: um `git revert` traria a de ontem de volta.
+
+        Esta era a metade que faltava. O portao da publicação cobria a história;
+        o teste, só o topo — e um teste que só olha o topo passa no dia seguinte
+        à restauração do commit que ele deveria ter barrado.
+        """
+        saida = git("log", "--all", "-p", "--format=")
+        if saida is None:
+            self.skipTest("não consegui ler o histórico")
+        self.assertEqual(self._fora(saida), set(),
+                         "pasta de projeto alheio em algum commit")
+
     def test_arquivos_rastreados(self):
         fora = {}
         for rel in RASTREADOS.splitlines():
@@ -105,10 +124,7 @@ class TestNenhumNomeDeProjetoAlheio(unittest.TestCase):
             caminho = RAIZ / rel
             if not caminho.is_file():
                 continue
-            texto = caminho.read_text(encoding="utf-8", errors="replace")
-            for m in FORMA_PROJETO.findall(texto):
-                if m in PERMITIDOS or PERMITIDO_RE.match(m):
-                    continue
+            for m in self._fora(caminho.read_text(encoding="utf-8", errors="replace")):
                 fora.setdefault(m, []).append(rel)
         self.assertEqual(
             fora, {},
