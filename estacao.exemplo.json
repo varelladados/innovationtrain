@@ -1,0 +1,12 @@
+{
+  "versao": 1,
+  "_leia_me": "Copie este arquivo como `estacao.json` e edite. Ele lista as plataformas que esta Estacao opera; a que tiver \"ativa\": true e' a que abre. O `estacao.json` NAO e' versionado — ele e' a sua configuracao, com os seus caminhos. Sem ele, o servidor sobe assim mesmo e a aba Embarque abre sozinha, que e' o caminho de quem ainda nao tem plataforma nenhuma.",
+  "plataformas": [
+    {
+      "nome": "Exemplo - cozinha e fotografia",
+      "caminho": "plataformas/exemplo",
+      "ativa": true,
+      "observacao": "A plataforma de exemplo que vem junto: quatro estagios povoados e a cadeia 1-2-3-4 navegavel. O caminho e' relativo a' raiz do repositorio; a sua sera' um caminho absoluto, em qualquer lugar do seu computador."
+    }
+  ]
+}

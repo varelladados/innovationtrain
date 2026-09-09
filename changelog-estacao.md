@@ -1,5 +1,36 @@
 # Changelog — Estação
 
+## 0.8.1 — 2026-09-09
+
+**A Estação vira pública.** Os três repositórios do hub (`app`, `metodo`,
+`plataformas/exemplo`) viraram **um só**, e ele foi publicado sob Apache 2.0.
+
+- **Um repositório.** Quem clona pega o produto inteiro e ele roda de primeira.
+  Antes, `app` sozinho gerava um Embarque que apontava para um
+  `metodo/plataforma.py` inexistente, e 12 testes pulavam em silêncio. Os
+  históricos dos três foram preservados: os commits de `metodo` e de
+  `plataformas/exemplo` entraram com as mensagens originais.
+- **A raiz do repositório é o hub.** `config.HUB_DIR` deixou de ser
+  `PROJECT_DIR.parent` e passou a ser `PROJECT_DIR`; a aba Versões passou a
+  mostrar dois repositórios (o seu conteúdo e a ferramenta) em vez de três.
+- **`estacao.json` saiu do versionamento** e ganhou um `estacao.exemplo.json`
+  como ponto de partida. Sem ele o servidor sobe do mesmo jeito e o Embarque
+  abre sozinho — que é exatamente o caminho de quem acabou de clonar.
+- **`README.md` e `LICENSE`** (Apache 2.0). O `readme-estacao.md` descrevia o
+  app pré-fork e foi substituído.
+- **`tests/test_publicacao.py`** — o guarda-corpo: falha se papel de trabalho,
+  configuração local ou nome de pasta de projeto de terceiro for versionado.
+  Cobra a **forma**, nunca uma lista de nomes.
+
+**O histórico foi reescrito antes de publicar.** Os papéis de trabalho de quem
+escreveu o produto — planos, propostas, análise de portfólio, backlogs e a
+curadoria de `portfolio.json` — foram removidos de **todos** os commits, junto
+com as menções a projetos de terceiros que existiam em comentários de código.
+Cinco commits ficaram vazios (só tocavam nesses arquivos) e foram podados: 27
+viraram 22, mais 8 vindos de `metodo` e do exemplo. Nenhum hash antigo
+sobreviveu, e a verificação foi feita sobre a história inteira antes de existir
+qualquer remoto.
+
 ## 0.8.0 — 2026-09-09
 
 **A Estação vira produto.** Fork de `C:\Plataforma\PRJ-Estacao` para `C:\.Estacao\app`, execução dos nove trechos do `plano-hub-estacao-e-embarque-2026-09-08.md`. A Estação do `plataforma de origem` continua existindo e servindo o caso aplicado; `C:\Plataforma` foi somente leitura o tempo todo e não recebeu nenhum arquivo.

@@ -19,7 +19,7 @@ import config  # noqa: E402
 import indexer  # noqa: E402
 import workflow  # noqa: E402
 
-EXEMPLO = Path(__file__).resolve().parent.parent.parent / "plataformas" / "exemplo"
+EXEMPLO = Path(__file__).resolve().parent.parent / "plataformas" / "exemplo"
 TEM_EXEMPLO = (EXEMPLO / "plataforma.json").exists()
 PRECISA = unittest.skipUnless(TEM_EXEMPLO, "plataformas/exemplo não está ao lado do app")
 

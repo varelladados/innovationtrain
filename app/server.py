@@ -149,16 +149,15 @@ def get_metrics():
 
 
 def repositorios():
-    """Os três repositórios que a aba Versões mostra lado a lado.
+    """Os repositórios que a aba Versões mostra lado a lado.
 
-    São três desde o Trecho 3, e é fácil salvar um e esquecer os outros — é
-    exatamente por isso que eles aparecem juntos.
+    Eram três até a unificação de 2026-09-09; agora o app e o método vivem no
+    mesmo repositório, então são dois: **o seu conteúdo** (a plataforma ativa) e
+    **a ferramenta** (a Estação). A separação que importa continua de pé — é
+    fácil salvar um e esquecer o outro, e é por isso que aparecem juntos.
     """
-    hub = config.hub_dir()
-    saida = [
-        {"chave": "app", "rotulo": "A aplicação", "pasta": PROJECT_DIR},
-        {"chave": "metodo", "rotulo": "O método", "pasta": hub / "metodo"},
-    ]
+    saida = [{"chave": "estacao", "rotulo": "A Estação (app, método e exemplo)",
+              "pasta": PROJECT_DIR}]
     if config.definida():
         cfg = config.atual()
         saida.insert(0, {"chave": "plataforma",
@@ -348,7 +347,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/versoes/prompt":
             tipo = qs.get("tipo", [""])[0]
-            chave = qs.get("repo", ["app"])[0]
+            chave = qs.get("repo", ["estacao"])[0]
             alvo = next((r for r in repositorios() if r["chave"] == chave), None)
             if alvo is None:
                 self._send_json({"error": "repositório desconhecido"}, status=400)

@@ -155,7 +155,7 @@ class TestFonteUnica(unittest.TestCase):
     def test_padroes_batem_com_a_taxonomia_escrita(self):
         """`config.PADROES` é a cópia executável de `metodo/taxonomia.md`. Se
         alguém renomear um estágio lá e esquecer aqui, isto acusa."""
-        doc = RAIZ_REPO.parent / "metodo" / "taxonomia.md"
+        doc = RAIZ_REPO / "metodo" / "taxonomia.md"
         if not doc.exists():
             self.skipTest("metodo/taxonomia.md não está ao lado deste repositório")
         texto = doc.read_text(encoding="utf-8")

@@ -88,7 +88,7 @@ aqui — e há um teste que compara os dois.
 ## Estrutura
 
 ```
-PRJ-Estacao/
+estacao/                  ← a raiz do repositório É o hub
 ├── app/
 │   ├── server.py       servidor HTTP + roteamento + endpoints de efeito colateral (toggle, launch, nota) + /files
 │   ├── indexer.py       varredura do corpus, classificação, índice JSON
@@ -111,9 +111,22 @@ PRJ-Estacao/
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js (10.9.1) e as três fontes .woff2 — sem CDN
+├── metodo/               regras, taxonomia, templates e plataforma.py (o utilitário)
+├── plataformas/
+│   └── exemplo/          plataforma povoada, com a cadeia 1→2→3→4 navegável
+├── tests/                137 + 8 testes, stdlib, sem dependência
+├── docs/                 design-system.md e os mockups de aprovação
 ├── cache/                index.json + backups/, gitignored
-└── docs/
+├── README.md  LICENSE    a porta de entrada pública e a Apache 2.0
+├── estacao.exemplo.json  template — copie como estacao.json (que é gitignored)
+└── pendencias/           decisões de quem usa; fora do versionamento
 ```
+
+**Isto era três repositórios até 2026-09-09** (`app`, `metodo`,
+`plataformas/exemplo`, dentro de um hub). Na publicação viraram um só: quem
+clona pega o produto inteiro e ele funciona de primeira. O efeito colateral bom
+é que os 11 testes de `test_exemplo.py` e o de taxonomia deixaram de pular em
+silêncio — antes eles dependiam de repositórios irmãos que um clone não trazia.
 
 ## Convenção de nomes que este app pressupõe (fonte de verdade: `indexer.py`)
 
@@ -269,6 +282,12 @@ a Estação nunca commita em nome de ninguém.
 - **A porta tem uma fonte só:** `config.PORTA`. O `.bat` pergunta ao Python; o
   `.claude/launch.json` é o único lugar que repete o número, porque é JSON lido
   pelo harness — e um teste cobra que os dois concordem.
+- **Este repositório é público.** `estacao.json` (a configuração de quem usa,
+  com os caminhos dela) e `pendencias/` ficam fora do versionamento, e
+  `tests/test_publicacao.py` falha o build se papel de trabalho, configuração
+  local ou nome de pasta de projeto de terceiro entrar. Ele cobra a **forma**,
+  não uma lista de nomes — um teste que listasse o que é privado publicaria
+  exatamente o que deveria proteger.
 - **Aba nova exige três pontos**, e esquecer o segundo é silencioso: o botão no
   `<aside>`, o id nas **duas** regras compartilhadas do CSS (a de estilo e a de
   `:hover`), e o wiring no bloco final de `addEventListener`. Ver

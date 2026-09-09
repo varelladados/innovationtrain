@@ -4,3 +4,19 @@ __pycache__/
 dist/
 .env
 *.log
+
+# A sua configuracao, com os seus caminhos. Copie de estacao.exemplo.json.
+# Sem ele o servidor sobe do mesmo jeito e o Embarque abre sozinho.
+estacao.json
+
+# Suas decisoes sobre o proprio produto — pessoais, ficam de fora.
+pendencias/
+
+# Papel de trabalho nao entra neste repositorio: ele e' publico.
+# Ver tests/test_publicacao.py, que falha o build se algum voltar.
+/plano-*.md
+/propostas-*.md
+/analise-*.md
+/backlog-*.md
+/portfolio.json
+/.design/

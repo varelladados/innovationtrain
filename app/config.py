@@ -27,8 +27,12 @@ import re
 from pathlib import Path
 
 APP_DIR = Path(__file__).resolve().parent
-PROJECT_DIR = APP_DIR.parent          # o repositório da aplicação
-HUB_DIR = PROJECT_DIR.parent          # o hub, onde vive o estacao.json
+PROJECT_DIR = APP_DIR.parent          # a raiz do repositório
+#: **A raiz do repositório é o hub.** Até a unificação de 2026-09-09 o hub era a
+#: pasta acima (o app vivia num repositório próprio dentro dele); agora `app/`,
+#: `metodo/` e `plataformas/` são irmãos na mesma raiz, e é ali que vive o
+#: `estacao.json`. Quem quiser separar as coisas de novo usa `ESTACAO_HUB`.
+HUB_DIR = PROJECT_DIR
 
 #: A porta do servidor local. **Fonte única.** O `server.py` importa daqui e o
 #: `iniciar-estacao.bat` pergunta ao Python em vez de repetir o número. O único
