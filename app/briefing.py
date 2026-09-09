@@ -7,7 +7,7 @@ guardrails do método, em vez de reescrever o pedido toda vez.
 
 Três briefings, todos derivados do estado real do disco:
 - `pendencias`  — as que o humano já respondeu no app e esperam encaminhamento;
-- `classificar` — uma Captura crua específica, contra o checklist do fluxo v2;
+- `classificar` — um item cru específico, contra o checklist do fluxo;
 - `avancar`     — um projeto, com os itens [ESSENCIAL] abertos do backlog.
 
 Os guardrails são **hardcoded** de propósito. Parsear `doutrina.md` pra montar o
@@ -53,7 +53,8 @@ def guardrails():
 - **Nunca fecha pendência por inferência** — só o campo `## Resposta` explícito fecha; "Deixar para depois" incrementa `**Adiada:**` e mantém ativa.
 - **Salvar é automático; publicar é decisão.** Commite local ao terminar, sem me pedir autorização — me **avise** o que entrou, não pergunte. `git add` **nominal**, nunca `git add .`. Mudança que não é sua fica de fora. **Push só com autorização explícita e separada.**
 - **Artefato de sessão vive no repositório**: plano, relatório ou análise substancial é copiado pra raiz do projeto com a convenção local (`plano-<assunto>-<AAAA-MM-DD>.md`) e commitado na mesma sessão.
-- `.Biblioteca` fica de fora de tudo isso — nunca entra em stage automático."""
+- O que a plataforma declarar em `excluir` fica de fora de tudo isso — nunca
+  entra em stage automático."""
 
 
 def _rel(p):
@@ -80,11 +81,10 @@ def briefing_pendencias():
     else:
         linhas += [
             f"O usuário respondeu **{len(respondidas)}** pendência(s) pela interface do "
-            "Estação (marcou a opção no próprio arquivo). Processe cada uma com a "
-            "skill `rotina-de-avanco` (passo 3 — pendências respondidas): aplique a decisão, "
-            "renomeie o arquivo pra `pendencia-resolvida-*`, escreva o bloco "
-            "`## Resolvida em <data>` explicando o que foi feito, e regenere "
-            "`pendentes.md`/`chaves.md`.", "",
+            "Estação (marcou a opção no próprio arquivo). Processe cada uma: "
+            "aplique a decisão, renomeie o arquivo pra `pendencia-resolvida-*`, "
+            "escreva o bloco `## Resolvida em <data>` explicando o que foi feito, "
+            "e regenere o `sem-destino` da plataforma.", "",
         ]
         for c in respondidas:
             marcadas = []

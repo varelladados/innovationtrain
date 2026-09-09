@@ -1,7 +1,7 @@
 # Classificar — quando um item passa de estágio
 
 > **Três passagens, três conjuntos de critérios.** Derivado do checklist do
-> `C:\Plataforma`, que só cobria uma passagem porque lá os estágios eram três e a
+> origem, que só cobria uma passagem porque lá os estágios eram três e a
 > etapa de organizar acontecia invisivelmente. Com quatro estágios
 > ([`taxonomia.md`](taxonomia.md)), cada passagem tem a sua pergunta.
 

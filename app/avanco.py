@@ -1,5 +1,5 @@
 """Frente 3 do console operacional — GET /api/avanco: resumo da última rodada da
-skill rotina-de-avanco, lido de historico.md (prosa livre, não estruturado — só
+rotina de avanço da plataforma, lido de historico.md (prosa livre, não estruturado — só
 extrai o último heading e o primeiro parágrafo, nunca inventa o que não está
 escrito lá). Disparar uma rodada nova continua exigindo uma sessão do Claude
 Code (a skill decide por julgamento, não é mecânica) — este módulo só mostra

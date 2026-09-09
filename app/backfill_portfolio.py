@@ -1,5 +1,5 @@
-"""Semeia `portfolio.json` nas Projetos que ainda não têm, a partir dos perfis da
-rodada de portfólio (`_metodo/portfolio/perfis/<projeto>.json`, 2026-09-05).
+"""Semeia `portfolio.json` nos projetos que ainda não têm, a partir dos perfis
+declarados pela plataforma (`perfis`).
 
 Fecha a Frente 4 do plano de 2026-09-06 ("Produção = link"): a aba Portfólio já
 lê curadoria de `portfolio.json`, mas só 2 dos 16 projetos tinham o arquivo — o
@@ -11,7 +11,7 @@ Conservador de propósito:
 - escreve só `tags`, `nota` e `repo_publico: false` — nada de `estavel`/`destaque`,
   que dependem de julgamento de qual artefato é a peça boa;
 - `--dry-run` é o padrão; `--write` é explícito;
-- **não commita** — cada Projeto tem repo próprio, revisão é do usuário.
+- **não commita** — cada projeto tem repo próprio, revisão é do usuário.
 
     python app/backfill_portfolio.py            # mostra o que faria
     python app/backfill_portfolio.py --write    # grava
@@ -30,7 +30,7 @@ MAX_NOTA = 200
 
 
 def candidatos():
-    """(pasta, perfil, destino) de cada Projeto sem portfolio.json."""
+    """(pasta, perfil, destino) de cada projeto sem portfolio.json."""
     perfis_dir = config.atual().caminho("perfis")
     if perfis_dir is None or not perfis_dir.exists():
         return []
@@ -38,7 +38,7 @@ def candidatos():
     for perfil_path in sorted(perfis_dir.glob("*.json")):
         nome = perfil_path.stem
         if nome not in indexer.pastas_de_projeto():
-            continue  # perfis de coisas que não são pasta de Projeto (ex.: _metodo)
+            continue  # perfis de coisas que não são pasta de projeto
         pasta = config.atual().projetos_dir / nome
         if not pasta.is_dir():
             continue
@@ -73,7 +73,7 @@ def main():
 
     achados = candidatos()
     if not achados:
-        print("Nada a fazer: toda Projeto com perfil já tem portfolio.json.")
+        print("Nada a fazer: todo projeto com perfil já tem portfolio.json.")
         return 0
 
     print(f"{len(achados)} projeto(s) sem portfolio.json:\n")

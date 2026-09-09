@@ -1,21 +1,23 @@
 """Configuração da plataforma ativa.
 
 Antes do Trecho 3 a Estação assumia que morava *dentro* da plataforma: a raiz
-era `PROJECT_DIR.parent` e cada módulo repetia caminhos do `C:\\Plataforma` como
-constante literal. Este módulo é o que desfaz isso.
+era `PROJECT_DIR.parent` e cada módulo repetia caminhos de uma plataforma
+específica como constante literal. Este módulo é o que desfaz isso.
 
 Duas coisas moram aqui:
 
 1. **A taxonomia** — nomes de estágio, siglas, arquivos de sistema, tipos de
    projeto. Os padrões abaixo são a cópia executável de `metodo/taxonomia.md`,
    que é a fonte única. Uma plataforma pode sobrescrever qualquer chave no seu
-   `plataforma.json`; o `plataforma de origem` sobrescreve pelo `estacao.json` do hub,
-   justamente para não receber arquivo novo.
+   `plataforma.json`; uma plataforma que não pode receber arquivo novo — uma
+   pasta lida em modo somente-leitura, por exemplo — sobrescreve pelo
+   `estacao.json` do hub em vez disso.
 
 2. **A resolução da raiz**, nesta ordem: `--raiz` → `ESTACAO_PLATAFORMA` →
    plataforma ativa no `estacao.json` do hub → erro claro em português. Não há
-   fallback para `PROJECT_DIR.parent`: fora do `plataforma de origem` ele não faz sentido e
-   mascara erro de configuração como se fosse árvore vazia.
+   fallback para `PROJECT_DIR.parent`: fora da plataforma em que a Estação
+   nasceu ele não faz sentido, e mascara erro de configuração como se fosse
+   árvore vazia.
 
 A configuração ativa é estado de módulo (`aplicar`/`atual`) e é lida **na hora
 da chamada**, nunca no import — é isso que faz o seletor de plataforma trocar
@@ -64,10 +66,20 @@ PADROES = {
         "sem_destino": "_sem-destino.md",
     },
     "tipos": ["app", "dados", "serviço", "curso"],
+    #: Nomes de campo de frontmatter que a plataforma usa. Não são caminhos: são
+    #: chaves que o produto **lê e escreve**. Ficam aqui, e não literais no
+    #: código, pelo mesmo motivo da raiz — uma plataforma com convenção própria
+    #: declara a dela e continua sendo lida sem receber arquivo nenhum.
+    "frontmatter": {
+        "processado": "registro-id",  # o item já tem linha no registro
+        "nucleo": None,               # marca "isto é maquinário, não conteúdo"
+        "origem": [],                 # campos de linhagem no CLAUDE.md do projeto
+    },
     "projetos": {"pasta": "4-projetos", "prefixo_re": None},
     "excluir": [".git", "node_modules", "__pycache__", ".claude", "dist", "build"],
     # Caminhos opcionais: quando ausentes, a aba correspondente degrada em vez
-    # de estourar. O `plataforma de origem` preenche todos; uma plataforma nova, nenhum.
+    # de estourar. Uma plataforma madura preenche vários; uma recém-criada,
+    # nenhum — e o app funciona nos dois casos.
     "perfis": None,             # pasta com os .json de maturidade do Portfólio
     "pendencias": None,         # pasta com pendencia-ativa-*.md
     "avanco_historico": None,   # historico.md da rotina de avanço
@@ -82,6 +94,8 @@ PADROES = {
     "doutrina": None,           # documentos citados pelo briefing
     "checklist": None,
     "fluxo": None,
+    "manifesto": None,          # documento com a frase-tese, usado pela vitrine
+    "manifesto_marca": None,    # o rótulo que precede a frase dentro dele
 }
 
 
@@ -120,6 +134,22 @@ class Config:
     @property
     def excluir(self):
         return list(self._d.get("excluir") or [])
+
+    def fm(self, qual):
+        """Nome do campo de frontmatter `qual`, como esta plataforma o chama.
+
+        `processado` sempre devolve algo (o padrão); `nucleo` devolve `None`
+        quanda plataforma de origem não tem esse conceito, e quem chama some com a
+        métrica em vez de contar zero como se fosse informação; `origem`
+        devolve uma lista, possivelmente vazia.
+        """
+        fm = self._d.get("frontmatter") or {}
+        if qual == "origem":
+            return list(fm.get("origem") or [])
+        valor = fm.get(qual)
+        if qual == "processado":
+            return valor or PADROES["frontmatter"]["processado"]
+        return valor
 
     # -- caminhos ---------------------------------------------------------
     def caminho(self, chave):
@@ -212,10 +242,10 @@ class Config:
 # ---------------------------------------------------------------- carga
 
 def _fundir(base: dict, extra: dict) -> dict:
-    """Merge raso, com um nível a mais em `arquivos` e `projetos`."""
+    """Merge raso, com um nível a mais em `arquivos`, `projetos` e `frontmatter`."""
     saida = dict(base)
     for k, v in (extra or {}).items():
-        if k in ("arquivos", "projetos") and isinstance(v, dict):
+        if k in ("arquivos", "projetos", "frontmatter") and isinstance(v, dict):
             saida[k] = {**base.get(k, {}), **v}
         else:
             saida[k] = v
@@ -225,8 +255,8 @@ def _fundir(base: dict, extra: dict) -> dict:
 def carregar(raiz, inline=None) -> Config:
     """Config de uma plataforma.
 
-    `inline` é a taxonomia declarada no `estacao.json` do hub — é assim que o
-    `plataforma de origem` é lido sem receber nenhum arquivo novo. Quando não há inline, lê o
+    `inline` é a taxonomia declarada no `estacao.json` do hub — é assim que uma
+    plataforma é lida sem receber nenhum arquivo novo. Quando não há inline, lê o
     `plataforma.json` da própria raiz. Sem nenhum dos dois, valem os padrões.
     """
     raiz = Path(raiz)

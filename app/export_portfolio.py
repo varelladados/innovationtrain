@@ -1,10 +1,10 @@
-"""Portfólio público do Bruno (Seu Beira) — página estática gerada do inventário.
+"""Vitrine pública — página estática gerada do inventário da plataforma.
 
 Diferente do export_static.py (a Estação inteiro, pra uso interno), isto é a
 VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
 
-- Todo projeto listado em _indice-projetos.md aparece (nome, tipo, status, resumo) — o
-  resumo é o texto canônico da tabela, sem editar.
+- Todo projeto listado no índice de projetos da plataforma aparece (nome, tipo,
+  status, resumo) — o resumo é o texto canônico da tabela, sem editar.
 - Link só se for público de verdade: URL "no ar" (portfolio.json `estavel` ou host
   público detectado) ou repositório GitHub marcado como público em
   portfolio.json (`"repo_publico": true`). Repositório privado vira texto
@@ -50,9 +50,17 @@ def _ler(p, limit=200_000):
 
 
 def frase_manifesto():
-    """A frase-tese, do pocket show (N0 da trilha) — fonte única, não reescrever aqui."""
-    txt = _ler(config.atual().raiz / "_metodo" / "manifesto.md")
-    m = re.search(r"\*\*\.Método, de cabo a rabo:\*\*\s*(.+)", txt)
+    """A frase-tese da plataforma — fonte única, nunca reescrita aqui.
+
+    Onde ela mora e por qual rótulo é reconhecida são declarados pela
+    plataforma (`manifesto` e `manifesto_marca`). Sem os dois, a vitrine sai
+    sem tese em vez de sair com uma frase inventada aqui dentro.
+    """
+    cfg = config.atual()
+    caminho, marca = cfg.caminho("manifesto"), cfg.get("manifesto_marca")
+    if not caminho or not marca:
+        return ""
+    m = re.search(re.escape(marca) + r"\s*(.+)", _ler(caminho))
     t = m.group(1).strip() if m else ""
     return (t[:1].upper() + t[1:]) if t else t
 
@@ -201,6 +209,7 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
     nav = "".join(f'<a href="#{esc(p["pasta"])}"><span>{esc(p["nome"])}</span><span class="k">{esc(p["tipo"])}</span></a>' for p in projetos)
     tipos_txt = " · ".join(f"{n} {TIPO_LABEL.get(t, t)}" for t, n in sorted(n_tipos.items(), key=lambda x: -x[1]))
 
+    cadeia_txt = " → ".join(e["nome"] for e in config.atual().estagios)
     body = f"""
 <div class="wrap">
   <aside class="rail">
@@ -216,7 +225,7 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
       <div class="cont"><div class="n">{sum(p["git"]["commits"] for p in projetos)}</div><div class="l">commits</div></div>
     </div>
     <nav aria-label="projetos">{nav}</nav>
-    <div class="metodo">Cada projeto aqui nasceu como ideia bruta e passou pelo mesmo caminho rastreável: <code>Captura → Ideia → Projeto</code>. {esc(tipos_txt)}.</div>
+    <div class="metodo">Cada projeto aqui nasceu como ideia bruta e passou pelo mesmo caminho rastreável: <code>{esc(cadeia_txt)}</code>. {esc(tipos_txt)}.</div>
   </aside>
   <main>
     <section>
@@ -232,11 +241,11 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
   </main>
   <footer>
     <span>Gerado em {esc(gerado)} a partir do inventário da Estação — a página muda quando os projetos mudam, não o contrário.</span>
-    <span>Resumos são os textos canônicos de <code>_indice-projetos.md</code>.</span>
+    <span>Resumos são os textos canônicos do índice de projetos da plataforma.</span>
   </footer>
 </div>"""
 
-    head = f"<title>Portfólio Seu Beira</title>\n{fontes}\n{style}\n"
+    head = f"<title>Portfólio — {esc(config.atual().nome)}</title>\n{fontes}\n{style}\n"
     page = head + body
     if full:
         page = f'<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n{head}</head>\n<body>{body}</body>\n</html>\n'

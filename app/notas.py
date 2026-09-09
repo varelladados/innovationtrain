@@ -1,10 +1,10 @@
 """Frente 1 do console operacional — captura de nota crua (SBC) pela UI, sem
 abrir sessão do Claude Code. Mesma mecânica da skill encaminhando-trecho-para-
-captura (novo-id -> arquivo em .pendente/ -> linha no LOG), só que disparada
+captura (novo-id -> arquivo no estágio de entrada -> linha no registro), disparada
 por POST /api/nota/nova em vez de chat. Nunca classifica, nunca decide destino
 — ver PRJ-Estacao/plano-console-operacional-2026-09-06.md, frente 1.
 
-plataforma.py é chamado via subprocess, nunca importado direto: `novo-id` faz
+O utilitário é chamado via subprocess, nunca importado direto: `novo-id` faz
 sys.exit() em erro, o que mataria o servidor inteiro se fosse import (mesmo
 motivo documentado em metrics.py para o import tardio).
 """
@@ -35,9 +35,7 @@ origem: nota criada pela UI do console (Estação) — captura crua, sem classif
 tags: []
 status: vaga
 links: []
-parte_do_nucleo: false
-registro-id: {id}
----
+{marcas}---
 
 ## Conteúdo bruto
 
@@ -46,7 +44,7 @@ registro-id: {id}
 
 # Serializa toda a operação (novo-id lê o LOG pra achar o maior SEQ do dia; duas
 # chamadas concorrentes sem isso podem gerar o mesmo SEQ — bug real já documentado
-# na skill encaminhando-trecho).
+# na rotina de encaminhamento equivalente feita em chat).
 _LOCK = threading.Lock()
 
 
@@ -95,14 +93,31 @@ def _gerar_id(texto):
             capture_output=True, text=True, timeout=10, cwd=str(cfg.raiz),
         )
     except Exception as e:
-        raise NotaError(f"falha ao chamar plataforma.py: {e}")
+        raise NotaError(f"falha ao chamar o utilitário da plataforma: {e}")
     if proc.returncode != 0:
-        raise NotaError(f"plataforma.py novo-id falhou: {(proc.stderr or proc.stdout).strip()}")
+        raise NotaError(f"novo-id falhou: {(proc.stderr or proc.stdout).strip()}")
     novo_id = proc.stdout.strip().splitlines()[0].strip() if proc.stdout.strip() else ""
     if not novo_id:
-        raise NotaError("plataforma.py novo-id não devolveu um ID")
+        raise NotaError("novo-id não devolveu um identificador")
     return novo_id
 
+
+
+def _marcas_frontmatter(id_):
+    """As linhas de frontmatter que a plataforma declara — nenhuma escrita aqui.
+
+    `processado` marca que o item já tem linha no registro (é por ele que o
+    indexer sabe não cobrar classificação de novo); `nucleo`, quando a
+    plataforma tem esse conceito, separa maquinário de conteúdo. Uma plataforma
+    que não declara `nucleo` simplesmente não ganha a linha.
+    """
+    cfg = config.atual()
+    linhas = []
+    nucleo = cfg.fm("nucleo")
+    if nucleo:
+        linhas.append(f"{nucleo}: false")
+    linhas.append(f"{cfg.fm('processado')}: {id_}")
+    return "".join(l + "\n" for l in linhas)
 
 def _escrever_arquivo_sbc(id_, texto):
     destino = _entrada_dir()
@@ -110,7 +125,8 @@ def _escrever_arquivo_sbc(id_, texto):
     caminho = destino / f"{id_}.md"
     if caminho.exists():
         raise NotaError(f"arquivo já existe: {caminho.name} (colisão de ID)")
-    conteudo = TEMPLATE.format(id=id_, data_iso=date.today().isoformat(), texto=texto.strip())
+    conteudo = TEMPLATE.format(id=id_, data_iso=date.today().isoformat(),
+                               texto=texto.strip(), marcas=_marcas_frontmatter(id_))
     tmp = caminho.with_suffix(".md.tmp")
     tmp.write_text(conteudo, encoding="utf-8", newline="\n")
     tmp.replace(caminho)  # gravação atômica — mesmo padrão do dois apps locais anteriores
@@ -160,7 +176,7 @@ def _append_log(id_, texto):
         raise NotaError(f"registro não encontrado: {registro}")
 
     # Caminho da pasta de entrada relativo ao registro — é o que vai na coluna
-    # Local e no link. Naquela plataforma dá `../.pendente`; numa plataforma nova, o
+    # Local e no link. Onde há ciclo de vida dá `../.pendente`; sem ele, o
     # próprio nome do estágio 1.
     rel_entrada = os.path.relpath(_entrada_dir(), registro.parent).replace("\\", "/")
 
@@ -200,8 +216,8 @@ def _append_log(id_, texto):
 def _sincronizar_pendentes():
     try:
         cfg = config.atual()
-        # o nome do subcomando muda com o utilitário: `gerar-pendentes` no
-        # plataforma.py da plataforma de origem, `gerar-sem-destino` no plataforma.py do hub.
+        # o nome do subcomando muda com o utilitário de cada plataforma —
+        # por isso ele vem do config, e não escrito aqui.
         subprocess.run(
             [sys.executable, str(_utilitario()), cfg.get("comando_sem_destino")],
             capture_output=True, text=True, timeout=15, cwd=str(cfg.raiz),
@@ -211,9 +227,10 @@ def _sincronizar_pendentes():
 
 
 def criar_captura_crua(texto):
-    """Cria uma Captura crua (SBC) a partir de texto solto: gera ID, grava o
-    arquivo em .pendente/, registra no LOG central e ressincroniza pendentes.md.
-    Levanta NotaError em qualquer falha (nunca deixa meio-registrado sem avisar)."""
+    """Cria uma captura crua a partir de texto solto: gera identificador, grava
+    o arquivo no estágio de entrada, registra no registro central e regenera o
+    `sem-destino`. Levanta NotaError em qualquer falha (nunca deixa
+    meio-registrado sem avisar)."""
     texto = (texto or "").strip()
     if not texto:
         raise NotaError("texto vazio")

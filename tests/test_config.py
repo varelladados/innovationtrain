@@ -1,7 +1,7 @@
 """Testes do config — a peça de que os outros onze módulos dependem.
 
 O risco aqui não é o app quebrar: é ele **funcionar apontando para o lugar
-errado**. Era isso que o fallback `PROJECT_DIR.parent` fazia — fora do `plataforma de origem`
+errado**. Era isso que o fallback `PROJECT_DIR.parent` fazia — fora da
 ele resolvia para uma pasta qualquer e o erro de configuração aparecia como
 "árvore vazia". Por isso o primeiro teste é que esse fallback não voltou.
 """
@@ -117,7 +117,7 @@ class TestCarregar(unittest.TestCase):
         self.assertEqual(cfg.historico, "_historico")
 
     def test_inline_vence_o_arquivo(self):
-        """É assim que o `plataforma de origem` é lido sem receber nenhum arquivo novo."""
+        """É assim que uma plataforma é lida sem receber nenhum arquivo novo."""
         (self.tmp / "plataforma.json").write_text('{"nome": "do arquivo"}', encoding="utf-8")
         cfg = config.carregar(self.tmp, {"nome": "do estacao.json"})
         self.assertEqual(cfg.nome, "do estacao.json")

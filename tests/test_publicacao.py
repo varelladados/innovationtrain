@@ -13,9 +13,11 @@ formato de nome de pasta de projeto do sistema de origem — e mantém uma lista
 que é permitido, que é curta e só tem nome deste projeto. Um teste que listasse
 os nomes proibidos publicaria exatamente o que deveria proteger.
 """
+import hashlib
 import re
 import subprocess
 import sys
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -29,7 +31,7 @@ FORMA_PROJETO = re.compile(r"\b(?:PJ|PR)[A-Z]-[A-Za-z][A-Za-z0-9_-]{2,}")
 #: O que pode aparecer com essa forma. Tudo aqui é deste projeto ou genérico.
 PERMITIDOS = {
     "PRJ-Estacao",        # o nome da pasta deste projeto antes do fork
-    "PRJ-Explorer",   # o nome dele antes de virar Estação
+    "PRJ-Explorer",       # um nome antigo deste projeto
     "PRJ-Teste_Console",  # fixture de teste
     "PRJ-Outro",          # exemplo genérico em documentação
 }
@@ -42,7 +44,7 @@ PERMITIDO_RE = re.compile(r"^PRJ-(?:[a-z]+|\d{3})$")
 PAPEIS = [re.compile(p) for p in (
     r"^plano-.*\.md$", r"^propostas-.*\.md$", r"^analise-.*\.md$",
     r"^backlog-.*\.md$", r"^portfolio\.json$", r"^\.design/",
-    r"^docs/backlog-", r"^docs/projeto-tecnico-",
+    r"^docs/backlog-", r"^docs/projeto-tecnico-", r"^docs/plano-",
 )]
 
 #: Configuração e decisões de quem usa — nunca versionadas.
@@ -128,6 +130,93 @@ class TestHistoricoLimpo(unittest.TestCase):
         achados = sorted(c for c in caminhos if any(p.search(c) for p in PAPEIS))
         self.assertEqual(achados, [],
                          f"papel de trabalho aparece no histórico: {achados}")
+
+
+#: Radicais de vocabulário que não pode entrar aqui — os nomes próprios de uma
+#: plataforma privada, que descreveriam o sistema de origem mesmo sem citar
+#: projeto nenhum. Guardados por **hash**, e não em claro, pelo mesmo motivo da
+#: lista de permitidos acima: um teste que escrevesse as palavras proibidas
+#: publicaria exatamente o que deveria proteger.
+#:
+#: Cada entrada é o SHA-256 de um radical em minúsculas e sem acento. O teste
+#: hasheia os prefixos de cada palavra que encontra, o que pega toda flexão sem
+#: precisar listá-las.
+RADICAIS_PROIBIDOS = {
+    "18d195be01bd565c04f805f908c506083cf54cd365a5ab2996d1774d3e83bc8e",
+    "ce68803976b2e4de4e8a1380b8a74f8c084e7a34e4a93cefce503cfbc96ee67b",
+}
+PREFIXO_MIN, PREFIXO_MAX = 4, 8
+
+PALAVRA_RE = re.compile(r"[A-Za-zÀ-ÿ]{4,}")
+
+
+def _sem_acento(p):
+    return unicodedata.normalize("NFKD", p.lower()).encode("ascii", "ignore").decode()
+
+
+def _radicais_em(texto):
+    """Radicais proibidos encontrados em `texto`, como hash (nunca como palavra).
+
+    Devolve hash de propósito: nem a mensagem de falha reescreve a palavra que
+    o arquivo existe para manter fora. Quem investigar procura o hash.
+    """
+    achados = set()
+    for palavra in PALAVRA_RE.findall(texto):
+        p = _sem_acento(palavra)
+        for n in range(PREFIXO_MIN, min(len(p), PREFIXO_MAX) + 1):
+            h = hashlib.sha256(p[:n].encode()).hexdigest()
+            if h in RADICAIS_PROIBIDOS:
+                achados.add(h[:12])
+    return achados
+
+
+@PRECISA_GIT
+class TestVocabularioPrivado(unittest.TestCase):
+    """O produto é genérico. Nome próprio de plataforma de alguém não entra.
+
+    Isto não é preciosismo de estilo: o vocabulário estava em *código vivo* —
+    chave de frontmatter que o app grava, caminho de arquivo de sistema, rótulo
+    de métrica na interface. Tirar as palavras sem mover essas coisas para
+    configuração teria quebrado a leitura da plataforma de origem; por isso a
+    correção foi configuração, e por isso este teste vale a pena: ele falha no
+    momento em que alguém volta a escrever no código o que é de uma plataforma.
+    """
+
+    def test_arquivos_rastreados(self):
+        fora = {}
+        for rel in RASTREADOS.splitlines():
+            rel = rel.strip()
+            if not rel or Path(rel).suffix.lower() not in TEXTO:
+                continue
+            if rel.startswith("app/templates/vendor/"):
+                continue          # biblioteca de terceiro, não é nosso texto
+            caminho = RAIZ / rel
+            if not caminho.is_file():
+                continue
+            for h in _radicais_em(caminho.read_text(encoding="utf-8", errors="replace")):
+                fora.setdefault(h, []).append(rel)
+        self.assertEqual(
+            fora, {},
+            "vocabulário de uma plataforma privada em arquivo rastreado. O que o "
+            "app lê e escreve tem que vir do config (`frontmatter`, `arquivos`, "
+            "os caminhos opcionais), nunca escrito no código.")
+
+    def test_mensagens_de_commit(self):
+        saida = git("log", "--all", "--format=%B")
+        if saida is None:
+            self.skipTest("não consegui ler o histórico")
+        achados = _radicais_em(saida)
+        self.assertEqual(achados, set(),
+                         "vocabulário de plataforma privada em mensagem de commit")
+
+    def test_historico_inteiro(self):
+        """Cobra a história, não só o topo: um `git revert` traria tudo de volta."""
+        saida = git("log", "--all", "-p", "--format=")
+        if saida is None:
+            self.skipTest("não consegui ler o histórico")
+        achados = _radicais_em(saida)
+        self.assertEqual(achados, set(),
+                         "vocabulário de plataforma privada em algum commit")
 
 
 class TestOQueUmRepositorioPublicoPrecisa(unittest.TestCase):

@@ -1,6 +1,6 @@
 """PRJ-Estacao — servidor local (stdlib puro).
 
-Navegador/portfólio pra C:\\Plataforma inteiro: orquestras, backlogs, LOG central.
+Navegador/portfólio da plataforma inteira: índices, backlogs, registro central.
 Modelo arquitetural: outro-app-local/app/server.py (ThreadingHTTPServer,
 roteamento manual, template lido fresco do disco a cada request).
 
@@ -553,7 +553,7 @@ class Handler(BaseHTTPRequestHandler):
         de um projeto. Allow-list vem do índice (só backlogs daquela pasta), trava
         de concorrência por sha1 do arquivo inteiro, backup antes de gravar.
         Formato escolhido de propósito: `- [ ] ... _(via console, data)_` é o que
-        plataforma.py e o snapshot do avanço já leem — a anotação volta pra IA sozinha."""
+        o utilitário e o snapshot do avanço já leem — a anotação volta pra IA sozinha."""
         entries, text_cache = get_state()
         try:
             resultado = projetos_mod.anotar(
@@ -589,7 +589,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_pendencia_responder(self, payload):
         """Quarto endpoint de escrita: grava a resposta do usuário numa
-        pendência-formulário do rotina-de-avanco, exatamente como ele faria à mão
+        pendência-formulário, exatamente como ele faria à mão
         (marcar `[x]`, ou preencher a linha "Outra resposta"). Nada além disso —
         renomear pra `pendencia-resolvida-*`, escrever "## Resolvida em" e mexer
         em `**Adiada:**` é trabalho da skill na rodada seguinte, por contrato
@@ -614,10 +614,10 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(resultado)
 
     def _handle_nota_nova(self, payload):
-        """Terceiro endpoint com efeito colateral: cria uma Captura crua (SBC) a
-        partir de texto solto — arquivo em 1-capturas/.pendente/ + linha no LOG
+        """Terceiro endpoint com efeito colateral: cria uma captura crua a
+        partir de texto solto — arquivo no estágio de entrada + linha no registro
         central. Nunca classifica, nunca decide destino (mesma disciplina da skill
-        encaminhando-trecho, só que via HTTP em vez de chat). Ver
+        rotina de encaminhamento equivalente, só que via HTTP em vez de chat). Ver
         app/notas.py e plano-console-operacional-2026-09-06.md, frente 1."""
         texto = payload.get("texto", "")
         try:

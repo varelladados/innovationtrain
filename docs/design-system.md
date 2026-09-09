@@ -41,7 +41,7 @@ A Estação tem **dois eixos independentes**: o *tema* (a identidade) e o *modo*
 | **Modo** — claro ou escuro | preferência do sistema operacional; `data-theme` força | o sistema |
 
 **Tema padrão** é a identidade do produto: verde-petróleo sobre cinza-frio.
-**Tema areia** é a identidade pessoal do `C:\Plataforma` — dourado sobre areia —
+**Tema areia** é a identidade alternativa — dourado sobre areia —
 preservada como um tema entre outros (Trecho 4, Parada 1).
 
 Isso dá quatro combinações, e as quatro têm bloco próprio no CSS, **nesta

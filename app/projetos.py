@@ -1,16 +1,17 @@
-"""View por projeto (Projeto): junta o que já existe em quatro fontes e deixa o
+"""View por projeto: junta o que já existe em quatro fontes e deixa o
 humano anotar no backlog do projeto sem abrir sessão do Claude Code.
 
 Fontes (nenhuma inventada aqui, todas já existiam):
 - `portfolio.build_portfolio()` — status, resumo canônico, git, links, execs;
-- `_metodo/portfolio/perfis/<pasta>.json` — maturidade 0-5 × 6 dimensões,
-  lacunas, ligações, documentos-chave (rodada de portfólio de 2026-09-05);
+- os perfis declarados pela plataforma (`perfis`) — maturidade 0-5 × 6
+  dimensões, lacunas, ligações, documentos-chave, quando existirem;
 - índice do app — os `backlog-*.md` daquele projeto;
 - `CLAUDE.md` do projeto.
 
 Escrita: só `POST /api/projeto/anotar`, que acrescenta UMA linha de checkbox no
-backlog do projeto. É de propósito o formato que a automação já lê (`plataforma.py`
-varre `- [ ]` em todo `backlog*.md`; o snapshot do avanço vê o arquivo mudado),
+backlog do projeto. É de propósito o formato que a automação já lê (o
+utilitário varre `- [ ]` em todo `backlog*.md`; o snapshot do avanço vê o
+arquivo mudado),
 então a anotação feita aqui reaparece pra IA na próxima rodada sem nenhum
 formato novo. Sem `**[ESSENCIAL]**`: anotação não é bloqueio de entrega.
 """
@@ -129,7 +130,7 @@ def detalhe(pasta, entries, text_cache, portfolio=None):
 def _posicao_de_insercao(linhas):
     """Antes do `## Links` de rodapé, se houver; senão depois da última linha de
     checkbox; senão no fim. Mantém o rodapé de links sempre por último, que é a
-    convenção de todo backlog da plataforma de origem."""
+    convenção de todo backlog do método."""
     for i, ln in enumerate(linhas):
         if LINKS_HEADING_RE.match(ln.strip()):
             fim = i

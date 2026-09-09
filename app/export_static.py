@@ -20,6 +20,7 @@ import sys
 import time
 from pathlib import Path
 
+import config
 import indexer
 import log_parser
 import metrics
@@ -46,7 +47,8 @@ def build_snapshot():
         if e["path"].lower().endswith((".html", ".htm")) and len(txt) > HTML_TRUNCATE:
             txt = txt[:HTML_TRUNCATE]
         raw[e["path"]] = txt
-    log_rows = log_parser.parse_log_tables(cache.get("1-capturas/LOG/_log.md", ""))
+    registro = config.atual().arquivo_rel("registro") or ""
+    log_rows = log_parser.parse_log_tables(cache.get(registro, ""))
     return {
         "gerado_em": time.strftime("%Y-%m-%d %H:%M"),
         "entries": entries,

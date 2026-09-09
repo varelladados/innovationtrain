@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Utilitário da plataforma — `novo-id`, `gerar-sem-destino`, `verificar`.
 
-Derivado de `C:\\Plataforma\\_ferramentas\\scripts\\plataforma.py`, não escrito do zero: a
+Derivado do utilitário do sistema em que a Estação nasceu, não escrito do zero: a
 lógica de sequência por dia e de hash sem colisão já estava testada em uso real,
 e reescrever isso só produziria bugs novos. O que mudou foi o vocabulário (os
 estágios saem do `plataforma.json`, não são três siglas fixas) e o tamanho —

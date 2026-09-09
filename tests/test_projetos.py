@@ -1,7 +1,7 @@
 """Testes da anotação em backlog de projeto (POST /api/projeto/anotar).
 
 O risco aqui é escrever no backlog de um repo de verdade: a linha tem que entrar
-no lugar certo (antes do rodapé `## Links`, que toda orquestra/backlog da plataforma de origem
+no lugar certo (antes do rodapé `## Links`, que todo índice/backlog do método
 usa), sem reescrever o resto do arquivo e sem trocar o fim de linha.
 """
 import shutil
@@ -45,7 +45,7 @@ class BaseProjeto(unittest.TestCase):
     PASTA = "PRJ-Teste_Console"
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-proj-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-proj-"))
         self.projeto_dir = self.tmp / self.PASTA
         self.projeto_dir.mkdir()
         apoio.aplicar(self.tmp, **apoio.qualquer_pasta_e_projeto())
@@ -125,7 +125,7 @@ class TestAnotar(BaseProjeto):
 
     def test_arquivo_fora_da_allow_list_recusado(self):
         _, rel, entries, cache = self.criar_backlog("backlog-c.md", BACKLOG_COM_LINKS)
-        for alvo in [f"{self.PASTA}/CLAUDE.md", "1-capturas/LOG/_log.md",
+        for alvo in [f"{self.PASTA}/CLAUDE.md", "_registro.md",
                      "../fora.md", f"{self.PASTA}/../outro/backlog.md"]:
             with self.assertRaises(projetos.ProjetoError):
                 projetos.anotar(self.PASTA, alvo, "anotação",
@@ -152,7 +152,7 @@ class TestAnotar(BaseProjeto):
 
     def test_nao_marca_essencial(self):
         """Anotação não é bloqueio de entrega — não pode virar [ESSENCIAL],
-        senão plataforma.py sincronizar-pendencias cobraria pendência-formulário."""
+        senão o utilitário cobraria pendência-formulário."""
         _, rel, entries, cache = self.criar_backlog("backlog-c.md", BACKLOG_COM_LINKS)
         r = projetos.anotar(self.PASTA, rel, "anotação", projetos.sha1(cache[rel]), entries, cache)
         self.assertNotIn("[ESSENCIAL]", r["linha"])

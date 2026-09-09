@@ -1,7 +1,7 @@
 """Indexer — varre a raiz da plataforma ativa, classifica cada arquivo
 pertinente e produz um índice JSON.
 
-Até o Trecho 3 a raiz era `PROJECT_DIR.parent` e os nomes do `plataforma de origem` estavam
+Até o Trecho 3 a raiz era `PROJECT_DIR.parent` e os nomes da plataforma estavam
 escritos aqui como constante. Agora tudo que é nome de plataforma sai de
 `config.atual()` — e é lido **na hora da chamada**, para que trocar de
 plataforma não exija reiniciar o servidor. Ver `metodo/taxonomia.md`.
@@ -25,7 +25,6 @@ MAX_TEXT_READ_BYTES = 500_000
 STUB_MAX_BYTES = 220
 STUB_MAX_LINES = 4
 
-PROCESSED_FRONTMATTER_RE = re.compile(r"^registro-id:\s*(\S+)", re.MULTILINE)
 HEADING_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 
@@ -144,8 +143,9 @@ def extract_title(name: str, body: str) -> str:
 
 
 def is_processed(name: str, frontmatter: dict):
-    if "registro-id" in frontmatter:
-        return True, frontmatter["registro-id"]
+    chave = config.atual().fm("processado")
+    if chave in frontmatter:
+        return True, frontmatter[chave]
     if config.atual().id_re.match(name):
         return True, name
     return False, None
@@ -153,8 +153,8 @@ def is_processed(name: str, frontmatter: dict):
 
 def lifecycle_stage(rel_posix: str):
     """Estágio de triagem física dentro de um estágio da taxonomia — ortogonal
-    à etapa. No `plataforma de origem` são `.entrada`/`.pendente`/`.historico`; na
-    taxonomia nova, só o `_historico/` de cada estágio."""
+    à etapa. Uma plataforma pode declarar quantas quiser em `ciclo_vida`; na
+    taxonomia padrão é só o `_historico/` de cada estágio."""
     cfg = config.atual()
     nomes = set(cfg.get("ciclo_vida") or [cfg.historico])
     for p in rel_posix.split("/")[:-1]:

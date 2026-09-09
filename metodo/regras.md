@@ -4,7 +4,8 @@
 > qualquer pessoa ou automação que mexa nela. Elas não são preferência de
 > organização: cada uma existe porque a falta dela custou alguma coisa.
 >
-> Derivadas da doutrina do `C:\Plataforma`, traduzidas para o vocabulário do produto
+> Derivadas da doutrina do sistema em que a Estação nasceu, traduzidas para o
+> vocabulário do produto
 > (ver [`taxonomia.md`](taxonomia.md)). Uma sessão de IA que abre numa
 > plataforma tem que seguir estas regras sem que você precise pedir.
 

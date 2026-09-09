@@ -1,8 +1,8 @@
-"""Métricas do dashboard Método — GET /api/metricas.
+"""Métricas do dashboard — GET /api/metricas.
 
 Lê o registro da plataforma ativa e reaproveita `indexer.is_excluded` para a
 varredura de arquivos, em vez de duplicar regex. Até o Trecho 6 isto dependia do
-utilitário do `plataforma de origem` (`plataforma.ler_log_texto`), o que fazia o Dashboard sumir em
+utilitário da plataforma, o que fazia o Dashboard sumir em
 qualquer outra plataforma; a regra de reconhecer uma linha de registro é a mesma
 de lá, agora com o identificador vindo do config. Mesmo formato de saída do
 protótipo em `.design/mockups/gerar_metricas_dashboard.py`, contra o qual os
@@ -26,8 +26,8 @@ TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$")
 def _linhas_do_registro():
     """As linhas de tabela do registro da plataforma ativa.
 
-    Antes isto era `plataforma.parse_tabelas_do_log()`, importado do utilitário do
-    `plataforma de origem` — o que fazia o Dashboard depender de um script que só existe
+    Antes isto era importado do utilitário da plataforma — o que fazia o
+    Dashboard depender de um script que só existe
     naquela plataforma. A regra é a mesma de lá (seis colunas, a primeira
     contendo um identificador), agora com o identificador vindo do config.
     """
@@ -61,7 +61,7 @@ def _tipo_re():
     A versão herdada procurava o tipo em qualquer lugar da coluna, e por isso
     contava o tipo do DESTINO em toda linha que já tinha avançado: uma entrada
     crua (que não tem tipo nenhum) aparecia como `DIG` só porque a seta dela
-    apontava para um item `SBI-DIG`. No `plataforma de origem` isso inflava a contagem em 8
+    apontava para um item já promovido. Numa plataforma real isso inflou a contagem em 8
     linhas. A coluna começa com a sigla do estágio, e o tipo, quando existe, vem
     logo depois — é só isso que conta.
     """
@@ -134,14 +134,17 @@ def _metricas_arquivos():
     return {"total_arquivos": total_arquivos, "total_md": total_md, "linhas_codigo": linhas_codigo}
 
 
-def _metricas_parte_do_nucleo():
-    """Conta o marcador `parte_do_nucleo:` do caso aplicado. Só faz sentido
-    onda plataforma de origem declara `metricas_pastas` — numa plataforma genérica esse
-    campo não existe, e a métrica sai do dashboard em vez de contar zero como
-    se fosse informação."""
+def _metricas_nucleo():
+    """Conta o marcador de núcleo que a plataforma declarar em `frontmatter`.
+
+    Só faz sentido onda plataforma de origem declara **as duas coisas** — o campo e as
+    `metricas_pastas` onde procurá-lo. Sem isso a métrica sai do dashboard, em
+    vez de contar zero como se fosse informação.
+    """
     cfg = config.atual()
+    campo = cfg.fm("nucleo")
     pastas = cfg.get("metricas_pastas")
-    if not pastas:
+    if not campo or not pastas:
         return {}
     nucleo = []
     for rel in pastas:
@@ -152,20 +155,21 @@ def _metricas_parte_do_nucleo():
         cm = cfg.projetos_dir / nome / "CLAUDE.md"
         if cm.exists():
             nucleo.append(cm)
+    padrao = re.compile(rf"^{re.escape(campo)}:\s*true", re.MULTILINE)
     marcados = [
         p for p in nucleo
-        if re.search(r"^parte_do_nucleo:\s*true", p.read_text(encoding="utf-8", errors="replace"), re.MULTILINE)
+        if padrao.search(p.read_text(encoding="utf-8", errors="replace"))
     ]
-    return {"marcados_parte_do_nucleo": len(marcados)}
+    return {"marcados_nucleo": len(marcados), "campo_nucleo": campo}
 
 
 def compute_metrics():
     """Custa uma varredura completa da plataforma — o server.py calcula no
     reindex e guarda em STATE, não chama isto a cada GET /api/metricas."""
     try:
-        log, nucleo, erro = _metricas_log(), _metricas_parte_do_nucleo(), None
-    except Exception as e:  # plataforma.py quebrado/ausente: só o dashboard degrada
-        log, nucleo, erro = {}, {}, f"plataforma.py indisponível: {type(e).__name__}: {e}"
+        log, nucleo, erro = _metricas_log(), _metricas_nucleo(), None
+    except Exception as e:  # utilitário quebrado/ausente: só o dashboard degrada
+        log, nucleo, erro = {}, {}, f"métricas indisponíveis: {type(e).__name__}: {e}"
     return {
         "gerado_em": datetime.datetime.now().isoformat(timespec="seconds"),
         "erro": erro,

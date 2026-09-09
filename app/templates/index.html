@@ -105,9 +105,9 @@
   --tipo-outro:#8B95A1;
 }
 
-/* tema "areia" — a identidade do C:\Plataforma, agora um tema entre outros
-   (Trecho 4, Parada 1). A paleta de tipo de arquivo é compartilhada: ela
-   diz o que o arquivo é, não de quem é a plataforma. */
+/* tema "areia" — dourado sobre areia, um tema entre outros (Trecho 4,
+   Parada 1). A paleta de tipo de arquivo é compartilhada: ela diz o que o
+   arquivo é, não de quem é a plataforma. */
 :root[data-tema="areia"]{
   --bg:#F2ECDE; --surface:#FBF8F0; --surface-2:#EFE7D2; --border:rgba(27,22,15,0.14);
   --text:#1B160F; --text-2:#6E6555; --accent:#9C7A3C; --accent-bg:#F0E6CC;
@@ -398,7 +398,7 @@ th{background:var(--surface-2)}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-1);font-size:var(--fs-2);opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.show{opacity:1}
 
-/* Tour — trilha.md renderizada por parada */
+/* Tour — o documento de trilha da plataforma, renderizado por parada */
 .tour-nav{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin:var(--sp-2) 0 var(--sp-4);position:sticky;top:0;background:var(--bg);padding:var(--sp-2) 0;z-index:2;border-bottom:1px solid var(--border)}
 .tour-step{padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-pill);background:var(--surface);cursor:pointer;font-size:var(--fs-1);font-family:"IBM Plex Mono",monospace;color:var(--text-2)}
 .tour-step:hover{border-color:var(--accent);color:var(--text)}
@@ -588,8 +588,8 @@ async function loadIndex(){
 // Quando a raiz ativa não é uma plataforma (pasta vazia, marcador ausente), o
 // servidor sobe assim mesmo e o aviso abaixo diz o motivo — nenhuma aba estoura.
 // A tela inicial diz qual plataforma está aberta e onde ela fica — antes ela
-// afirmava ser "o corpus inteiro de C:\Plataforma", que virou mentira no momento em
-// que a Estação passou a operar mais de uma.
+// nomeava uma plataforma específica, o que virou mentira no momento em que a
+// Estação passou a operar mais de uma.
 function renderBoasVindas(data){
   const el = document.getElementById("welcome-lead");
   if (!el) return;
@@ -1418,8 +1418,11 @@ async function openDashboardView(){
     {num: data.arquivos.total_arquivos, label: "Arquivos na plataforma"},
     {num: data.arquivos.total_md, label: "Arquivos .md"},
     {num: data.arquivos.linhas_codigo, label: "Linhas de código"});
-  if (data.nucleo && data.nucleo.marcados_parte_do_nucleo !== undefined){
-    kpis.push({num: data.nucleo.marcados_parte_do_nucleo, label: "Marcados parte_do_nucleo"});
+  // só aparece quanda plataforma de origem declara um campo de núcleo; o rótulo é o
+  // nome que ELA dá ao campo, não um escrito aqui.
+  if (data.nucleo && data.nucleo.marcados_nucleo !== undefined){
+    kpis.push({num: data.nucleo.marcados_nucleo,
+               label: `Marcados ${data.nucleo.campo_nucleo}`});
   }
   const kpiSection = document.createElement("div");
   kpiSection.className = "dash-section";
@@ -1491,10 +1494,9 @@ async function openDashboardView(){
 // Workflow — os estágios da plataforma + decisões abertas (GET /api/workflow, /api/avanco)
 // ============================================================
 // v1: só leitura. Resolver uma pendência continua sendo uma sessão do Claude
-// Code — ver plano-console-operacional-2026-09-06.md, frente 2 (decisão em aberto
-// sobre decisão inline ficar pra depois ou entrar aqui).
+// Code. Decisão inline dentro do card ficou para depois, de propósito.
 // os rótulos e a ordem das colunas vêm do servidor: dependem da taxonomia da
-// plataforma ativa, e não são mais os três da plataforma de origem escritos aqui.
+// plataforma ativa, e não são mais uma lista fixa escrita aqui.
 let WF_STAGE_LABEL = {};
 
 async function openWorkflowView(){
@@ -2224,8 +2226,8 @@ async function ebGerar(){
 // de IA fazer o registro.
 //
 // Os conjuntos abaixo são alinhados pelo FIM da lista de estágios. Uma
-// plataforma de quatro estágios usa os três; uma de três usa os dois últimos —
-// que é o checklist que a plataforma de origem sempre teve. Ficam hardcoded de propósito, como
+// plataforma de quatro estágios usa os três; uma de três usa os dois últimos.
+// Ficam hardcoded de propósito, como
 // os guardrails do briefing: parsear a prosa do método para montar esta tela a
 // deixaria quebrar em silêncio a cada edição de texto.
 const FX_SETS = [
@@ -2371,7 +2373,7 @@ async function openNotaView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "C:\\Plataforma\\ Nova nota";
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Nova nota";
   document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">captura</span><span id="meta-path">vira ${escapeHtml(plNome(1))} (${escapeHtml(plSigla(1))}) no primeiro estágio — sem classificação, sem IA</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `
@@ -2498,7 +2500,7 @@ function tryOpenTarget(hrefOrName, basePath){
 
 // Links dentro do markdown renderizado (#content) são <a href="..."> normais
 // — sem isto, o navegador tenta *navegar* pro caminho cru (ex.: clicar em
-// "../_metodo/_indice.md") e o servidor responde 404, porque só
+// "../_indice.md") e o servidor responde 404, porque só
 // serve conteúdo via /api/file?path=..., não por path direto. Intercepta e
 // roteia pela SPA, deixando passar só o que genuinamente deve navegar fora
 // dela (link externo, âncora, e os data-href da view de LOG que já têm

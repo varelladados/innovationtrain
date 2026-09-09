@@ -4,7 +4,7 @@ O que importa aqui: o bloco de guardrails nunca pode sumir de um briefing (é o
 que impede a sessão de IA de commitar sozinha, apagar fisicamente ou fechar
 pendência por inferência), e os caminhos citados têm que ser os **reais da
 plataforma ativa** — desde o Trecho 3 eles saem do config, então o teste monta
-uma plataforma temporária em vez de depender de C:\\Plataforma existir.
+uma plataforma temporária em vez de depender de uma plataforma real existir.
 """
 import shutil
 import sys
@@ -79,7 +79,7 @@ class TestGuardrails(unittest.TestCase):
               "Push só com autorização explícita e separada",
               "nunca `git add .`",
               "por inferência", "Apagar é sempre lógico", "novo-id",
-              "vive no repositório", ".Biblioteca"]
+              "vive no repositório", "declarar em `excluir`"]
 
     def test_nao_manda_mais_esperar_autorizacao_pra_commitar(self):
         """O erro que custou trabalho perdido não pode voltar por descuido."""
@@ -90,7 +90,7 @@ class TestGuardrails(unittest.TestCase):
             self.assertNotIn("só commite depois", texto.lower())
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-brf-gr-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-gr-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):
@@ -116,7 +116,7 @@ class TestGuardrails(unittest.TestCase):
 
 class TestPendencias(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-brf-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-"))
         self.pend = self.tmp / "pendencias"
         self.pend.mkdir()
         plataforma_de_teste(self.tmp)
@@ -150,7 +150,7 @@ class TestPendencias(unittest.TestCase):
 
 class TestClassificar(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-brf-cl-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-cl-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):
@@ -182,7 +182,7 @@ class TestAvancar(unittest.TestCase):
     PASTA = "projeto-de-teste"
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-brf-av-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-av-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):
@@ -210,7 +210,7 @@ class TestAvancar(unittest.TestCase):
 
 class TestGerar(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-brf-ge-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-ge-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):

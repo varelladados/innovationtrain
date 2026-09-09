@@ -110,7 +110,7 @@ Só contexto, nenhuma opção — formato pré-canônico.
 
 class BaseTemp(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="plataformaexp-test-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-test-"))
         self.exec_dir = self.tmp / "execucao"
         self.exec_dir.mkdir()
         self.backups = self.tmp / "backups"

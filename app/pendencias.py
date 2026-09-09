@@ -1,4 +1,4 @@
-"""Pendências-formulário do rotina-de-avanco: parse tolerante + escrita da resposta.
+"""Pendências-formulário: parse tolerante + escrita da resposta.
 
 Por que parser próprio em vez de reusar `gerar_trem_pendencias.py`: aquele script
 busca literalmente o heading `## Resposta (marque uma opção)` e descarta o card

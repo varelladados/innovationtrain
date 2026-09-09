@@ -1,4 +1,4 @@
-"""Portfólio — inventário de tudo que "roda" em cada Projeto (GET /api/portfolio).
+"""Portfólio — inventário de tudo que "roda" em cada projeto (GET /api/portfolio).
 
 "Executável" no sentido amplo: link publicado na internet, repositório, .bat
 que abre o app, .exe empacotado, servidor Python, protótipo HTML standalone,
@@ -9,7 +9,7 @@ Fontes, em ordem de autoridade:
 1. `portfolio.json` na raiz do projeto (curadoria manual, opcional):
    {"estavel": "https://…", "destaque": ["app.html"], "ocultar": ["x.html"],
     "estavel_local": ["app-local-campo-v1.1.html"], "tags": ["b2b"], "nota": "…"}
-2. `4-projetos/_indice-projetos.md` (status e resumo canônicos)
+2. o índice de projetos da plataforma (status e resumo canônicos)
 3. `CLAUDE.md` do projeto (id, tipo) + URLs citadas em CLAUDE.md/readme-*/backlog-*
 4. git do projeto (remote, último commit, nº de commits)
 5. varredura da pasta (heurística por extensão/nome — ver classificar_arquivo)
@@ -138,7 +138,7 @@ def _ids_do_log():
 def _frontmatter_claude(pasta: Path):
     txt = _ler(pasta / "CLAUDE.md", 6000)
     fm = {}
-    for chave in ("id", "tipo", "status", "origem_nota", "origem_captura"):
+    for chave in ("id", "tipo", "status", *config.atual().fm("origem")):
         m = re.search(rf"^{chave}:\s*(.+)$", txt, re.MULTILINE)
         if m:
             fm[chave] = m.group(1).strip()
