@@ -17,6 +17,7 @@ POST /api/launch abre executável local (efeito colateral, não escreve arquivo)
 """
 import json
 import re
+import webbrowser
 import shutil
 import threading
 import time
@@ -25,6 +26,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote
 
 import config
+from config import PORTA as PORT   # fonte única da porta; ver config.py
 import indexer
 import search as search_mod
 import log_parser
@@ -43,7 +45,6 @@ import mimetypes
 import subprocess
 import sys
 
-PORT = 8744
 APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
 TEMPLATE_PATH = APP_DIR / "templates" / "index.html"
@@ -752,12 +753,31 @@ def main(argv=None):
     with STATE_LOCK:
         ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
 
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    print(f"Estacao rodando em http://127.0.0.1:{PORT}")
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    except OSError as e:
+        print(f"Não consegui abrir a porta {PORT}: {e}")
+        print("")
+        print("Quase sempre isto quer dizer que a Estação já está aberta noutra")
+        print(f"janela. Tente http://127.0.0.1:{PORT} antes de abrir de novo.")
+        return 3
+
+    url = f"http://127.0.0.1:{PORT}"
+    print(f"Estacao rodando em {url}")
     print(f"Plataforma: {cfg.nome} — {cfg.raiz}  ({cfg.origem})")
     if not ok:
         print(f"Atenção: a plataforma não pôde ser lida ({erro}).")
         print("O servidor subiu assim mesmo — abra o app para configurar.")
+
+    # o navegador abre DEPOIS de o socket estar escutando: era o .bat que
+    # abria antes, e a primeira coisa que a pessoa via era "não foi possível
+    # acessar este site".
+    if "--abrir" in argv:
+        try:
+            webbrowser.open(url)
+        except Exception:
+            print(f"Não consegui abrir o navegador sozinho — abra {url} à mão.")
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:

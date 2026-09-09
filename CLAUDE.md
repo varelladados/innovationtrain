@@ -62,12 +62,28 @@ Abre em `http://127.0.0.1:8744`. `app/templates/index.html` é lido fresco do
 disco a cada request — não precisa reiniciar o servidor pra mudança de
 HTML/CSS/JS, só pra mudança em arquivo `.py`.
 
-## Cuidado: este projeto lê `C:\Plataforma`, mas não é `C:\Plataforma`
+## A raiz não é mais adivinhada — ela é resolvida
 
-A Estação **lê** a pasta um nível acima da sua própria (`C:\Plataforma`),
-mas o próprio código do app vive em `C:\Plataforma\PRJ-Estacao\` — igual
-todo outro projeto-projeto, um nível abaixo da raiz. O indexer nunca
-autoindexa a própria pasta `PRJ-Estacao/` (está na lista de exclusão).
+Desde o Trecho 3 a Estação **não assume** que mora dentro da plataforma que lê.
+A raiz resolve nesta ordem, em `config.resolver()`:
+
+1. `--raiz <pasta>` na linha de comando;
+2. a variável de ambiente `ESTACAO_PLATAFORMA`;
+3. a plataforma marcada `ativa` no `estacao.json` do hub;
+4. erro em português, dizendo as três saídas acima.
+
+**Não existe fallback para `PROJECT_DIR.parent`**, e a ausência dele é
+deliberada: fora do `plataforma de origem` ele resolvia para uma pasta qualquer e fazia erro de
+configuração aparecer como "árvore vazia". Há um teste que cobra que ele não
+voltou (`test_config.py`).
+
+Tudo que é nome de plataforma — pastas dos estágios, siglas, arquivos de
+sistema, tipos de projeto — sai de `config.atual()`, **lido na hora da chamada**,
+nunca no import. É isso que faz o seletor trocar de plataforma sem reiniciar o
+servidor.
+
+O `config.PADROES` é a cópia executável de `metodo/taxonomia.md`. Mudou lá, muda
+aqui — e há um teste que compara os dois.
 
 ## Estrutura
 
@@ -89,9 +105,12 @@ PRJ-Estacao/
 │   ├── noar.py           (v0.6) checagem "está no ar?" das URLs públicas (cache 6h, thread pós-reindex)
 │   ├── backfill_portfolio.py (v0.6) semeia portfolio.json a partir dos perfis (CLI, --dry-run padrão)
 │   ├── briefing.py       (v0.7) GET /api/briefing — texto pronto pra colar numa sessão do Claude Code
+│   ├── config.py         (v0.8) taxonomia + resolução da raiz. TODO módulo lê daqui, na hora da chamada
+│   ├── embarque.py       (v0.8) POST /api/embarque/prompt — os primeiros passos de quem não tem plataforma
+│   ├── versoes.py        (v0.8) GET /api/versoes — leitura do git, allow-list de subcomando, só leitura
 │   └── templates/
 │       ├── index.html    UI de página única
-│       └── vendor/                marked.min.js + mermaid.min.js (10.9.1) — vendorizados (MIT), sem CDN
+│       └── vendor/       marked.min.js + mermaid.min.js (10.9.1) e as três fontes .woff2 — sem CDN
 ├── cache/                index.json + backups/, gitignored
 └── docs/
 ```
@@ -167,8 +186,26 @@ o que o classificador espera), não assuma que é bug do app.
 | `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
 
+`POST /api/plataforma/ativar` e `POST /api/embarque/registrar` escrevem **só no
+`estacao.json` do hub** — que é config do usuário, não corpus de plataforma. Por
+isso não passam pela disciplina acima; a trava deles é outra: caminho tem que
+estar registrado (ou ser acrescentado por eles), e nada é tocado dentro de
+plataforma nenhuma.
+
+### Endpoints que **não escrevem em disco** — e é de propósito
+
+| endpoint | o que faz | por que não escreve |
+|---|---|---|
+| `GET /api/briefing` | texto pra colar numa sessão de IA | a IA é que executa, com o humano olhando |
+| `POST /api/embarque/prompt` | texto que **cria a primeira plataforma** | é POST porque a entrada é um objeto de respostas, não porque escreve |
+| `GET /api/versoes` | estado do git dos três repositórios | allow-list de subcomando, todos de leitura |
+| `GET /api/versoes/prompt` | "salvar um ponto", "mandar pra nuvem", "linha nova" | a Estação lê o git e gera o texto; **nunca o executa** |
+
+Sobre o último: automatismo de commit mora onde a IA está, não numa interface
+web onde um botão um dia é clicado sem querer. Ver `metodo/versionamento.md`.
+
 `POST /api/launch` abre executável local (efeito colateral, não escreve arquivo).
-Toda escrita nova segue a mesma disciplina — ver a seção abaixo antes de somar a quarta.
+Toda escrita nova segue a mesma disciplina — ver a seção abaixo antes de somar a sexta.
 
 ## Efeitos colaterais: toggle de backlog (v1), abrir executável (v0.4), nota (v0.5)
 
@@ -226,6 +263,16 @@ a Estação nunca commita em nome de ninguém.
   `python -m unittest discover tests` (suíte stdlib, sem dependência — desde a
   v0.6.0); se mexer no `<script>` de `index.html`, `node --check` no trecho
   extraído.
+- **Nenhum valor literal de cor fora do bloco de tokens** do `index.html`. É
+  cobrado por `tests/test_design_tokens.py` e explicado em
+  `docs/design-system.md`. Cor escrita numa regra não troca no modo escuro.
+- **A porta tem uma fonte só:** `config.PORTA`. O `.bat` pergunta ao Python; o
+  `.claude/launch.json` é o único lugar que repete o número, porque é JSON lido
+  pelo harness — e um teste cobra que os dois concordem.
+- **Aba nova exige três pontos**, e esquecer o segundo é silencioso: o botão no
+  `<aside>`, o id nas **duas** regras compartilhadas do CSS (a de estilo e a de
+  `:hover`), e o wiring no bloco final de `addEventListener`. Ver
+  `docs/design-system.md`.
 - **Salvar é automático; publicar é decisão** — doutrina do `plataforma de origem`, regra 6,
   definida em 2026-09-08 depois de perda real de trabalho. A sessão commita
   local **sem pedir autorização** ao terminar um artefato e ao encerrar a

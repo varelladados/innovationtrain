@@ -30,6 +30,13 @@ APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent          # o repositório da aplicação
 HUB_DIR = PROJECT_DIR.parent          # o hub, onde vive o estacao.json
 
+#: A porta do servidor local. **Fonte única.** O `server.py` importa daqui e o
+#: `iniciar-estacao.bat` pergunta ao Python em vez de repetir o número. O único
+#: lugar que continua literal é o `.claude/launch.json`, que é JSON lido pelo
+#: harness e não pode chamar código — e por isso tem um teste que cobra que os
+#: dois digam a mesma coisa.
+PORTA = 8744
+
 ESTACAO_JSON = "estacao.json"
 PLATAFORMA_JSON = "plataforma.json"
 
