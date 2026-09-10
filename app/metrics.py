@@ -68,7 +68,7 @@ def _tipo_re():
     cfg = config.atual()
     if not cfg.tipos:
         return None
-    siglas = "|".join(re.escape(s) for s in cfg.siglas)
+    siglas = "|".join(re.escape(s) for s in cfg.siglas_todas)
     tipos = "|".join(re.escape(x) for x in cfg.tipos)
     return re.compile(r"^(?:" + siglas + r")-(" + tipos + r")\b")
 
@@ -77,7 +77,8 @@ EXTS_CODIGO = {".py", ".js", ".html", ".css"}
 
 
 def _metricas_log():
-    etapa_re = config.atual().etapa_re
+    cfg = config.atual()
+    etapa_re = cfg.etapa_re
     tipo_re = _tipo_re()
     linhas = _linhas_do_registro()
     por_etapa = Counter()
@@ -87,7 +88,9 @@ def _metricas_log():
     for l in linhas:
         campo = l["etapa_tipo"]
         m_etapa = etapa_re.search(campo)
-        etapa = m_etapa.group(1) if m_etapa else "outro"
+        # a sigla legada é contada no estágio de hoje: os cartões do Dashboard
+        # são os estágios declarados, e uma chave `SBC` não teria onde aparecer.
+        etapa = cfg.sigla_canonica(m_etapa.group(1)) if m_etapa else "outro"
         m_tipo = tipo_re.search(campo) if tipo_re else None
         tipo = m_tipo.group(1) if m_tipo else None
         por_etapa[etapa] += 1

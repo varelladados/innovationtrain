@@ -1,5 +1,38 @@
 # Changelog — Estação
 
+## 0.9.1 — 2026-09-10
+
+**`siglas_legadas`: a plataforma que já tinha acervo quando adotou a Estação.**
+
+Uma plataforma com anos de uso chega com identificadores já emitidos numa
+taxonomia própria, num registro append-only e com a sigla embutida em nome de
+pasta. A chave nova mapeia cada sigla antiga para o **número** do estágio a que
+ela corresponde hoje (`{"SBC": 2, "SBI": 3, "SBZ": 5}`) — por número e não por
+posição, porque os dois vocabulários podem ter tamanhos diferentes.
+
+A fronteira que a feature fixa: **lê o antigo em todo lugar, escreve só o de
+hoje.** Registro, nome de arquivo, `_sem-destino.md`, `verificar`, métricas e a
+escala de cor reconhecem a sigla legada e a tratam como o estágio dela;
+`novo-id` a **recusa**, com mensagem dizendo por quê. Sem essa segunda metade a
+taxonomia antiga nunca terminaria de sair.
+
+- `app/config.py` — `siglas` continua só canônica; `siglas_todas`,
+  `estagio_de_sigla()` e `sigla_canonica()` são novas, e as três regex de
+  identificador passam a usar `siglas_todas` (as mais longas primeiro, senão uma
+  sigla curta trunca a captura de uma longa que começa igual).
+- `app/workflow.py` · `app/metrics.py` · `app/portfolio.py` — estágio e cor saem
+  do mapa; as métricas **dobram** a legada no cartão do estágio de hoje, senão a
+  linha não teria onde aparecer e sumiria da contagem.
+- `metodo/plataforma.py` — `gerar-sem-destino` agrupa por **estágio**, não por
+  string; `verificar` para de avisar "estágio desconhecido" para o que a
+  plataforma declarou; `novo-id` recusa sigla legada.
+- `tests/test_siglas_legadas.py` (novo, 22 casos) — inclusive os dois lados do
+  aviso de estágio desconhecido: ele pega a **discordância** entre identificador
+  e coluna, não uma linha inventada (essa o parser descarta antes). A suíte vai
+  a 197.
+
+Nada muda para quem não declara a chave: há teste cobrando isso.
+
 ## 0.9.0 — 2026-09-10
 
 **Um estágio novo entre ideia e projeto: a funcionalidade.** A taxonomia padrão

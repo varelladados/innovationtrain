@@ -72,7 +72,32 @@ class Plataforma:
 
     @property
     def siglas(self):
+        """As canônicas, uma por estágio. É delas que sai todo identificador novo."""
         return [e["sigla"] for e in self.estagios]
+
+    @property
+    def siglas_legadas(self):
+        """{sigla antiga: número do estágio} — plataforma que já tinha acervo.
+
+        Reconhecidas na **leitura** (registro, nome de arquivo, `sem-destino`,
+        `verificar`) e nunca na **escrita**: `novo-id` recusa uma sigla daqui,
+        porque item novo nasce com o vocabulário de hoje.
+        """
+        d = self.d.get("siglas_legadas") or {}
+        return {str(k): int(v) for k, v in d.items() if str(k) not in self.siglas}
+
+    @property
+    def siglas_todas(self):
+        # as mais longas primeiro: numa alternância, a curta casaria antes e
+        # truncaria a captura
+        return sorted(self.siglas + list(self.siglas_legadas),
+                      key=lambda s: (-len(s), s))
+
+    def estagio_de_sigla(self, sigla):
+        for e in self.estagios:
+            if e["sigla"] == sigla:
+                return e["n"]
+        return self.siglas_legadas.get(sigla)
 
     @property
     def tipos(self):
@@ -99,7 +124,7 @@ class Plataforma:
     # -- registro ---------------------------------------------------------
     @property
     def id_re(self):
-        siglas = "|".join(re.escape(s) for s in self.siglas)
+        siglas = "|".join(re.escape(s) for s in self.siglas_todas)
         tipos = r"(?:-([A-Z]{2,4}))?"
         return re.compile(
             r"\b(\d{2}\.\d{2}\.\d{2})-(" + siglas + r")" + tipos +
@@ -159,6 +184,11 @@ def slugify(text, max_words=5, max_len=40):
 def cmd_novo_id(args):
     p = Plataforma(Path(args.raiz))
     etapa = args.etapa.upper()
+    if etapa in p.siglas_legadas:
+        sys.exit(
+            f"ERRO: '{etapa}' é uma sigla legada desta plataforma — ela é lida, "
+            f"nunca emitida.\nItem novo nasce com o vocabulário de hoje: "
+            f"{p.siglas}")
     if etapa not in p.siglas:
         sys.exit(f"ERRO: --etapa precisa ser uma de {p.siglas}")
 
@@ -235,11 +265,29 @@ def cmd_gerar_sem_destino(args):
                  f"{MARK_START.format(key=p.siglas[0].lower())} … "
                  f"{MARK_END.format(key=p.siglas[0].lower())} por estágio.")
 
+    def sigla_da_linha(l):
+        """A sigla no início da coluna Etapa/Tipo — a mais longa que casar.
+
+        A coluna começa com a sigla e pode trazer tipo e seta depois
+        (`SBZ-DIG →PJD-x`). Casar pela mais longa evita que uma sigla curta
+        engula uma longa que começa igual.
+        """
+        campo = l["etapa_tipo"].lstrip("→ ")
+        for s in p.siglas_todas:
+            if campo.startswith(s):
+                return s
+        return None
+
     texto = original = destino.read_text(encoding="utf-8")
     contagens = {}
     for sigla in p.siglas:
         chave = sigla.lower()
-        itens = [l for l in sem_destino if l["etapa_tipo"].startswith(sigla)]
+        n = p.estagio_de_sigla(sigla)
+        # por ESTÁGIO, não por string: numa plataforma que já tinha acervo, a
+        # linha antiga traz a sigla antiga e precisa cair no bloco do estágio a
+        # que ela corresponde hoje — senão o gerado nasce vazio e mente.
+        itens = [l for l in sem_destino
+                 if p.estagio_de_sigla(sigla_da_linha(l) or "") == n]
         contagens[sigla] = len(itens)
         padrao = re.compile(
             re.escape(MARK_START.format(key=chave)) + r".*?" + re.escape(MARK_END.format(key=chave)),
@@ -311,10 +359,10 @@ def cmd_verificar(args):
                 problemas.append(f"arquivo sem linha no registro: "
                                  f"{arq.relative_to(p.raiz).as_posix()}")
 
-    # 5. linha no registro cujo estágio não existe na taxonomia
+    # 5. linha no registro cujo estágio não existe na taxonomia (nem como legado)
     for l in linhas:
         sigla = l["etapa_tipo"].split("-")[0].split(" ")[0].strip("→ ")
-        if sigla and sigla not in p.siglas:
+        if sigla and p.estagio_de_sigla(sigla) is None:
             avisos.append(f"linha com estágio desconhecido '{sigla}': {l['id']}")
 
     # 6. o gerado está sincronizado?

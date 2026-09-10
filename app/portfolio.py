@@ -56,7 +56,7 @@ def _re_id_tipo():
     cfg = config.atual()
     if not cfg.tipos:
         return None
-    return re.compile(r"-(?:" + _alt(cfg.siglas) + r")-(" + _alt(cfg.tipos) + r")-")
+    return re.compile(r"-(?:" + _alt(cfg.siglas_todas) + r")-(" + _alt(cfg.tipos) + r")-")
 
 
 def _pasta_pattern():
@@ -124,13 +124,17 @@ def _ids_do_log():
     if not registro:
         return _LOG_CACHE
     txt = _ler(registro, 2_000_000)
-    sigla_projeto = cfg.siglas[-1] if cfg.siglas else ""
-    padrao = (r"^\|\s*(\S+-(?:" + _alt(cfg.siglas) + r")(?:-([A-Z]{3}))?-\d+-\S+)\s*"
+    # o estágio de projeto pode aparecer com a sigla de hoje ou com a legada da
+    # taxonomia anterior — as duas identificam a mesma coisa no registro
+    n_projeto = cfg.estagios[-1]["n"] if cfg.estagios else None
+    siglas_projeto = {s for s in cfg.siglas_todas
+                      if cfg.estagio_de_sigla(s) == n_projeto}
+    padrao = (r"^\|\s*(\S+-(?:" + _alt(cfg.siglas_todas) + r")(?:-([A-Z]{3}))?-\d+-\S+)\s*"
               r"\|[^|]*\|[^|]*\|\s*`[^`]*?/(" + _pasta_pattern() + r")/?`")
     for m in re.finditer(padrao, txt, re.MULTILINE):
         id_, tipo, pasta = m.groups()
         # a última linha do estágio de projeto vence (regularizações vêm depois)
-        if f"-{sigla_projeto}-" in id_ or pasta not in _LOG_CACHE:
+        if any(f"-{s}-" in id_ for s in siglas_projeto) or pasta not in _LOG_CACHE:
             _LOG_CACHE[pasta] = (id_, tipo)
     return _LOG_CACHE
 

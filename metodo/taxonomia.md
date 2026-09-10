@@ -133,6 +133,37 @@ zerada, não um problema.
 
 ---
 
+## Quando a plataforma já tinha acervo — `siglas_legadas`
+
+Uma plataforma que adota a Estação depois de anos de uso chega com
+identificadores já emitidos, numa taxonomia própria, num registro que é
+append-only e com a sigla embutida em nome de pasta. Reescrever tudo custaria
+caro e mentiria sobre o histórico; ignorar as siglas antigas faria cada linha
+antiga virar "estágio desconhecido".
+
+A chave `siglas_legadas` mapeia cada sigla antiga para o **número** do estágio a
+que ela corresponde hoje:
+
+```json
+"siglas_legadas": {"SBC": 2, "SBI": 3, "SBZ": 5}
+```
+
+Mapeia para o número, e não para a posição, porque os dois vocabulários podem
+ter tamanhos diferentes — no exemplo acima a taxonomia antiga tinha três
+estágios e o último dela salta para o quinto de hoje, porque o de funcionalidade
+não existia lá.
+
+**A fronteira é entre ler e escrever**, e ela é o ponto todo:
+
+| | Sigla legada |
+|---|---|
+| registro, nome de arquivo, `_sem-destino.md`, `verificar`, métricas, cores | **é lida** — cai no estágio de hoje |
+| identificador novo (`novo-id`) | **é recusada** — item novo nasce com o vocabulário de hoje |
+
+Sem a segunda metade, a taxonomia antiga nunca terminaria de sair: um item novo
+nasceria com a sigla que a migração veio aposentar. O histórico fica bilíngue de
+propósito; o futuro, não.
+
 ## Tipos de projeto
 
 Cada plataforma declara os seus, na chave `tipos` do `plataforma.json`. Não há

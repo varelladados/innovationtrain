@@ -1,6 +1,6 @@
 # CLAUDE.md — Estação
 
-> **Documento** · v0.9.0 · atualizado em 2026-09-10
+> **Documento** · v0.9.1 · atualizado em 2026-09-10
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta.
@@ -75,6 +75,7 @@ se esquece:
 | **Taxonomia** | `estagios`, `siglas`, `tipos`, `historico` | pastas, nomes, siglas dos estágios |
 | **Caminhos** | as chaves opcionais (`perfis`, `trilha`, `pendencias`, `manifesto`…) | onde cada coisa mora dentro da plataforma |
 | **Campos de frontmatter** | `frontmatter.processado` · `.nucleo` · `.origem` | os nomes de campo que o app **lê e escreve** |
+| **Siglas de uma taxonomia anterior** | `siglas_legadas` | `{sigla: nº do estágio}` — lidas em todo lugar, nunca emitidas |
 
 A terceira existe porque nome de campo é comportamento, não prosa: o app grava
 `<processado>: <id>` no arquivo que cria e procura esse mesmo campo depois. Se

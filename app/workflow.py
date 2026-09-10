@@ -15,7 +15,11 @@ import pendencias
 
 
 def _etapa_re():
-    return re.compile(r"-(" + "|".join(re.escape(s) for s in config.atual().siglas) + r")-")
+    # siglas_todas, não siglas: numa plataforma que já tinha acervo, o arquivo
+    # antigo carrega a sigla antiga no nome — e sem reconhecê-la a carta dele
+    # apareceria sem estágio, cinza, no meio das outras.
+    cfg = config.atual()
+    return re.compile(r"-(" + "|".join(re.escape(s) for s in cfg.siglas_todas) + r")-")
 
 
 def _etapa_de(path):
@@ -25,12 +29,12 @@ def _etapa_de(path):
 
 
 def _estagio_de(etapa):
-    """1..N — é o que a escala de maturidade da interface colore."""
-    cfg = config.atual()
-    for e in cfg.estagios:
-        if e["sigla"] == etapa:
-            return e["n"]
-    return None
+    """1..N — é o que a escala de maturidade da interface colore.
+
+    Passa pelo config para que uma sigla legada caia no estágio a que ela
+    corresponde hoje, e não em lugar nenhum.
+    """
+    return config.atual().estagio_de_sigla(etapa)
 
 
 def colunas_do_quadro():

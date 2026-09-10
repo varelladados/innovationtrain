@@ -77,6 +77,13 @@ PADROES = {
         "origem": [],                 # campos de linhagem no CLAUDE.md do projeto
     },
     "projetos": {"pasta": "5-projetos", "prefixo_re": None},
+    #: Siglas de uma taxonomia anterior, mapeadas para o número do estágio a que
+    #: correspondem hoje (ex.: `{"SBC": 2, "SBI": 3, "SBZ": 5}`). Existe para uma
+    #: plataforma que **já tinha acervo** quando adotou a Estação: os
+    #: identificadores antigos continuam válidos, reconhecidos e agrupados no
+    #: estágio certo, sem reescrever registro (que é append-only) nem renomear
+    #: pasta. Identificador **novo** nunca usa sigla legada — o utilitário recusa.
+    "siglas_legadas": {},
     "excluir": [".git", "node_modules", "__pycache__", ".claude", "dist", "build"],
     # Caminhos opcionais: quando ausentes, a aba correspondente degrada em vez
     # de estourar. Uma plataforma madura preenche vários; uma recém-criada,
@@ -203,18 +210,66 @@ class Config:
     # -- derivados --------------------------------------------------------
     @property
     def siglas(self):
+        """As siglas **canônicas**, uma por estágio, na ordem.
+
+        É esta lista que a interface mostra, que o briefing imprime como cadeia
+        e da qual sai a sigla de todo identificador novo. Sigla legada não entra
+        aqui de propósito — ela é reconhecida na leitura, nunca emitida.
+        """
         return [e["sigla"] for e in self.estagios]
 
     @property
+    def siglas_legadas(self):
+        """{sigla antiga: número do estágio}, da plataforma que já tinha acervo."""
+        d = self._d.get("siglas_legadas") or {}
+        return {str(k): int(v) for k, v in d.items() if str(k) not in self.siglas}
+
+    @property
+    def siglas_todas(self):
+        """Canônicas + legadas — o que as regex de leitura precisam reconhecer.
+
+        As mais longas primeiro: numa alternância de regex, `SB` casaria antes de
+        `SBC` e truncaria a captura. Ordenar por tamanho decrescente é o que
+        garante que a sigla inteira vença.
+        """
+        return sorted(self.siglas + list(self.siglas_legadas),
+                      key=lambda s: (-len(s), s))
+
+    def estagio_de_sigla(self, sigla):
+        """Número do estágio de uma sigla, canônica ou legada. None se não é sigla."""
+        for e in self.estagios:
+            if e["sigla"] == sigla:
+                return e["n"]
+        return self.siglas_legadas.get(sigla)
+
+    def sigla_canonica(self, sigla):
+        """A sigla de hoje para um estágio — traduz a legada, devolve a canônica
+        intacta, e devolve a desconhecida como veio (quem chama decide o que fazer)."""
+        n = self.estagio_de_sigla(sigla)
+        if n is None:
+            return sigla
+        for e in self.estagios:
+            if e["n"] == n:
+                return e["sigla"]
+        return sigla
+
+    def _alt_siglas(self):
+        return "|".join(re.escape(s) for s in self.siglas_todas)
+
+    @property
     def etapa_re(self):
-        """Regex que casa a sigla de estágio (ex.: \\b(CAP|NOT|IDE|PRJ)\\b)."""
-        return re.compile(r"\b(" + "|".join(re.escape(s) for s in self.siglas) + r")\b")
+        """Regex que casa a sigla de estágio (ex.: \\b(CAP|NOT|IDE|FUN|PRJ)\\b).
+
+        Reconhece também as legadas: um registro anterior à adoção da Estação
+        continua sendo lido, e é isso que impede 154 linhas de virarem "outro".
+        """
+        return re.compile(r"\b(" + self._alt_siglas() + r")\b")
 
     @property
     def id_re(self):
         """Regex que reconhece um nome de arquivo já identificado (prefixo)."""
-        siglas = "|".join(re.escape(s) for s in self.siglas)
-        return re.compile(r"^\d{2}\.\d{2}\.\d{2}-(?:" + siglas + r")(?:-[A-Z]{3})?-\d+-")
+        return re.compile(
+            r"^\d{2}\.\d{2}\.\d{2}-(?:" + self._alt_siglas() + r")(?:-[A-Z]{3})?-\d+-")
 
     @property
     def identificador_re(self):
@@ -224,9 +279,8 @@ class Config:
         sequência do dia, slug e hash. É por ela que as métricas reconhecem uma
         linha de registro de verdade.
         """
-        siglas = "|".join(re.escape(s) for s in self.siglas)
         return re.compile(
-            r"\b(\d{2}\.\d{2}\.\d{2})-(" + siglas + r")(?:-([A-Z]{2,4}))?"
+            r"\b(\d{2}\.\d{2}\.\d{2})-(" + self._alt_siglas() + r")(?:-([A-Z]{2,4}))?"
             r"-(\d{3})-([a-z0-9-]+)-([a-f0-9]{4,5})\b")
 
     def ok(self):
@@ -244,6 +298,7 @@ class Config:
             "trilha": self.get("trilha"),
             "registro": self.arquivo_rel("registro"),
             "historico": self.historico,
+            "siglas_legadas": self.siglas_legadas,
             "ok": self.ok(),
             # A interface só oferece "reiniciar" onde ele existe. Uma plataforma
             # de verdade não declara `estado_inicial`, e o botão nem aparece —
