@@ -314,5 +314,59 @@ class TestUtilitario(unittest.TestCase):
         self.assertNotIn("estágio desconhecido", r.stdout)
 
 
+class TestDuplicatasHistoricas(unittest.TestCase):
+    """Mesmo espírito das siglas legadas: o acervo chega com as marcas do tempo
+    em que ainda não havia regra. Declarar rebaixa de PROBLEMA para AVISO e
+    mantém à vista — não resolve, e não é para resolver."""
+
+    ID = "26.08.31-SBC-062-duplicata-antiga-d1ea"
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="dup-hist-"))
+        montar(self.tmp)
+        reg = self.tmp / "_registro.md"
+        linha = (f"| {self.ID} | 2026-08-31 | SBC | `2-notas/` | repetida | "
+                 f"[a](<2-notas/{self.ID}.md>) |\n")
+        reg.write_text(reg.read_text(encoding="utf-8") + linha + linha, encoding="utf-8")
+        (self.tmp / "2-notas" / f"{self.ID}.md").write_text("# x\n", encoding="utf-8")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _declarar(self, ids):
+        pj = self.tmp / "plataforma.json"
+        d = json.loads(pj.read_text(encoding="utf-8"))
+        d["duplicatas_historicas"] = ids
+        pj.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def test_sem_declarar_e_problema(self):
+        r = util("verificar", "--raiz", str(self.tmp))
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("identificador repetido no registro", r.stdout)
+
+    def test_declarada_vira_aviso_e_nao_derruba(self):
+        self._declarar([self.ID])
+        util("gerar-sem-destino", "--raiz", str(self.tmp))
+        r = util("verificar", "--raiz", str(self.tmp))
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("declarado como histórico", r.stdout)
+        self.assertNotIn("PROBLEMA", r.stdout)
+
+    def test_declarar_uma_nao_perdoa_a_outra(self):
+        """A tolerância é nominal: vale para o identificador declarado, não para
+        a prática de repetir identificador."""
+        outro = "26.09.02-SBC-001-outra-duplicata-e71c"
+        reg = self.tmp / "_registro.md"
+        linha = (f"| {outro} | 2026-09-02 | SBC | `2-notas/` | outra | "
+                 f"[a](<2-notas/{outro}.md>) |\n")
+        reg.write_text(reg.read_text(encoding="utf-8") + linha + linha, encoding="utf-8")
+        (self.tmp / "2-notas" / f"{outro}.md").write_text("# y\n", encoding="utf-8")
+        self._declarar([self.ID])
+        r = util("verificar", "--raiz", str(self.tmp))
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn(outro, r.stdout)
+        self.assertIn("declarado como histórico", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

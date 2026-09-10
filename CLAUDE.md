@@ -76,6 +76,7 @@ se esquece:
 | **Caminhos** | as chaves opcionais (`perfis`, `trilha`, `pendencias`, `manifesto`…) | onde cada coisa mora dentro da plataforma |
 | **Campos de frontmatter** | `frontmatter.processado` · `.nucleo` · `.origem` | os nomes de campo que o app **lê e escreve** |
 | **Siglas de uma taxonomia anterior** | `siglas_legadas` | `{sigla: nº do estágio}` — lidas em todo lugar, nunca emitidas |
+| **Duplicatas que o acervo já trouxe** | `duplicatas_historicas` | identificadores repetidos de antes da convenção `-N`: viram AVISO, não PROBLEMA |
 
 A terceira existe porque nome de campo é comportamento, não prosa: o app grava
 `<processado>: <id>` no arquivo que cria e procura esse mesmo campo depois. Se

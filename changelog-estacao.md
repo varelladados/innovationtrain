@@ -26,10 +26,15 @@ taxonomia antiga nunca terminaria de sair.
 - `metodo/plataforma.py` — `gerar-sem-destino` agrupa por **estágio**, não por
   string; `verificar` para de avisar "estágio desconhecido" para o que a
   plataforma declarou; `novo-id` recusa sigla legada.
-- `tests/test_siglas_legadas.py` (novo, 22 casos) — inclusive os dois lados do
+- **`duplicatas_historicas`** — mesma ideia, outra chave: identificadores que já
+  chegaram repetidos, de antes de a plataforma ter a convenção do sufixo `-N`.
+  Declarar rebaixa de PROBLEMA para AVISO e mantém à vista; não resolve, e não é
+  para resolver. Exigir que o passado seja reescrito para o `verificar` ficar
+  verde é o caminho mais curto para ninguém mais rodar o `verificar`.
+- `tests/test_siglas_legadas.py` (novo, 25 casos) — inclusive os dois lados do
   aviso de estágio desconhecido: ele pega a **discordância** entre identificador
-  e coluna, não uma linha inventada (essa o parser descarta antes). A suíte vai
-  a 197.
+  e coluna, não uma linha inventada (essa o parser descarta antes); e que
+  declarar uma duplicata não perdoa a seguinte. A suíte vai a 200.
 
 Nada muda para quem não declara a chave: há teste cobrando isso.
 

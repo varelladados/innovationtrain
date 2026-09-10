@@ -164,6 +164,23 @@ Sem a segunda metade, a taxonomia antiga nunca terminaria de sair: um item novo
 nasceria com a sigla que a migração veio aposentar. O histórico fica bilíngue de
 propósito; o futuro, não.
 
+### O acervo também chega com as marcas do tempo sem regra
+
+Mesma ideia, outra chave: `duplicatas_historicas` lista identificadores que já
+chegaram repetidos, de antes de a plataforma ter a convenção do sufixo `-N`.
+
+```json
+"duplicatas_historicas": ["26.08.31-XXX-062-assunto-d1ea"]
+```
+
+Declarar **não resolve** a duplicata: rebaixa de PROBLEMA para AVISO e a mantém
+à vista, nominalmente. A tolerância vale para o identificador declarado, nunca
+para a prática — repetir um identificador novo continua sendo problema.
+
+Por que existe: exigir que o passado seja reescrito para o `verificar` ficar
+verde é o caminho mais curto para ninguém mais rodar o `verificar`. Um alarme
+que sempre toca deixa de ser alarme.
+
 ## Tipos de projeto
 
 Cada plataforma declara os seus, na chave `tipos` do `plataforma.json`. Não há

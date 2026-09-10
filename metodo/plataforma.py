@@ -76,6 +76,20 @@ class Plataforma:
         return [e["sigla"] for e in self.estagios]
 
     @property
+    def duplicatas_historicas(self):
+        """Identificadores que já chegaram repetidos, de antes da convenção `-N`.
+
+        Mesmo espírito de `siglas_legadas`: uma plataforma com acervo chega com
+        as marcas do tempo em que ela ainda não tinha regra. Exigir que o
+        passado seja reescrito para o `verificar` ficar verde é o caminho mais
+        curto para ninguém mais rodar o `verificar`.
+
+        Declarar aqui **não resolve** a duplicata — rebaixa de PROBLEMA para
+        AVISO e a mantém à vista. Só o dono decide se retrofita ou convive.
+        """
+        return {str(x) for x in (self.d.get("duplicatas_historicas") or [])}
+
+    @property
     def siglas_legadas(self):
         """{sigla antiga: número do estágio} — plataforma que já tinha acervo.
 
@@ -335,8 +349,15 @@ def cmd_verificar(args):
     for l in linhas:
         por_id.setdefault(l["id"], []).append(l["data"])
     bases = {l["id"] for l in linhas if not SUFIXO_CONTINUACAO_RE.match(l["id"])}
+    historicas = p.duplicatas_historicas
     for id_, datas in por_id.items():
-        if len(datas) > 1:
+        if len(datas) <= 1:
+            continue
+        if id_ in historicas:
+            avisos.append(f"identificador repetido ({len(datas)}x), declarado como "
+                          f"histórico no plataforma.json: {id_} — anterior à "
+                          "convenção do sufixo -N; decidir retrofit ou convivência")
+        else:
             problemas.append(f"identificador repetido no registro ({len(datas)}x): {id_} "
                              "— continuação usa o mesmo id + sufixo -N, nunca a string igual")
     for id_ in por_id:
