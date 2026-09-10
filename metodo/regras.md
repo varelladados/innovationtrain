@@ -41,9 +41,9 @@ que pode ser reescrito não é histórico.
 
 ## 3. Tudo é o mesmo grão
 
-Uma captura que virou nota, que virou ideia, que virou projeto **continua sendo
-o mesmo grão**. Os quatro estágios não são categorias excludentes: são estados
-no fluxo da mesma coisa.
+Uma captura que virou nota, que virou ideia, que virou funcionalidade, que
+virou projeto **continua sendo o mesmo grão**. Os cinco estágios não são
+categorias excludentes: são estados no fluxo da mesma coisa.
 
 Por isso a separação entre o que ainda está cru e o que já avançou tem que ser
 **visível** — pelo `_historico/` de cada estágio e pelo marcador `→` no
@@ -51,9 +51,12 @@ registro.
 
 ## 4. Nenhum item pula estágio
 
-Uma ideia que já nasce madura passa pelos quatro assim mesmo. As quatro
-passagens podem acontecer na mesma sessão, minutos uma depois da outra — mas
-cada uma ganha identificador próprio e linha própria no registro.
+Uma ideia que já nasce madura passa pelos cinco assim mesmo. As passagens podem
+acontecer na mesma sessão, minutos uma depois da outra — mas cada uma ganha
+identificador próprio e linha própria no registro. A única passagem sem
+identificador novo é a de uma funcionalidade para um projeto **que já existe**:
+ali o grão não muda de estágio, chega ao destino — ver
+[`classificar.md`](classificar.md), passagem 4a.
 
 **Por quê:** "virtualmente" não significa "sem registro". Pular a etapa é como
 se perde a rastreabilidade de onde a coisa veio, e é sempre no dia seguinte

@@ -31,13 +31,19 @@
 
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0 | 2026-07-25 | IDE →26.07.28-PRJ-001-exemplo-monitor-de-precos-1e77 | `3-ideias/_historico/` | guardar a série, não o print — a pergunta "mudou?" com resposta | [arquivo](<3-ideias/_historico/26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0.md>) |
+| 26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0 | 2026-07-25 | IDE →26.07.26-FUN-001-coleta-diaria-de-preco-e-frete-4e63 | `3-ideias/_historico/` | guardar a série, não o print — a pergunta "mudou?" com resposta | [arquivo](<3-ideias/_historico/26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0.md>) |
+
+## Entradas 2026-07-26
+
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.07.26-FUN-001-coleta-diaria-de-preco-e-frete-4e63 | 2026-07-26 | FUN →26.07.28-PRJ-001-exemplo-monitor-de-precos-1e77 | `4-funcionalidades/_historico/` | uma coleta por dia, no mesmo horário, de 20 produtos: preço, frete, data e hora — nunca sobrescreve | [arquivo](<4-funcionalidades/_historico/26.07.26-FUN-001-coleta-diaria-de-preco-e-frete-4e63.md>) |
 
 ## Entradas 2026-07-28
 
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.07.28-PRJ-001-exemplo-monitor-de-precos-1e77 | 2026-07-28 | PRJ-dados | `4-projetos/exemplo-monitor-de-precos/` | coleta diária de preço e frete, com série em vez de print | [CLAUDE.md](<4-projetos/exemplo-monitor-de-precos/CLAUDE.md>) |
+| 26.07.28-PRJ-001-exemplo-monitor-de-precos-1e77 | 2026-07-28 | PRJ-dados | `5-projetos/exemplo-monitor-de-precos/` | coleta diária de preço e frete, com série em vez de print | [CLAUDE.md](<5-projetos/exemplo-monitor-de-precos/CLAUDE.md>) |
 
 ## Entradas 2026-08-03
 
@@ -55,13 +61,19 @@
 
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.08.10-IDE-001-radar-de-dominios-parecidos-3ce8 | 2026-08-10 | IDE →26.08.12-PRJ-001-exemplo-radar-de-clones-72f5 | `3-ideias/_historico/` | varredura semanal por variação de domínio e por texto copiado | [arquivo](<3-ideias/_historico/26.08.10-IDE-001-radar-de-dominios-parecidos-3ce8.md>) |
+| 26.08.10-IDE-001-radar-de-dominios-parecidos-3ce8 | 2026-08-10 | IDE →26.08.11-FUN-001-varredura-semanal-de-dominios-a8d2 | `3-ideias/_historico/` | varredura semanal por variação de domínio e por texto copiado | [arquivo](<3-ideias/_historico/26.08.10-IDE-001-radar-de-dominios-parecidos-3ce8.md>) |
+
+## Entradas 2026-08-11
+
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.08.11-FUN-001-varredura-semanal-de-dominios-a8d2 | 2026-08-11 | FUN →26.08.12-PRJ-001-exemplo-radar-de-clones-72f5 | `4-funcionalidades/_historico/` | uma varredura por semana: variações do meu domínio e três frases minhas, com ficha datada por achado | [arquivo](<4-funcionalidades/_historico/26.08.11-FUN-001-varredura-semanal-de-dominios-a8d2.md>) |
 
 ## Entradas 2026-08-12
 
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.08.12-PRJ-001-exemplo-radar-de-clones-72f5 | 2026-08-12 | PRJ-servico | `4-projetos/exemplo-radar-de-clones/` | detecção, não remoção: saber quantas cópias existem antes de decidir | [CLAUDE.md](<4-projetos/exemplo-radar-de-clones/CLAUDE.md>) |
+| 26.08.12-PRJ-001-exemplo-radar-de-clones-72f5 | 2026-08-12 | PRJ-servico | `5-projetos/exemplo-radar-de-clones/` | detecção, não remoção: saber quantas cópias existem antes de decidir | [CLAUDE.md](<5-projetos/exemplo-radar-de-clones/CLAUDE.md>) |
 
 ## Entradas 2026-08-18
 
@@ -128,6 +140,8 @@
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
 | 26.09.08-CAP-001-print-do-anuncio-que-usa-minha-foto-c73b | 2026-09-08 | CAP | `1-capturas/` | anúncio patrocinado usando a minha foto de produto — o terceiro caso | [arquivo](<1-capturas/26.09.08-CAP-001-print-do-anuncio-que-usa-minha-foto-c73b.md>) |
+| 26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0-1 | 2026-09-08 | IDE →26.09.08-FUN-001-alerta-de-queda-acima-de-10-por-cento-3f7b | `3-ideias/_historico/` | desmembrada: a segunda funcionalidade da mesma ideia, o alerta de queda | [arquivo](<3-ideias/_historico/26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0.md>) |
+| 26.09.08-FUN-001-alerta-de-queda-acima-de-10-por-cento-3f7b | 2026-09-08 | FUN | `4-funcionalidades/` | destacar, na segunda de manhã, o produto que caiu mais de 10% desde a última coleta — dentro do monitor | [arquivo](<4-funcionalidades/26.09.08-FUN-001-alerta-de-queda-acima-de-10-por-cento-3f7b.md>) |
 
 ## Entradas 2026-09-09
 

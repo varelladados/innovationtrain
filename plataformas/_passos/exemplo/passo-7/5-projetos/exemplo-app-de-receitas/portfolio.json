@@ -1,0 +1,12 @@
+{
+  "nome": "Exemplo — App de receitas",
+  "tags": [
+    "cozinha",
+    "exemplo"
+  ],
+  "nota": "Projeto de exemplo da plataforma. Serve para mostrar como o Portfólio fica quando um projeto declara o que publica.",
+  "repo_publico": false,
+  "destaque": [
+    "prototipo-uma-tela.html"
+  ]
+}

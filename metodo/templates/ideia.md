@@ -26,6 +26,11 @@ reprocessar — é essa a régua deste estágio.>
 
 <o caminho de quem usa, do começo ao fim.>
 
+## Onde isso entraria
+
+<num projeto que já existe (qual?), ou num projeto novo? Não precisa decidir
+agora — mas é esta resposta que faz a ideia virar funcionalidade.>
+
 ## Próximos passos
 
 - [ ] <o que dá para fazer já>

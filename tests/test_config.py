@@ -100,7 +100,7 @@ class TestCarregar(unittest.TestCase):
 
     def test_sem_arquivo_usa_os_padroes(self):
         cfg = config.carregar(self.tmp)
-        self.assertEqual(cfg.siglas, ["CAP", "NOT", "IDE", "PRJ"])
+        self.assertEqual(cfg.siglas, ["CAP", "NOT", "IDE", "FUN", "PRJ"])
         self.assertEqual(cfg.marcador, "_indice.md")
         self.assertEqual(cfg.origem, "padrões")
 
@@ -163,7 +163,8 @@ class TestRegex(unittest.TestCase):
         self.assertIsNone(self.cfg.etapa_re.search("SBZ-DIG"))
 
     def test_estagio_dir(self):
-        self.assertEqual(self.cfg.estagio_dir(4), self.tmp / "4-projetos")
+        self.assertEqual(self.cfg.estagio_dir(4), self.tmp / "4-funcionalidades")
+        self.assertEqual(self.cfg.estagio_dir(5), self.tmp / "5-projetos")
         self.assertIsNone(self.cfg.estagio_dir(9))
 
 

@@ -57,7 +57,8 @@ PADROES = {
         {"n": 1, "pasta": "1-capturas", "nome": "Captura", "plural": "Capturas", "sigla": "CAP"},
         {"n": 2, "pasta": "2-notas", "nome": "Nota", "plural": "Notas", "sigla": "NOT"},
         {"n": 3, "pasta": "3-ideias", "nome": "Ideia", "plural": "Ideias", "sigla": "IDE"},
-        {"n": 4, "pasta": "4-projetos", "nome": "Projeto", "plural": "Projetos", "sigla": "PRJ"},
+        {"n": 4, "pasta": "4-funcionalidades", "nome": "Funcionalidade", "plural": "Funcionalidades", "sigla": "FUN"},
+        {"n": 5, "pasta": "5-projetos", "nome": "Projeto", "plural": "Projetos", "sigla": "PRJ"},
     ],
     "historico": "_historico",
     "arquivos": {
@@ -75,7 +76,7 @@ PADROES = {
         "nucleo": None,               # marca "isto é maquinário, não conteúdo"
         "origem": [],                 # campos de linhagem no CLAUDE.md do projeto
     },
-    "projetos": {"pasta": "4-projetos", "prefixo_re": None},
+    "projetos": {"pasta": "5-projetos", "prefixo_re": None},
     "excluir": [".git", "node_modules", "__pycache__", ".claude", "dist", "build"],
     # Caminhos opcionais: quando ausentes, a aba correspondente degrada em vez
     # de estourar. Uma plataforma madura preenche vários; uma recém-criada,

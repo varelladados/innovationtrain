@@ -36,11 +36,19 @@ tratar em cada estágio.
 | 26.09.07-IDE-001-alerta-de-preco-abaixo-do-custo-b1d9 | 2026-09-07 | IDE | `3-ideias/` | avisar na hora da mudança, não trinta dias depois no fechamento | [arquivo](<3-ideias/26.09.07-IDE-001-alerta-de-preco-abaixo-do-custo-b1d9.md>) |
 <!-- gerado:ide:fim -->
 
+## Funcionalidades
+
+<!-- gerado:fun:inicio -->
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.09.08-FUN-001-alerta-de-queda-acima-de-10-por-cento-3f7b | 2026-09-08 | FUN | `4-funcionalidades/` | destacar, na segunda de manhã, o produto que caiu mais de 10% desde a última coleta — dentro do monitor | [arquivo](<4-funcionalidades/26.09.08-FUN-001-alerta-de-queda-acima-de-10-por-cento-3f7b.md>) |
+<!-- gerado:fun:fim -->
+
 ## Projetos
 
 <!-- gerado:prj:inicio -->
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.07.28-PRJ-001-exemplo-monitor-de-precos-1e77 | 2026-07-28 | PRJ-dados | `4-projetos/exemplo-monitor-de-precos/` | coleta diária de preço e frete, com série em vez de print | [CLAUDE.md](<4-projetos/exemplo-monitor-de-precos/CLAUDE.md>) |
-| 26.08.12-PRJ-001-exemplo-radar-de-clones-72f5 | 2026-08-12 | PRJ-servico | `4-projetos/exemplo-radar-de-clones/` | detecção, não remoção: saber quantas cópias existem antes de decidir | [CLAUDE.md](<4-projetos/exemplo-radar-de-clones/CLAUDE.md>) |
+| 26.07.28-PRJ-001-exemplo-monitor-de-precos-1e77 | 2026-07-28 | PRJ-dados | `5-projetos/exemplo-monitor-de-precos/` | coleta diária de preço e frete, com série em vez de print | [CLAUDE.md](<5-projetos/exemplo-monitor-de-precos/CLAUDE.md>) |
+| 26.08.12-PRJ-001-exemplo-radar-de-clones-72f5 | 2026-08-12 | PRJ-servico | `5-projetos/exemplo-radar-de-clones/` | detecção, não remoção: saber quantas cópias existem antes de decidir | [CLAUDE.md](<5-projetos/exemplo-radar-de-clones/CLAUDE.md>) |
 <!-- gerado:prj:fim -->

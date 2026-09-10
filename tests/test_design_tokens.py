@@ -112,9 +112,9 @@ class TestParesClaroEscuro(unittest.TestCase):
                 f"o bloco {marca} não declara os mesmos tokens de cor que o padrão claro — "
                 "o que faltar não troca de tema e vira bug visual")
 
-    def test_escala_de_maturidade_tem_quatro_degraus(self):
+    def test_escala_de_maturidade_tem_cinco_degraus(self):
         for marca, nomes in self._blocos().items():
-            for n in range(1, 5):
+            for n in range(1, 6):
                 self.assertIn(f"--estagio-{n}", nomes, f"faltando em {marca}")
 
 

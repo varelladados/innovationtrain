@@ -35,10 +35,16 @@ tratar em cada estágio.
 *(nada nesta etapa no momento)*
 <!-- gerado:ide:fim -->
 
+## Funcionalidades
+
+<!-- gerado:fun:inicio -->
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.08.30-FUN-001-busca-pelo-que-tem-em-casa-5c2e | 2026-08-30 | FUN | `4-funcionalidades/` | entra a lista curta do que tem em casa, sai o que dá pra fazer — ordenado por quantos ingredientes faltam | [arquivo](<4-funcionalidades/26.08.30-FUN-001-busca-pelo-que-tem-em-casa-5c2e.md>) |
+<!-- gerado:fun:fim -->
+
 ## Projetos
 
 <!-- gerado:prj:inicio -->
-| ID | Data | Etapa/Tipo | Local | Resumo | Link |
-|---|---|---|---|---|---|
-| 26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | 2026-09-02 | PRJ-app | `4-projetos/exemplo-app-de-receitas/` | o app que responde "o que faço com o que tenho?" | [CLAUDE.md](<4-projetos/exemplo-app-de-receitas/CLAUDE.md>) |
+*(nada nesta etapa no momento)*
 <!-- gerado:prj:fim -->

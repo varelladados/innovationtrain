@@ -37,6 +37,12 @@ tratar em cada estágio.
 *(nada nesta etapa no momento)*
 <!-- gerado:ide:fim -->
 
+## Funcionalidades
+
+<!-- gerado:fun:inicio -->
+*(nada nesta etapa no momento)*
+<!-- gerado:fun:fim -->
+
 ## Projetos
 
 <!-- gerado:prj:inicio -->

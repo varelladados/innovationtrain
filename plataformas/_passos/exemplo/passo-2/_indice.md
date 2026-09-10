@@ -16,21 +16,22 @@ do grupo de fotografia, e uma queixa recorrente sobre comprar coentro de novo.
 **É assim que uma plataforma de verdade começa:** cheia de matéria-prima e sem
 nada organizado. A parte difícil não é capturar — é a primeira passagem.
 
-## Os quatro estágios
+## Os cinco estágios
 
 | Pasta | O que tem aqui | Agora |
 |---|---|---|
 | `1-capturas/` | chegou e ninguém tratou | **9** |
 | `2-notas/` | já foi lido e organizado | vazio |
 | `3-ideias/` | tem forma e serve de insumo | vazio |
-| `4-projetos/` | ganhou corpo próprio | vazio |
+| `4-funcionalidades/` | diz o que vai existir quando estiver pronto, e onde | vazio |
+| `5-projetos/` | ganhou corpo próprio | vazio |
 
 Dentro de cada uma, `_historico/` guarda o que já avançou dali. Estão todos
 vazios — ainda não avançou nada.
 
-## A trilha — cinco passos, no painel da barra lateral
+## A trilha — sete passos, no painel da barra lateral
 
-Esta plataforma vem com uma **trilha**: cinco estados sucessivos dela mesma,
+Esta plataforma vem com uma **trilha**: sete estados sucessivos dela mesma,
 seguindo dois grãos do começo ao fim. Clique em **▶** e a plataforma inteira
 passa para o estado seguinte.
 
@@ -39,15 +40,17 @@ passa para o estado seguinte.
 | 0 | como ela vem: nove capturas, nada mais |
 | 1 | `ideia-no-onibus` vira a nota **app de receitas pela despensa** |
 | 2 | a nota vira a ideia **receita pela despensa** |
-| 3 | a ideia vira o projeto **`exemplo-app-de-receitas`**, com backlog |
-| 4 | um segundo grão anda: `conversa-sobre-curso` vira nota e depois ideia |
-| 5 | o curso vira projeto — e com **dois** na mesa, nasce a primeira decisão |
+| 3 | a ideia vira a funcionalidade **busca pelo que tem em casa** — o que vai existir, com critério de pronto, e onde: projeto novo |
+| 4 | a funcionalidade vira o projeto **`exemplo-app-de-receitas`**, com backlog — e ela é a primeira linha dele |
+| 5 | um segundo grão anda: `conversa-sobre-curso` vira nota e depois ideia |
+| 6 | o curso vira a funcionalidade **semana 1: luz, com devolutiva** |
+| 7 | o curso vira projeto — e com **dois** na mesa, nasce a primeira decisão |
 
 Em cada passo, repare em três coisas: o item some da pasta ativa e reaparece no
 `_historico/` com um rodapé apontando para frente; a linha dele no `_registro.md`
 ganha o marcador `→`; e o `_sem-destino.md` para de cobrá-lo.
 
-O passo 5 mostra a coisa mais parecida com a vida real que este exemplo tem:
+O passo 7 mostra a coisa mais parecida com a vida real que este exemplo tem:
 dois projetos nasceram em três dias, são da mesma pessoa e disputam as mesmas
 noites — e isso vira uma **pendência** em `_pendencias/`, que aparece como carta
 na aba **🔀 Workflow**. Decisão não se resolve sozinha, e ninguém a fecha por

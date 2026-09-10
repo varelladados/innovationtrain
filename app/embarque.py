@@ -78,10 +78,14 @@ def _slug(texto, limite=40):
 def _estagios(usos):
     """Os estágios da plataforma nova. Sem 'projetos', são três — e o produto
     inteiro aguenta isso: o config aceita N estágios e a aba Fluxo mostra N-1
-    passagens."""
+    passagens.
+
+    'projetos' acrescenta **dois** estágios, não um: funcionalidade e projeto.
+    Uma funcionalidade só existe em função de um projeto (novo ou já existente),
+    então não faz sentido oferecê-la sozinha."""
     base = [dict(e) for e in config.PADROES["estagios"]]
     if "projetos" not in usos:
-        base = [e for e in base if e["n"] != 4]
+        base = [e for e in base if e["n"] < 4]
     return base
 
 
@@ -95,7 +99,7 @@ def taxonomia(respostas):
         "estagios": estagios,
         "historico": config.PADROES["historico"],
         "arquivos": dict(config.PADROES["arquivos"]),
-        "projetos": {"pasta": "4-projetos" if "projetos" in usos else "", "prefixo_re": None},
+        "projetos": {"pasta": "5-projetos" if "projetos" in usos else "", "prefixo_re": None},
         "excluir": [".git", "node_modules", "__pycache__", ".claude"],
         "entrada": estagios[0]["pasta"],
     }

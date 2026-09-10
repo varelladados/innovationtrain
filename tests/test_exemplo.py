@@ -102,9 +102,9 @@ class _Exemplo:
         self.assertNotIn(self.RAIZ, snap.parents,
                          "o instantâneo está dentro da plataforma: seria apagado junto")
 
-    def test_os_quatro_estagios_existem_e_tem_historico(self):
+    def test_os_cinco_estagios_existem_e_tem_historico(self):
         cfg = config.atual()
-        self.assertEqual(len(cfg.estagios), 4)
+        self.assertEqual(len(cfg.estagios), 5)
         for e in cfg.estagios:
             self.assertTrue((self.RAIZ / e["pasta"]).is_dir(), e["pasta"])
             self.assertTrue((self.RAIZ / e["pasta"] / cfg.historico).is_dir(),
@@ -128,8 +128,9 @@ class _Madura:
         projetos = indexer.pastas_de_projeto()
         self.assertGreaterEqual(len(projetos), 2, projetos)
 
-    def test_a_cadeia_1_2_3_4_esta_inteira(self):
-        """Um mesmo grão do primeiro estágio até um projeto. Se isto quebrar, a
+    def test_a_cadeia_1_2_3_4_5_esta_inteira(self):
+        """Um mesmo grão do primeiro estágio até um projeto — passando pela
+        funcionalidade, porque nenhum item pula estágio. Se isto quebrar, a
         plataforma deixa de cumprir o propósito dela."""
         cfg = config.atual()
         primeiro = cfg.estagios[0]["pasta"]
@@ -143,18 +144,31 @@ class _Madura:
         # começar numa cadeia curta. O que a plataforma promete é ter **uma**
         # cadeia inteira, não que toda captura tenha uma.
         cadeias = [self._percorrer(c) for c in inicios]
-        inteiras = [c for c in cadeias if len(c) >= 4]
+        inteiras = [c for c in cadeias if len(c) >= 5]
         self.assertTrue(inteiras,
-                        f"nenhuma cadeia chega ao quarto estágio: {cadeias}")
+                        f"nenhuma cadeia chega ao quinto estágio: {cadeias}")
         for visitados in inteiras:
             self.assertTrue(visitados[0].startswith(("26.", "25.")))
             siglas = [v.split("-")[1] for v in visitados if len(v.split("-")) > 1]
-            self.assertEqual(siglas[:3], ["CAP", "NOT", "IDE"], visitados)
+            self.assertEqual(siglas[:4], ["CAP", "NOT", "IDE", "FUN"], visitados)
+
+    def test_ha_uma_funcionalidade_acoplavel_esperando(self):
+        """O desfecho 4a (acoplar a projeto existente) precisa aparecer no
+        exemplo, senão ninguém descobre que ele existe: pelo menos uma
+        funcionalidade ativa declara `projeto:` com o nome de um projeto de pé."""
+        cfg = config.atual()
+        pasta = self.RAIZ / cfg.estagios[3]["pasta"]
+        ativas = [a for a in pasta.glob("*.md") if cfg.id_re.match(a.stem)]
+        self.assertTrue(ativas, "nenhuma funcionalidade ativa")
+        projetos = indexer.pastas_de_projeto()
+        destinos = [self._frontmatter(a).get("projeto") for a in ativas]
+        self.assertTrue(any(d in projetos for d in destinos),
+                        f"nenhuma aponta para projeto existente: {destinos}")
 
     def _percorrer(self, inicio):
         """Segue `avancou_para` do começo até onde a linhagem levar."""
         atual, visitados = inicio, [inicio.stem]
-        for _ in range(5):
+        for _ in range(6):
             destino_id = self._frontmatter(atual).get("avancou_para")
             if not destino_id:
                 break

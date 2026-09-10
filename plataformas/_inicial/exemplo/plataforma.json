@@ -25,7 +25,14 @@
     },
     {
       "n": 4,
-      "pasta": "4-projetos",
+      "pasta": "4-funcionalidades",
+      "nome": "Funcionalidade",
+      "plural": "Funcionalidades",
+      "sigla": "FUN"
+    },
+    {
+      "n": 5,
+      "pasta": "5-projetos",
       "nome": "Projeto",
       "plural": "Projetos",
       "sigla": "PRJ"
@@ -44,7 +51,7 @@
     "servico"
   ],
   "projetos": {
-    "pasta": "4-projetos",
+    "pasta": "5-projetos",
     "prefixo_re": null
   },
   "excluir": [
@@ -73,14 +80,22 @@
       },
       {
         "pasta": "../_passos/exemplo/passo-3",
-        "rotulo": "A ideia vira projeto"
+        "rotulo": "A ideia vira funcionalidade: o que vai existir, e onde"
       },
       {
         "pasta": "../_passos/exemplo/passo-4",
-        "rotulo": "Um segundo grão anda: o curso"
+        "rotulo": "A funcionalidade vira projeto — e é a primeira linha do backlog"
       },
       {
         "pasta": "../_passos/exemplo/passo-5",
+        "rotulo": "Um segundo grão anda: o curso"
+      },
+      {
+        "pasta": "../_passos/exemplo/passo-6",
+        "rotulo": "O curso vira funcionalidade"
+      },
+      {
+        "pasta": "../_passos/exemplo/passo-7",
         "rotulo": "O curso vira projeto, e nasce a primeira decisão"
       }
     ]

@@ -18,7 +18,7 @@ Ela é irmã de `plataformas/exemplo` (cozinha e fotografia). As duas usam o mes
 método em assuntos opostos de propósito: uma é doméstica e sem prazo, a outra
 tem dinheiro e advogada envolvidos.
 
-## Parada 2 — Os quatro estágios
+## Parada 2 — Os cinco estágios
 
 `1-capturas/` é o que chegou e ninguém tratou: um áudio transcrito sem revisão,
 domínios colados de um grupo de WhatsApp, um print. Texto cru, sem forma.
@@ -28,7 +28,11 @@ reclamações se concentram no fim de semana, e a causa é mecânica".
 
 `3-ideias/` tem forma própria e serve de insumo: "guardar a série, não o print".
 
-`4-projetos/` ganhou corpo — pasta, `CLAUDE.md`, backlog.
+`4-funcionalidades/` diz o que vai existir quando estiver pronto, e onde entra:
+"uma coleta por dia, de 20 produtos, com preço e frete — num projeto novo". Ou,
+no caso do alerta de queda, "dentro do monitor, que já existe".
+
+`5-projetos/` ganhou corpo — pasta, `CLAUDE.md`, backlog.
 
 A regra que faz isso funcionar: **capturar é barato, organizar é uma etapa
 própria.** Quem tenta organizar na hora de capturar acaba não capturando.
@@ -46,10 +50,12 @@ a parte ativa da pasta continua respondendo "tem coisa por tratar?" de relance.
 Abra `1-capturas/_historico/26.07.20-CAP-001-cliente-reclamou-do-preco-4c19.md`.
 É um desabafo depois do terceiro cliente reclamando de preço.
 
-O rodapé dele leva à nota. A nota leva à ideia. A ideia leva ao projeto
-`exemplo-monitor-de-precos`, com backlog e uma lista de produtos observados.
+O rodapé dele leva à nota. A nota leva à ideia. A ideia leva à funcionalidade —
+a coleta diária, com critério de pronto. A funcionalidade leva ao projeto
+`exemplo-monitor-de-precos`, com backlog e uma lista de produtos observados, e
+ela é a primeira linha desse backlog.
 
-Quatro cliques, e você viu uma irritação virar trabalho. Repare que o backlog do
+Cinco cliques, e você viu uma irritação virar trabalho. Repare que o backlog do
 projeto **cita as notas** que decidiram cada item: "guardar frete junto com o
 preço" já está marcado como feito, decidido por uma nota antes de existir uma
 linha de código.

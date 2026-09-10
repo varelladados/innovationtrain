@@ -13,6 +13,7 @@ tratar em cada estágio.
 <!-- gerado:cap:inicio -->
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
+| 26.08.26-CAP-001-conversa-sobre-curso-1d55 | 2026-08-26 | CAP | `1-capturas/` | conversa com a Marta: por que os cursos de foto que ela fez não pegaram | [arquivo](<1-capturas/26.08.26-CAP-001-conversa-sobre-curso-1d55.md>) |
 | 26.09.02-CAP-001-geladeira-cheia-e-nada-pra-comer-3fb1 | 2026-09-02 | CAP | `1-capturas/` | o padrão do que estraga: sempre as mesmas coisas | [arquivo](<1-capturas/26.09.02-CAP-001-geladeira-cheia-e-nada-pra-comer-3fb1.md>) |
 | 26.09.02-CAP-002-anotacoes-da-aula-de-luz-6b8e | 2026-09-02 | CAP | `1-capturas/` | rabiscos de uma aula sobre luz natural | [arquivo](<1-capturas/26.09.02-CAP-002-anotacoes-da-aula-de-luz-6b8e.md>) |
 | 26.09.05-CAP-001-recado-da-feira-7e52 | 2026-09-05 | CAP | `1-capturas/` | áudio transcrito do feirante sobre o que vale a pena na semana | [arquivo](<1-capturas/26.09.05-CAP-001-recado-da-feira-7e52.md>) |
@@ -31,15 +32,19 @@ tratar em cada estágio.
 ## Ideias
 
 <!-- gerado:ide:inicio -->
-| ID | Data | Etapa/Tipo | Local | Resumo | Link |
-|---|---|---|---|---|---|
-| 26.09.01-IDE-001-curso-de-fotografia-em-6-semanas-2b60 | 2026-09-01 | IDE | `3-ideias/` | seis semanas, seis fotos, devolutiva escrita em toda entrega | [arquivo](<3-ideias/26.09.01-IDE-001-curso-de-fotografia-em-6-semanas-2b60.md>) |
+*(nada nesta etapa no momento)*
 <!-- gerado:ide:fim -->
+
+## Funcionalidades
+
+<!-- gerado:fun:inicio -->
+*(nada nesta etapa no momento)*
+<!-- gerado:fun:fim -->
 
 ## Projetos
 
 <!-- gerado:prj:inicio -->
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | 2026-09-02 | PRJ-app | `4-projetos/exemplo-app-de-receitas/` | o app que responde "o que faço com o que tenho?" | [CLAUDE.md](<4-projetos/exemplo-app-de-receitas/CLAUDE.md>) |
+| 26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | 2026-09-02 | PRJ-app | `5-projetos/exemplo-app-de-receitas/` | o app que responde "o que faço com o que tenho?" | [CLAUDE.md](<5-projetos/exemplo-app-de-receitas/CLAUDE.md>) |
 <!-- gerado:prj:fim -->

@@ -37,7 +37,7 @@
   --danger:#8C2F3A; --danger-bg:#F5DEE1; --success:#2F6B45; --success-bg:#DDEDE3;
   --warn:#7A5A1F; --warn-bg:#F2E8D2; --stub:#9AA4B2;
   --shadow:0 1px 2px rgba(16,24,40,0.06), 0 8px 24px -12px rgba(16,24,40,0.20);
-  --estagio-1:#A3B0B2; --estagio-2:#7FA6A2; --estagio-3:#4C8F89; --estagio-4:#1F6F6B;
+  --estagio-1:#A3B0B2; --estagio-2:#7FA6A2; --estagio-3:#5C978F; --estagio-4:#3E827C; --estagio-5:#1F6F6B;
   --tipo-orquestra:#1F6F6B;
   --tipo-backlog:#3F6B2A;
   --tipo-log:#9C3B33;
@@ -62,7 +62,7 @@
   --danger:#D98A96; --danger-bg:#322226; --success:#8FC5A3; --success-bg:#1B2A21;
   --warn:#E0BE7E; --warn-bg:#2C2519; --stub:#6B7684;
   --shadow:0 1px 2px rgba(0,0,0,0.35), 0 12px 28px -14px rgba(0,0,0,0.65);
-  --estagio-1:#55686B; --estagio-2:#6E918D; --estagio-3:#46A197; --estagio-4:#6ECFC6;
+  --estagio-1:#55686B; --estagio-2:#6E918D; --estagio-3:#46A197; --estagio-4:#5ABBB1; --estagio-5:#6ECFC6;
   --tipo-orquestra:#6ECFC6;
   --tipo-backlog:#9BC77E;
   --tipo-log:#E09A93;
@@ -87,7 +87,7 @@
   --danger:#D98A96; --danger-bg:#322226; --success:#8FC5A3; --success-bg:#1B2A21;
   --warn:#E0BE7E; --warn-bg:#2C2519; --stub:#6B7684;
   --shadow:0 1px 2px rgba(0,0,0,0.35), 0 12px 28px -14px rgba(0,0,0,0.65);
-  --estagio-1:#55686B; --estagio-2:#6E918D; --estagio-3:#46A197; --estagio-4:#6ECFC6;
+  --estagio-1:#55686B; --estagio-2:#6E918D; --estagio-3:#46A197; --estagio-4:#5ABBB1; --estagio-5:#6ECFC6;
   --tipo-orquestra:#6ECFC6;
   --tipo-backlog:#9BC77E;
   --tipo-log:#E09A93;
@@ -115,7 +115,7 @@
   --danger:#7A2F2F; --danger-bg:#F0DFE1; --success:#4C6B2F; --success-bg:#E7EDD9;
   --warn:#7A5E2C; --warn-bg:#EFE7D2; --stub:#A8A69C;
   --shadow:0 1px 2px rgba(27,22,15,0.06), 0 8px 24px -12px rgba(27,22,15,0.18);
-  --estagio-1:#B0A896; --estagio-2:#C0A87A; --estagio-3:#B08F4B; --estagio-4:#9C7A3C;
+  --estagio-1:#B0A896; --estagio-2:#C0A87A; --estagio-3:#B79C60; --estagio-4:#B08F4B; --estagio-5:#9C7A3C;
 }
 @media (prefers-color-scheme: dark){
   :root[data-tema="areia"]:not([data-theme="light"]){
@@ -125,7 +125,7 @@
   --danger:#C97F92; --danger-bg:#34222A; --success:#9BB579; --success-bg:#232A1C;
   --warn:#E0B876; --warn-bg:#2A2418; --stub:#6E6555;
   --shadow:0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
-  --estagio-1:#6E6555; --estagio-2:#9A8862; --estagio-3:#BE9A55; --estagio-4:#CBA25A;
+  --estagio-1:#6E6555; --estagio-2:#9A8862; --estagio-3:#AC915C; --estagio-4:#BE9A55; --estagio-5:#CBA25A;
   }
 }
 :root[data-tema="areia"][data-theme="dark"]{
@@ -135,7 +135,7 @@
   --danger:#C97F92; --danger-bg:#34222A; --success:#9BB579; --success-bg:#232A1C;
   --warn:#E0B876; --warn-bg:#2A2418; --stub:#6E6555;
   --shadow:0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
-  --estagio-1:#6E6555; --estagio-2:#9A8862; --estagio-3:#BE9A55; --estagio-4:#CBA25A;
+  --estagio-1:#6E6555; --estagio-2:#9A8862; --estagio-3:#AC915C; --estagio-4:#BE9A55; --estagio-5:#CBA25A;
 }
 
 *{box-sizing:border-box}
@@ -499,9 +499,10 @@ th{background:var(--surface-2)}
 .est-2{--est:var(--estagio-2)}
 .est-3{--est:var(--estagio-3)}
 .est-4{--est:var(--estagio-4)}
+.est-5{--est:var(--estagio-5)}
 .wf-card{border-left:3px solid var(--est,var(--border))}
 .wf-card .et{color:var(--est,var(--accent))}
-.pf-card{border-left:3px solid var(--estagio-4)}
+.pf-card{border-left:3px solid var(--estagio-5)}
 </style>
 </head>
 <body>
@@ -2125,7 +2126,7 @@ function ebSalvar(){
 const EB_USOS = [
   {id: "notas", rotulo: "Guardar e organizar ideias", sub: "o básico: capturar sem fricção e arrumar depois. Não dá pra desmarcar — é o motor.", fixo: true},
   {id: "decisoes", rotulo: "Registrar decisões que dependem de mim", sub: "acrescenta uma pasta de pendências: cada dúvida vira uma pergunta com opções, que espera por você."},
-  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta o quarto estágio. Sem isso a plataforma tem três, e funciona igual."},
+  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta dois estágios: funcionalidade (o que vai existir quando estiver pronto, e onde) e projeto. Sem isso a plataforma tem três, e funciona igual."},
   {id: "portfolio", rotulo: "Ver num só lugar tudo que já roda", sub: "cada projeto declara o que publica; o app monta o Portfólio a partir disso. Precisa de \u201cprojetos\u201d."},
 ];
 
@@ -2309,13 +2310,18 @@ async function ebGerar(){
 // metodo/classificar.md. Não grava veredito: daqui sai o briefing pra sessão
 // de IA fazer o registro.
 //
-// Os conjuntos abaixo são alinhados pelo FIM da lista de estágios. Uma
-// plataforma de quatro estágios usa os três; uma de três usa os dois últimos.
+// Cada conjunto é escolhido pela sigla do estágio de DESTINO da passagem
+// (`para`). Quando a plataforma usa as siglas padrão, cada passagem acha o seu;
+// quando não usa (uma plataforma lida com taxonomia própria), os conjuntos são
+// alinhados pelo FIM da lista, sem o de funcionalidade — uma plataforma de
+// três estágios cai em "serve de insumo?" e "tem corpo próprio?", que é o par
+// que qualquer taxonomia bruto → validado → corpo tem.
 // Ficam hardcoded de propósito, como
 // os guardrails do briefing: parsear a prosa do método para montar esta tela a
 // deixaria quebrar em silêncio a cada edição de texto.
 const FX_SETS = [
   {
+    para: "NOT",
     pergunta: "já foi lido e organizado?",
     regra: 2,
     criterios: [
@@ -2326,6 +2332,7 @@ const FX_SETS = [
     ],
   },
   {
+    para: "IDE",
     pergunta: "serve de insumo para outra coisa, sem reprocessar?",
     regra: 2,
     criterios: [
@@ -2336,6 +2343,18 @@ const FX_SETS = [
     ],
   },
   {
+    para: "FUN",
+    pergunta: "já diz o que vai existir quando estiver pronto, e onde?",
+    regra: 2,
+    criterios: [
+      "Descreve um comportamento ou entregável concreto — o que faz, não só o que resolve?",
+      "Tem destino declarado: um projeto que já existe, ou “projeto novo”?",
+      "Tem critério de pronto: dá para responder sim ou não se está feito?",
+      "Cabe numa entrega só? (se precisa de várias, são várias funcionalidades — ou é um projeto)",
+    ],
+  },
+  {
+    para: "PRJ",
     pergunta: "tem corpo próprio?",
     regra: "todos",
     criterios: [
@@ -2344,6 +2363,7 @@ const FX_SETS = [
       "Tem backlog com pelo menos um item aberto de verdade?",
       "É um repositório git próprio?",
     ],
+    nota: "Se o destino é um projeto que já existe, a funcionalidade não vira projeto: ela é acoplada — copiada para dentro dele, com uma linha no backlog, e a linha dela no registro ganha o marcador → com a pasta do projeto.",
   },
 ];
 let FX_MARCADOS = {};   // índice da passagem -> Set de critérios marcados
@@ -2352,10 +2372,17 @@ let FX_ABERTA = 0;      // qual passagem está com o checklist aberto
 function fxPassagens(){
   const est = plEstagios();
   if (est.length < 2) return [];
-  const sets = FX_SETS.slice(-(est.length - 1));
-  return est.slice(0, -1).map((de, i) => ({
-    de, para: est[i + 1], set: sets[i] || FX_SETS[FX_SETS.length - 1],
-  }));
+  const porSigla = {};
+  FX_SETS.forEach(s => { porSigla[s.para] = s; });
+  const conhece = est.some(e => porSigla[e.sigla]);
+  // fallback para taxonomia própria: alinhado pelo fim, sem o de funcionalidade
+  const semFun = FX_SETS.filter(s => s.para !== "FUN");
+  const porFim = semFun.slice(-(est.length - 1));
+  return est.slice(0, -1).map((de, i) => {
+    const para = est[i + 1];
+    const set = (conhece && porSigla[para.sigla]) || porFim[i] || semFun[semFun.length - 1];
+    return {de, para, set};
+  });
 }
 
 async function openFluxoView(){
@@ -2421,6 +2448,13 @@ async function openFluxoView(){
       ? `${n} de ${total} → promove a ${plNome(i + 2)} (${plSigla(i + 2)})`
       : `${n} de ${total} → fica como ${plNome(i + 1)}. Se a dúvida for genuína, vire pendência em vez de forçar.`;
     el.appendChild(ver);
+
+    if (p.set.nota){
+      const obs = document.createElement("p");
+      obs.style.cssText = "font-size:var(--fs-1);color:var(--text-2);margin:var(--sp-1) 0 0";
+      obs.textContent = p.set.nota;
+      el.appendChild(obs);
+    }
 
     if (i === 0){
       const btn = document.createElement("button");

@@ -92,10 +92,13 @@ class TestTaxonomia(unittest.TestCase):
         self.assertEqual(tax["projetos"]["pasta"], "")
         self.assertNotIn("tipos", tax)
 
-    def test_com_projetos_tem_quatro(self):
+    def test_com_projetos_tem_cinco(self):
+        """'projetos' acrescenta dois estágios, não um: funcionalidade só faz
+        sentido em função de um projeto (novo ou existente)."""
         tax = embarque.taxonomia({"usos": ["notas", "projetos"], "nome": "X"})
-        self.assertEqual(len(tax["estagios"]), 4)
-        self.assertEqual(tax["projetos"]["pasta"], "4-projetos")
+        self.assertEqual([e["sigla"] for e in tax["estagios"]],
+                         ["CAP", "NOT", "IDE", "FUN", "PRJ"])
+        self.assertEqual(tax["projetos"]["pasta"], "5-projetos")
 
     def test_decisoes_declara_a_pasta_de_pendencias(self):
         tax = embarque.taxonomia({"usos": ["notas", "decisoes"], "nome": "X"})

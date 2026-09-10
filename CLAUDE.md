@@ -1,6 +1,6 @@
 # CLAUDE.md — Estação
 
-> **Documento** · v0.8.2 · atualizado em 2026-09-09
+> **Documento** · v0.9.0 · atualizado em 2026-09-10
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta.
@@ -23,6 +23,12 @@ checkbox de backlog). Hoje também:
 - **mostra o fluxo** (aba Fluxo) — as passagens entre estágios e os critérios de
   promoção;
 - **cria a primeira plataforma** (aba Embarque) — cinco perguntas, um prompt.
+
+A taxonomia padrão tem **cinco** estágios desde a 0.9.0 (capturas → notas →
+ideias → funcionalidades → projetos). O quarto é a unidade de trabalho: uma
+funcionalidade ou **se acopla** a um projeto que já existe (mesmo identificador,
+linha no backlog do projeto) ou é a semente de um projeto novo. Nada no código
+sabe disso por nome — vem de `config.PADROES`, como o resto.
 
 É por isso que ela funciona como **sub-harness**: a IA não roda aqui dentro; a
 Estação prepara o que entra (contexto + guardrail) e recebe o que sai (decisão,
@@ -110,7 +116,7 @@ estacao/                  ← a raiz do repositório É o hub
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
 ├── metodo/               regras, taxonomia, templates e plataforma.py (o utilitário)
 ├── plataformas/
-│   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 3 passos
+│   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
 │   ├── _inicial/         cópias intactas das duas: é delas que "voltar ao início" copia
 │   └── _passos/          os estados seguintes da trilha do exemplo

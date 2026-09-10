@@ -1,5 +1,64 @@
 # Changelog — Estação
 
+## 0.9.0 — 2026-09-10
+
+**Um estágio novo entre ideia e projeto: a funcionalidade.** A taxonomia padrão
+passa de quatro para **cinco** estágios — capturas → notas → ideias →
+**funcionalidades** → projetos —, e a pasta de projetos vai de `4-projetos/` para
+`5-projetos/`, porque a numeração carrega a sequência.
+
+**Por quê.** A plataforma em que a Estação nasceu mediu, em uso real, que a
+maioria das ideias com forma **não é projeto novo** — é peça de um projeto que
+já existe. Sem um estágio entre os dois, essa ideia ou ficava parada em ideias
+para sempre, ou virava uma pasta vazia em projetos que mentia no Portfólio. A
+funcionalidade é a unidade de trabalho: diz **o que vai existir quando estiver
+pronto, para quem, como se sabe que ficou pronto, e onde entra**. Ela ou se
+**acopla** a um projeto de pé ou é a **semente** de um novo — a primeira linha
+do backlog dele. Decisão registrada em `metodo/taxonomia.md`, parada 6.
+
+- **`metodo/taxonomia.md`** — a tabela dos cinco estágios, a árvore com
+  `4-funcionalidades/` e `<projeto>/funcionalidades/`, a exceção ao "copiar com
+  identificador novo" (acoplar não muda de estágio, então não ganha identificador
+  nem linha nova — só o marcador `→` com a pasta do projeto).
+- **`metodo/classificar.md`** — quatro passagens. A 3 (ideia → funcionalidade)
+  promove com 2 de 4: comportamento concreto · destino declarado · critério de
+  pronto · cabe numa entrega. A 4 tem **dois desfechos**: 4a acoplar a projeto
+  existente, 4b corpo próprio (os quatro critérios, juntos).
+- **`metodo/templates/funcionalidade.md`** (novo) — com o campo `projeto:` no
+  frontmatter e as seções "Pronto quando" e "Onde entra". `ideia.md` ganhou a
+  pergunta "onde isso entraria"; `projeto-CLAUDE.md` passa a nascer de uma
+  funcionalidade.
+- **`app/config.py`** — `PADROES` com o quinto estágio (`FUN`) e
+  `projetos.pasta = 5-projetos`. Nada mais no código sabe o nome: a aba Fluxo,
+  o Workflow, o Dashboard e o briefing já liam a lista.
+- **Embarque** — "Tocar projetos" acrescenta **dois** estágios, não um; sem ele
+  a plataforma continua com três.
+- **Aba Fluxo** — o conjunto de critérios de cada passagem é escolhido pela
+  **sigla de destino**, não pela posição. Uma plataforma lida com taxonomia
+  própria (sem `FUN`) cai no alinhamento pelo fim, sem o conjunto de
+  funcionalidade — o comportamento de antes.
+- **Escala de maturidade** — cinco degraus (`--estagio-5`, classe `est-5`). O
+  último continua sendo a cor da marca; o meio foi reespaçado. Documentado em
+  `docs/design-system.md`.
+- **As duas plataformas de exemplo** passam a cumprir a regra "nenhum item pula
+  estágio" também aqui: as quatro cadeias que iam direto de ideia a projeto
+  ganharam a funcionalidade no meio (no `_historico/`, com a linha no registro),
+  e cada projeto de exemplo tem a funcionalidade que o originou como **primeira
+  linha do backlog**. `exemplo-precos` ganhou ainda uma funcionalidade **ativa e
+  acoplável** — `alerta de queda acima de 10%`, com `projeto:
+  exemplo-monitor-de-precos` —, desmembrada da mesma ideia que originou o
+  monitor (a linha `…-d5f0-1` do registro mostra a continuação com sufixo).
+- **A trilha da cozinha vai a sete passos**: 3 (a ideia vira funcionalidade) e
+  6 (o curso vira funcionalidade) são novos; os demais foram renumerados.
+- **Testes** — 175, contra 137: os que fixavam quatro estágios passaram a cobrar
+  cinco, a cadeia inteira do exemplo exige `CAP → NOT → IDE → FUN`, e há um
+  teste novo que cobra que o exemplo tenha uma funcionalidade ativa apontando
+  para um projeto que existe (senão ninguém descobre que o desfecho 4a existe).
+
+**O que este release não faz:** não migra plataforma nenhuma. Uma plataforma
+criada antes continua com quatro estágios e abre normalmente — a taxonomia é
+dela, no `plataforma.json`. Adotar o quinto é decisão de quem a opera.
+
 ## 0.8.5 — 2026-09-09
 
 **A trilha do exemplo vai a cinco passos**, e o quinto é o que ela não tinha:

@@ -25,7 +25,14 @@
     },
     {
       "n": 4,
-      "pasta": "4-projetos",
+      "pasta": "4-funcionalidades",
+      "nome": "Funcionalidade",
+      "plural": "Funcionalidades",
+      "sigla": "FUN"
+    },
+    {
+      "n": 5,
+      "pasta": "5-projetos",
       "nome": "Projeto",
       "plural": "Projetos",
       "sigla": "PRJ"
@@ -44,7 +51,7 @@
     "pesquisa"
   ],
   "projetos": {
-    "pasta": "4-projetos",
+    "pasta": "5-projetos",
     "prefixo_re": null
   },
   "excluir": [

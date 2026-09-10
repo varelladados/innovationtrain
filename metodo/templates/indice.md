@@ -7,7 +7,7 @@
 
 <o que esta plataforma guarda, de quem é, e o que ela NÃO é. Três frases.>
 
-## Os quatro estágios
+## Os cinco estágios
 
 Toda ideia entra crua e vai amadurecendo. As pastas numeradas são esse caminho:
 
@@ -16,7 +16,8 @@ Toda ideia entra crua e vai amadurecendo. As pastas numeradas são esse caminho:
 | `1-capturas/` | chegou e ninguém tratou |
 | `2-notas/` | já foi lido e organizado |
 | `3-ideias/` | tem forma e serve de insumo |
-| `4-projetos/` | ganhou corpo próprio: pasta, backlog, git |
+| `4-funcionalidades/` | diz o que vai existir quando estiver pronto, e onde entra |
+| `5-projetos/` | ganhou corpo próprio: pasta, backlog, git |
 
 Dentro de cada uma, `_historico/` guarda o que já avançou dali.
 As regras da passagem estão em `metodo/classificar.md`.

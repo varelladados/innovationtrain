@@ -27,7 +27,7 @@ Abre em `http://127.0.0.1:8744`. No Windows, um duplo clique em
 
 Uma Estação opera **várias** plataformas, e troca entre elas sem reiniciar.
 
-## Os quatro estágios
+## Os cinco estágios
 
 Toda ideia entra crua e vai amadurecendo. As pastas numeradas são esse caminho:
 
@@ -36,7 +36,13 @@ Toda ideia entra crua e vai amadurecendo. As pastas numeradas são esse caminho:
 | `1-capturas/` | chegou e ninguém tratou — colado, transcrito, exportado |
 | `2-notas/` | já foi lido e organizado |
 | `3-ideias/` | tem forma e serve de insumo para outra coisa |
-| `4-projetos/` | ganhou corpo próprio: pasta, backlog, git |
+| `4-funcionalidades/` | diz o que vai existir quando estiver pronto, e **onde entra**: num projeto que já existe, ou num novo |
+| `5-projetos/` | ganhou corpo próprio: pasta, backlog, git |
+
+O quarto estágio é o que falta na maioria das taxonomias: a maior parte das
+ideias com forma não é um projeto novo — é uma peça de um projeto que já
+existe. A funcionalidade é a unidade de trabalho, com critério de pronto, que
+ou **se acopla** a um projeto de pé ou é a **semente** do próximo.
 
 Ao avançar, o item é **copiado** para o estágio seguinte e o original vai para o
 `_historico/` daquele estágio. Duas coisas ficam garantidas: o texto de cada
@@ -74,8 +80,9 @@ São **duas**, e elas usam o mesmo método em assuntos opostos de propósito:
 São duas de propósito, e elas se completam:
 
 - **`plataformas/exemplo` começa vazia** — só nove capturas. Ela vem com uma
-  **trilha de três passos**: um clique e a plataforma inteira passa para o estado
-  seguinte, até uma captura virar projeto com backlog. **↺ voltar ao início**
+  **trilha de sete passos**: um clique e a plataforma inteira passa para o estado
+  seguinte, até uma captura virar projeto com backlog — passando pela
+  funcionalidade, que é onde a ideia diz o que vai existir e onde entra. **↺ voltar ao início**
   desfaz tudo. Nada é calculado: cada passo é um instantâneo pronto, e o botão só
   o restaura.
 - **`plataformas/exemplo-precos` já rodou** — cinco cadeias, das quais **duas
@@ -94,7 +101,7 @@ A trilha e o reiniciar **só existem nas plataformas de exemplo**: é uma chave 
 ```
 app/                       o servidor e a interface (stdlib puro, zero dependência)
 metodo/                    as regras, a taxonomia, os templates e o utilitário
-plataformas/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 3 passos
+plataformas/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 plataformas/exemplo-precos/ preços e lojas clone — já povoada, e o que ficou pelo caminho
 docs/design-system.md  tokens, temas, fontes e a regra de ouro do CSS
 tests/                 137 testes, stdlib, sem dependência

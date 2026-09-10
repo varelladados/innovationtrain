@@ -31,14 +31,21 @@ tratar em cada estágio.
 ## Ideias
 
 <!-- gerado:ide:inicio -->
-*(nada nesta etapa no momento)*
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.09.01-IDE-001-curso-de-fotografia-em-6-semanas-2b60 | 2026-09-01 | IDE | `3-ideias/` | seis semanas, seis fotos, devolutiva escrita em toda entrega | [arquivo](<3-ideias/26.09.01-IDE-001-curso-de-fotografia-em-6-semanas-2b60.md>) |
 <!-- gerado:ide:fim -->
+
+## Funcionalidades
+
+<!-- gerado:fun:inicio -->
+*(nada nesta etapa no momento)*
+<!-- gerado:fun:fim -->
 
 ## Projetos
 
 <!-- gerado:prj:inicio -->
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | 2026-09-02 | PRJ-app | `4-projetos/exemplo-app-de-receitas/` | o app que responde "o que faço com o que tenho?" | [CLAUDE.md](<4-projetos/exemplo-app-de-receitas/CLAUDE.md>) |
-| 26.09.04-PRJ-001-exemplo-curso-de-fotografia-77c1 | 2026-09-04 | PRJ-curso | `4-projetos/exemplo-curso-de-fotografia/` | um curso que cabe em seis semanas, e que a Marta terminaria | [CLAUDE.md](<4-projetos/exemplo-curso-de-fotografia/CLAUDE.md>) |
+| 26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | 2026-09-02 | PRJ-app | `5-projetos/exemplo-app-de-receitas/` | o app que responde "o que faço com o que tenho?" | [CLAUDE.md](<5-projetos/exemplo-app-de-receitas/CLAUDE.md>) |
 <!-- gerado:prj:fim -->

@@ -31,7 +31,13 @@
 
 | ID | Data | Etapa/Tipo | Local | Resumo | Link |
 |---|---|---|---|---|---|
-| 26.08.28-IDE-001-receita-pela-despensa-b3a9 | 2026-08-28 | IDE →26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | `3-ideias/_historico/` | busca invertida: entra o que tem em casa, sai o que dá pra fazer | [arquivo](<3-ideias/_historico/26.08.28-IDE-001-receita-pela-despensa-b3a9.md>) |
+| 26.08.28-IDE-001-receita-pela-despensa-b3a9 | 2026-08-28 | IDE →26.08.30-FUN-001-busca-pelo-que-tem-em-casa-5c2e | `3-ideias/_historico/` | busca invertida: entra o que tem em casa, sai o que dá pra fazer | [arquivo](<3-ideias/_historico/26.08.28-IDE-001-receita-pela-despensa-b3a9.md>) |
+
+## Entradas 2026-08-30
+
+| ID | Data | Etapa/Tipo | Local | Resumo | Link |
+|---|---|---|---|---|---|
+| 26.08.30-FUN-001-busca-pelo-que-tem-em-casa-5c2e | 2026-08-30 | FUN | `4-funcionalidades/` | entra a lista curta do que tem em casa, sai o que dá pra fazer — ordenado por quantos ingredientes faltam | [arquivo](<4-funcionalidades/26.08.30-FUN-001-busca-pelo-que-tem-em-casa-5c2e.md>) |
 
 ## Entradas 2026-09-02
 
@@ -39,7 +45,6 @@
 |---|---|---|---|---|---|
 | 26.09.02-CAP-001-geladeira-cheia-e-nada-pra-comer-3fb1 | 2026-09-02 | CAP | `1-capturas/` | o padrão do que estraga: sempre as mesmas coisas | [arquivo](<1-capturas/26.09.02-CAP-001-geladeira-cheia-e-nada-pra-comer-3fb1.md>) |
 | 26.09.02-CAP-002-anotacoes-da-aula-de-luz-6b8e | 2026-09-02 | CAP | `1-capturas/` | rabiscos de uma aula sobre luz natural | [arquivo](<1-capturas/26.09.02-CAP-002-anotacoes-da-aula-de-luz-6b8e.md>) |
-| 26.09.02-PRJ-001-exemplo-app-de-receitas-e4a8 | 2026-09-02 | PRJ-app | `4-projetos/exemplo-app-de-receitas/` | o app que responde "o que faço com o que tenho?" | [CLAUDE.md](<4-projetos/exemplo-app-de-receitas/CLAUDE.md>) |
 
 ## Entradas 2026-09-05
 

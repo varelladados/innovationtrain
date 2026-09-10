@@ -14,7 +14,7 @@
 
 ## O que é esta pasta
 
-Uma plataforma da Estação: capturas → notas → ideias → projetos. Toda ideia
+Uma plataforma da Estação: capturas → notas → ideias → funcionalidades → projetos. Toda ideia
 entra crua no primeiro estágio e vai amadurecendo. A porta de entrada é o
 `_indice.md`.
 
@@ -34,7 +34,7 @@ trabalho.
   continuação usa o mesmo identificador com sufixo `-N`.
 - **Apagar é lógico, nunca físico.** Encerrar é mover para o
   `_historico/` do estágio, não remover.
-- **Nenhum item pula estágio:** CAP → NOT → IDE → PRJ em ordem, cada um com
+- **Nenhum item pula estágio:** CAP → NOT → IDE → FUN → PRJ em ordem, cada um com
   identificador próprio e linha própria no registro.
 - **Identificador só pelo utilitário**, nunca montado à mão.
 - **Nenhuma decisão se fecha por inferência** — só a marcação explícita

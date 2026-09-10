@@ -28,7 +28,7 @@ def plataforma_de_teste(raiz, **extra):
     pasta de projeto — é o mínimo que os três briefings citam."""
     raiz = Path(raiz)
     (raiz / "1-capturas").mkdir(exist_ok=True)
-    (raiz / "4-projetos" / "projeto-de-teste").mkdir(parents=True, exist_ok=True)
+    (raiz / "5-projetos" / "projeto-de-teste").mkdir(parents=True, exist_ok=True)
     return apoio.aplicar(
         raiz,
         doutrina=DOUTRINA, checklist=CHECKLIST, fluxo="metodo/taxonomia.md",
@@ -102,7 +102,7 @@ class TestGuardrails(unittest.TestCase):
         # os caminhos citados são os que a plataforma declara, não literais
         self.assertIn(DOUTRINA, texto)
         self.assertIn(UTILITARIO, texto)
-        self.assertIn("CAP → NOT → IDE → PRJ", texto)
+        self.assertIn("CAP → NOT → IDE → FUN → PRJ", texto)
 
     def test_guardrails_em_pendencias(self):
         self._checar(briefing.briefing_pendencias()["texto"])
@@ -157,7 +157,7 @@ class TestClassificar(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_recusa_caminho_fora_do_primeiro_estagio(self):
-        for path in ["", "4-projetos/qualquer/CLAUDE.md", "metodo/regras.md"]:
+        for path in ["", "5-projetos/qualquer/CLAUDE.md", "metodo/regras.md"]:
             with self.assertRaises(ValueError):
                 briefing.briefing_classificar(path)
 
@@ -199,7 +199,7 @@ class TestAvancar(unittest.TestCase):
 
     def test_pasta_invalida(self):
         # pasta vazia, pasta que não existe, e travessia de caminho
-        for pasta in ["", "naoexiste", "../..", "4-projetos/projeto-de-teste"]:
+        for pasta in ["", "naoexiste", "../..", "5-projetos/projeto-de-teste"]:
             with self.assertRaises(ValueError):
                 briefing.briefing_avancar(pasta, [], {})
 

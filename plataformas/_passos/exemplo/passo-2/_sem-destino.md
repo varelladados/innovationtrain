@@ -37,6 +37,12 @@ tratar em cada estágio.
 | 26.08.28-IDE-001-receita-pela-despensa-b3a9 | 2026-08-28 | IDE | `3-ideias/` | busca invertida: entra o que tem em casa, sai o que dá pra fazer | [arquivo](<3-ideias/26.08.28-IDE-001-receita-pela-despensa-b3a9.md>) |
 <!-- gerado:ide:fim -->
 
+## Funcionalidades
+
+<!-- gerado:fun:inicio -->
+*(nada nesta etapa no momento)*
+<!-- gerado:fun:fim -->
+
 ## Projetos
 
 <!-- gerado:prj:inicio -->

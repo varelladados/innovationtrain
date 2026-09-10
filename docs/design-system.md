@@ -89,19 +89,22 @@ maturidade mudam com o tema.
 | `--success` / `--success-bg` | `#2F6B45` / `#DDEDE3` | `#8FC5A3` / `#1B2A21` | pendência respondida, confirmação |
 | `--warn` / `--warn-bg` | `#7A5A1F` / `#F2E8D2` | `#E0BE7E` / `#2C2519` | adiado, atenção, plataforma não encontrada |
 
-### Maturidade — `--estagio-1` a `--estagio-4`
+### Maturidade — `--estagio-1` a `--estagio-5`
 
 Um matiz só, do apagado ao saturado: a cor **diz o quanto o grão avançou**
-(Trecho 4, Parada 3).
+(Trecho 4, Parada 3). Eram quatro degraus; com o estágio de funcionalidade
+(2026-09-10) são cinco, e o último continua sendo a cor da marca — o que mudou
+foi o meio da escala, reespaçado.
 
 | Token | Padrão claro | Padrão escuro | Areia claro | Areia escuro |
 |---|---|---|---|---|
 | `--estagio-1` | `#A3B0B2` | `#55686B` | `#B0A896` | `#6E6555` |
 | `--estagio-2` | `#7FA6A2` | `#6E918D` | `#C0A87A` | `#9A8862` |
-| `--estagio-3` | `#4C8F89` | `#46A197` | `#B08F4B` | `#BE9A55` |
-| `--estagio-4` | `#1F6F6B` | `#6ECFC6` | `#9C7A3C` | `#CBA25A` |
+| `--estagio-3` | `#5C978F` | `#46A197` | `#B79C60` | `#AC915C` |
+| `--estagio-4` | `#3E827C` | `#5ABBB1` | `#B08F4B` | `#BE9A55` |
+| `--estagio-5` | `#1F6F6B` | `#6ECFC6` | `#9C7A3C` | `#CBA25A` |
 
-**Como usar:** ponha a classe `est-1`…`est-4` no elemento; ela define a variável
+**Como usar:** ponha a classe `est-1`…`est-5` no elemento; ela define a variável
 local `--est`, que a regra consome com fallback:
 
 ```css

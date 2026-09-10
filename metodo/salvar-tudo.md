@@ -34,7 +34,7 @@ origem, salva o que é da sessão, e **reporta**. Nunca pergunta.
 Podem ser mais de um. O caso comum:
 
 - a **plataforma** (esta pasta);
-- cada **projeto** dentro de `4-projetos/`, quando tem `.git` próprio;
+- cada **projeto** dentro de `5-projetos/`, quando tem `.git` próprio;
 - e, se você estiver mexendo neles, o **método** e a **aplicação** do hub.
 
 Para cada um, rode `git status --porcelain=v1 -b` e guarde a saída.

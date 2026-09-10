@@ -19,14 +19,15 @@ conclusão. Três capturas continuam cruas — uma delas desde julho.
 
 **Isso é o estado normal.** Uma plataforma onde tudo avançou não existe.
 
-## Os quatro estágios
+## Os cinco estágios
 
 | Pasta | O que tem aqui | Agora |
 |---|---|---|
 | `1-capturas/` | chegou e ninguém tratou | 3 esperando |
 | `2-notas/` | já foi lido e organizado | 2 |
 | `3-ideias/` | tem forma e serve de insumo | 2 |
-| `4-projetos/` | ganhou corpo próprio | 2 |
+| `4-funcionalidades/` | diz o que vai existir quando estiver pronto, e onde | 1 |
+| `5-projetos/` | ganhou corpo próprio | 2 |
 
 Dentro de cada uma, `_historico/` guarda o que já avançou dali — o texto
 preservado como era naquele estágio.
@@ -40,11 +41,22 @@ Esta é a cadeia inteira, e ela existe para ser percorrida clicando:
 | 1 | `26.07.20-CAP-001-cliente-reclamou-do-preco-4c19` | `1-capturas/_historico/` |
 | 2 | `26.07.22-NOT-001-o-concorrente-muda-preco-na-sexta-8ab3` | `2-notas/_historico/` |
 | 3 | `26.07.25-IDE-001-historico-de-preco-em-vez-de-print-d5f0` | `3-ideias/_historico/` |
-| 4 | **`exemplo-monitor-de-precos`** | `4-projetos/` |
+| 4 | `26.07.26-FUN-001-coleta-diaria-de-preco-e-frete-4e63` | `4-funcionalidades/_historico/` |
+| 5 | **`exemplo-monitor-de-precos`** | `5-projetos/` |
 
 Começa com "terceiro cliente essa semana mandando print" e termina num projeto
-com backlog. A segunda cadeia (cliente que comprou numa cópia → radar de clones)
+com backlog — e a funcionalidade que o originou é a primeira linha desse
+backlog. A segunda cadeia (cliente que comprou numa cópia → radar de clones)
 faz o mesmo caminho.
+
+**O outro desfecho de uma funcionalidade** está em `4-funcionalidades/`:
+`26.09.08-FUN-001-alerta-de-queda-acima-de-10-por-cento-3f7b` declara
+`projeto: exemplo-monitor-de-precos` — um projeto que **já existe**. Quando ela
+avançar, não vira projeto novo: é **acoplada**, copiada para dentro do monitor
+com o mesmo identificador, e o backlog dele ganha uma linha. Ela saiu da mesma
+ideia que originou o monitor (a linha `…-d5f0-1` no registro é o
+desmembramento), e é a maioria dos casos numa plataforma de verdade: ideia
+boa que é peça de projeto de pé, não projeto novo.
 
 ## O que empacou, e por quê
 
