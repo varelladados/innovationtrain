@@ -1,5 +1,46 @@
 # Changelog — Estação
 
+## 0.9.2 — 2026-09-11
+
+**Revisão da interface, e um bug que 200 testes não pegaram.**
+
+O diagnóstico veio do uso: *"o painel esquerdo parece programa da década de 90,
+cheio de espaço, e as pastas lá embaixo esquecidas — aquilo é muito importante"*.
+
+- **A barra lateral.** Eram 8 botões de bloco, cada um com borda, serifa em
+  negrito e 16px de margem: ~390px só de navegação, antes de a árvore começar.
+  Agora a navegação é grade de duas colunas (~120px), a árvore ganha todo o
+  resto com cabeçalho e contagem próprios, e o filtro por tipo virou gaveta.
+  A aba aberta passa a ficar **marcada** — antes nada na tela dizia onde você
+  estava. O seletor de tema desceu para o rodapé: é ajuste, não navegação.
+- **`openProjetoView` não existia.** Todo cartão do Portfólio tem "abrir projeto
+  →" e o clique morria num `ReferenceError`; o back-end estava inteiro e o
+  `CLAUDE.md` descrevia a tela como pronta. Ela foi escrita: maturidade por
+  dimensão, backlogs com checkbox que marca de verdade, anotação de item novo e
+  o briefing de avanço.
+- **Projeto em subpasta era invisível.** `projetos.py` e `briefing.py` montavam
+  o caminho como `<pasta>/arquivo.md` quando o índice guarda
+  `5-projetos/<pasta>/arquivo.md`. Com a **taxonomia padrão** — que é a que põe
+  projeto em subpasta — a tela abria sem backlog e sem `CLAUDE.md`, e o briefing
+  dizia "nenhum backlog indexado" para todo projeto. O que escondeu isso foi o
+  fixture: `apoio.qualquer_pasta_e_projeto()` põe `projetos.pasta = ""`, e a
+  suíte exercitava só o caso em que o projeto está na raiz. `tests/
+  test_projeto_em_subpasta.py` cobre o caso padrão, e um teste antigo que criava
+  a pasta num lugar e montava o caminho em outro foi corrigido.
+- **Aba Fluxo.** O veredito dizia "0 de 4 → fica como Captura", que repete o
+  estado em que o item já está: com régua de 2, "0 de 4" e "1 de 4" davam a
+  mesma frase. Agora ele diz **quanto falta**, e só pinta de âmbar quando há o
+  que decidir. O botão de briefing saiu de dentro do primeiro passo — ele age
+  sobre o item aberto na árvore, não sobre aquela pergunta — e subiu para uma
+  barra que mostra **qual** item vai usar.
+- **Filtros do Portfólio.** Catorze chips em fila única, separados por barrinhas
+  que somem na primeira quebra de linha. Viraram grupos com rótulo (*o que tem ·
+  tipo · estado · também*), mais um "limpar" que só aparece quando há filtro.
+- **Janela estreita** deixou de espremer o texto: a barra lateral encolhe e a
+  navegação vira uma coluna.
+
+208 testes.
+
 ## 0.9.1 — 2026-09-10
 
 **`siglas_legadas`: a plataforma que já tinha acervo quando adotou a Estação.**

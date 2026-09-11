@@ -167,7 +167,11 @@ def briefing_avancar(pasta, entries, text_cache):
     if not _pasta_valida(pasta):
         raise ValueError("pasta não é um projeto desta plataforma")
 
-    backlogs = [e for e in entries if e["type"] == "backlog" and e["path"].startswith(pasta + "/")]
+    # o mesmo prefixo que a view de projeto usa: o nome da pasta não é o
+    # caminho dela quando a plataforma guarda projeto em subpasta
+    from projetos import prefixo_do_projeto
+    base = prefixo_do_projeto(pasta) + "/"
+    backlogs = [e for e in entries if e["type"] == "backlog" and e["path"].startswith(base)]
     essenciais, abertos_total = [], 0
     for b in backlogs:
         for linha in text_cache.get(b["path"], "").splitlines():
@@ -180,7 +184,7 @@ def briefing_avancar(pasta, entries, text_cache):
 
     linhas = [
         _cabecalho(f"Avançar o projeto {pasta}"), "",
-        f"Leia primeiro `{pasta}/CLAUDE.md` (a orquestra do projeto) e os backlogs:",
+        f"Leia primeiro `{base}CLAUDE.md` (a orquestra do projeto) e os backlogs:",
         "",
     ]
     linhas += [f"- `{b['path']}`" for b in backlogs] or ["- (nenhum backlog indexado)"]

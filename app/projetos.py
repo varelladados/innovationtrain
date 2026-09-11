@@ -83,11 +83,28 @@ def _perfil(pasta):
         return {"_erro": f"perfil ilegível: {e}"}
 
 
+def prefixo_do_projeto(pasta):
+    """Caminho da pasta do projeto **relativo à raiz da plataforma**.
+
+    `pastas_de_projeto()` devolve só o nome (`Anotai`); o índice guarda o
+    caminho inteiro (`5-projetos/Anotai/...`). Quem junta os dois é isto. Sem
+    ele, toda plataforma que guarda projeto em subpasta — que é a taxonomia
+    padrão — abre a tela de projeto vazia.
+    """
+    cfg = config.atual()
+    try:
+        rel = cfg.projetos_dir.relative_to(cfg.raiz).as_posix()
+    except ValueError:
+        rel = ""
+    return f"{rel}/{pasta}" if rel and rel != "." else pasta
+
+
 def _backlogs_do(entries, pasta):
+    base = prefixo_do_projeto(pasta) + "/"
     return [
         {"path": e["path"], "title": e["title"], "size_bytes": e["size_bytes"]}
         for e in entries
-        if e["type"] == "backlog" and e["path"].startswith(pasta + "/")
+        if e["type"] == "backlog" and e["path"].startswith(base)
     ]
 
 
@@ -112,7 +129,7 @@ def detalhe(pasta, entries, text_cache, portfolio=None):
             if ln.strip().startswith("- [ ]")
         ])
 
-    claude_path = f"{pasta}/CLAUDE.md"
+    claude_path = f"{prefixo_do_projeto(pasta)}/CLAUDE.md"
     return {
         "pasta": pasta,
         "projeto": projeto,

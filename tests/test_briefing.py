@@ -189,7 +189,11 @@ class TestAvancar(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_destaca_essenciais(self):
-        rel = f"{self.PASTA}/backlog-teste.md"
+        # O caminho indexado inclui a pasta de projetos da plataforma. A versão
+        # anterior deste teste criava a pasta em `5-projetos/` e montava a
+        # entrada sem o prefixo — incoerência que fazia o teste passar sobre um
+        # código errado, e escondeu por completo o bug de projeto em subpasta.
+        rel = f"5-projetos/{self.PASTA}/backlog-teste.md"
         entries = [{"path": rel, "type": "backlog", "title": "Backlog", "size_bytes": 1}]
         r = briefing.briefing_avancar(self.PASTA, entries, {rel: BACKLOG})
         self.assertIn("publicar a primeira versão", r["texto"])

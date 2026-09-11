@@ -1,6 +1,6 @@
 # CLAUDE.md — Estação
 
-> **Documento** · v0.9.1 · atualizado em 2026-09-10
+> **Documento** · v0.9.2 · atualizado em 2026-09-11
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta.
