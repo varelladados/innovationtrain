@@ -508,6 +508,12 @@ def cmd_reiniciar(args):
 
 
 def main(argv=None):
+    # A saída é sempre UTF-8, que é como quem chama lê. Num pipe do Windows o
+    # padrão é a página de código local (cp1252), que não tem "→": o print
+    # levantava UnicodeEncodeError no meio do relatório e o comando saía com 1.
+    for fluxo in (sys.stdout, sys.stderr):
+        if hasattr(fluxo, "reconfigure"):
+            fluxo.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(
         description="Utilitário de uma estação da Central.")
     sub = parser.add_subparsers(dest="cmd", required=True)

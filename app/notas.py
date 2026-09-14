@@ -93,6 +93,7 @@ def _gerar_id(texto):
             [sys.executable, str(_utilitario()), "novo-id",
              "--etapa", cfg.siglas[0], "--slug", slug],
             capture_output=True, text=True, timeout=10, cwd=str(cfg.raiz),
+            encoding="utf-8", errors="replace",
         )
     except Exception as e:
         raise NotaError(f"falha ao chamar o utilitário da estação: {e}")
@@ -228,6 +229,7 @@ def _sincronizar_pendentes():
         subprocess.run(
             [sys.executable, str(_utilitario()), cfg.get("comando_sem_destino")],
             capture_output=True, text=True, timeout=15, cwd=str(cfg.raiz),
+            encoding="utf-8", errors="replace",
         )
     except Exception:
         pass  # nunca derruba a criação da nota por isso — pendentes.md só fica atrasado

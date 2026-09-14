@@ -337,5 +337,25 @@ class TestUtilitarioPeloNomeAntigo(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class TestSaidaDoUtilitario(unittest.TestCase):
+    """A saída do utilitário é UTF-8 qualquer que seja a página de código.
+
+    Num pipe do Windows o padrão é cp1252, que não tem "→": o print levantava
+    `UnicodeEncodeError` no meio do relatório e o comando saía com código 1.
+    Onde o console já é UTF-8 ninguém via — quem via era o CI em Windows.
+    Forçar cp1252 aqui traz a falha para qualquer máquina.
+    """
+
+    def test_verificar_com_pagina_de_codigo_cp1252(self):
+        import subprocess
+        env = dict(os.environ, PYTHONIOENCODING="cp1252", PYTHONUTF8="0")
+        r = subprocess.run([sys.executable, str(RAIZ_REPO / "metodo" / "estacao.py"),
+                            "verificar", "--raiz", str(RAIZ_REPO / "estacoes" / "exemplo-precos")],
+                           capture_output=True, env=env)
+        saida = r.stdout.decode("utf-8")   # levanta se a saída não for UTF-8
+        self.assertEqual(r.returncode, 0, saida + r.stderr.decode("utf-8", "replace"))
+        self.assertIn("Estação:", saida)
+
+
 if __name__ == "__main__":
     unittest.main()

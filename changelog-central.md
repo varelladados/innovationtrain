@@ -1,5 +1,19 @@
 # Changelog — Central
 
+## 0.10.1 — 2026-09-14
+
+**O utilitário escreve sempre em UTF-8.** Num pipe do Windows a saída padrão usa
+a página de código local (cp1252), que não tem `→`: o `print` levantava
+`UnicodeEncodeError` no meio do relatório e o comando saía com código 1. Seis
+testes de `test_siglas_legadas` falhavam assim no CI em Windows desde
+2026-09-10, e quatro testes novos da 0.10.0 caíram junto. Onde o console já é
+UTF-8, ninguém via.
+
+- `metodo/estacao.py` reconfigura `stdout` e `stderr` para UTF-8 ao começar.
+- `app/notas.py` lê a saída do utilitário em UTF-8, como a `trilha.py` já fazia.
+- `tests/test_config.py` força cp1252 no subprocesso: a falha agora aparece em
+  qualquer máquina, e não só no CI.
+
 ## 0.10.0 — 2026-09-14
 
 **A Estação passa a se chamar Central** — o app, o arquivo da raiz e a config
