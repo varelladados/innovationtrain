@@ -14,7 +14,7 @@
 
 ## O que é esta pasta
 
-Uma plataforma da Estação: capturas → notas → ideias → funcionalidades → projetos. Toda ideia
+Uma plataforma da Central: capturas → notas → ideias → funcionalidades → projetos. Toda ideia
 entra crua no primeiro estágio e vai amadurecendo. A porta de entrada é o
 `_indice.md`.
 

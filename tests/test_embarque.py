@@ -145,7 +145,7 @@ class TestPromptCria(unittest.TestCase):
         self.assertIn("plataforma.json", criados)
         self.assertIn("_indice.md", criados)
         cfg = config.carregar(self.raiz)
-        self.assertTrue(cfg.ok(), "o marcador não foi criado — a Estação não abriria")
+        self.assertTrue(cfg.ok(), "o marcador não foi criado — a Central não abriria")
         self.assertEqual(cfg.nome, "Plataforma do teste")
         for e in cfg.estagios:
             self.assertTrue((self.raiz / e["pasta"]).is_dir(), e["pasta"])
@@ -191,15 +191,15 @@ class TestRegistrar(unittest.TestCase):
     def setUp(self):
         import os
         self.tmp = Path(tempfile.mkdtemp(prefix="embarque-reg-"))
-        self._hub = os.environ.get("ESTACAO_HUB")
-        os.environ["ESTACAO_HUB"] = str(self.tmp)
+        self._hub = os.environ.get("CENTRAL_DIR")
+        os.environ["CENTRAL_DIR"] = str(self.tmp)
 
     def tearDown(self):
         import os
         if self._hub is not None:
-            os.environ["ESTACAO_HUB"] = self._hub
+            os.environ["CENTRAL_DIR"] = self._hub
         else:
-            os.environ.pop("ESTACAO_HUB", None)
+            os.environ.pop("CENTRAL_DIR", None)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_registra_e_aparece(self):

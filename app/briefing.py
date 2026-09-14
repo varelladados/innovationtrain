@@ -81,7 +81,7 @@ def briefing_pendencias():
     else:
         linhas += [
             f"O usuário respondeu **{len(respondidas)}** pendência(s) pela interface do "
-            "Estação (marcou a opção no próprio arquivo). Processe cada uma: "
+            "Central (marcou a opção no próprio arquivo). Processe cada uma: "
             "aplique a decisão, renomeie o arquivo pra `pendencia-resolvida-*`, "
             "escreva o bloco `## Resolvida em <data>` explicando o que foi feito, "
             "e regenere o `sem-destino` da plataforma.", "",

@@ -5,7 +5,7 @@
 
 ## O que é isto
 
-Uma **plataforma de exemplo** da Estação, sobre acompanhar preço de concorrente
+Uma **plataforma de exemplo** da Central, sobre acompanhar preço de concorrente
 e detectar lojas que copiam a sua. É a irmã de `plataformas/exemplo` (cozinha e
 fotografia): mesma estrutura, assunto oposto de propósito.
 

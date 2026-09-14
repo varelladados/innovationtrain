@@ -21,13 +21,13 @@ RAIZ_REPO = Path(__file__).resolve().parent.parent
 
 
 class TestResolucaoDaRaiz(unittest.TestCase):
-    """--raiz → ESTACAO_PLATAFORMA → estacao.json → erro claro. Nessa ordem."""
+    """--raiz → ESTACAO_PLATAFORMA → central.json → erro claro. Nessa ordem."""
 
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="config-raiz-"))
         self._env = os.environ.pop("ESTACAO_PLATAFORMA", None)
-        self._hub = os.environ.get("ESTACAO_HUB")
-        os.environ["ESTACAO_HUB"] = str(self.tmp / "hub-vazio")
+        self._hub = os.environ.get("CENTRAL_DIR")
+        os.environ["CENTRAL_DIR"] = str(self.tmp / "hub-vazio")
 
     def tearDown(self):
         if self._env is not None:
@@ -35,9 +35,9 @@ class TestResolucaoDaRaiz(unittest.TestCase):
         else:
             os.environ.pop("ESTACAO_PLATAFORMA", None)
         if self._hub is not None:
-            os.environ["ESTACAO_HUB"] = self._hub
+            os.environ["CENTRAL_DIR"] = self._hub
         else:
-            os.environ.pop("ESTACAO_HUB", None)
+            os.environ.pop("CENTRAL_DIR", None)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_argumento_vence(self):
@@ -50,7 +50,7 @@ class TestResolucaoDaRaiz(unittest.TestCase):
         raiz, _, _ = config.resolver([f"--raiz={self.tmp}"])
         self.assertEqual(raiz, self.tmp)
 
-    def test_env_vence_o_estacao_json(self):
+    def test_env_vence_o_central_json(self):
         os.environ["ESTACAO_PLATAFORMA"] = str(self.tmp / "pelo-env")
         raiz, _, origem = config.resolver([])
         self.assertEqual(raiz, self.tmp / "pelo-env")
@@ -63,7 +63,7 @@ class TestResolucaoDaRaiz(unittest.TestCase):
         msg = str(ctx.exception)
         self.assertIn("--raiz", msg)
         self.assertIn("ESTACAO_PLATAFORMA", msg)
-        self.assertIn("estacao.json", msg)
+        self.assertIn("central.json", msg)
         self.assertIn("Embarque", msg)
 
     def test_iniciar_sem_nada_NAO_levanta(self):
@@ -119,9 +119,9 @@ class TestCarregar(unittest.TestCase):
     def test_inline_vence_o_arquivo(self):
         """É assim que uma plataforma é lida sem receber nenhum arquivo novo."""
         (self.tmp / "plataforma.json").write_text('{"nome": "do arquivo"}', encoding="utf-8")
-        cfg = config.carregar(self.tmp, {"nome": "do estacao.json"})
-        self.assertEqual(cfg.nome, "do estacao.json")
-        self.assertEqual(cfg.origem, "estacao.json")
+        cfg = config.carregar(self.tmp, {"nome": "do central.json"})
+        self.assertEqual(cfg.nome, "do central.json")
+        self.assertEqual(cfg.origem, "central.json")
 
     def test_json_invalido_diz_qual_arquivo(self):
         (self.tmp / "plataforma.json").write_text("{ isto não é json", encoding="utf-8")
@@ -194,24 +194,24 @@ class TestFonteUnica(unittest.TestCase):
                       f"launch.json diz {portas}, config.PORTA diz {config.PORTA}")
 
     def test_o_bat_nao_repete_a_porta(self):
-        bat = RAIZ_REPO / "iniciar-estacao.bat"
+        bat = RAIZ_REPO / "iniciar-central.bat"
         if not bat.exists():
-            self.skipTest("sem iniciar-estacao.bat")
+            self.skipTest("sem iniciar-central.bat")
         texto = bat.read_text(encoding="utf-8", errors="replace")
         self.assertIn("config.PORTA", texto, "o .bat tem que perguntar a porta ao config")
 
 
-class TestEstacaoJson(unittest.TestCase):
+class TestCentralJson(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="config-hub-"))
-        self._hub = os.environ.get("ESTACAO_HUB")
-        os.environ["ESTACAO_HUB"] = str(self.tmp)
+        self._hub = os.environ.get("CENTRAL_DIR")
+        os.environ["CENTRAL_DIR"] = str(self.tmp)
 
     def tearDown(self):
         if self._hub is not None:
-            os.environ["ESTACAO_HUB"] = self._hub
+            os.environ["CENTRAL_DIR"] = self._hub
         else:
-            os.environ.pop("ESTACAO_HUB", None)
+            os.environ.pop("CENTRAL_DIR", None)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_hub_sem_arquivo_e_estado_normal(self):
@@ -219,11 +219,11 @@ class TestEstacaoJson(unittest.TestCase):
         self.assertIsNone(config.plataforma_ativa())
 
     def test_arquivo_ilegivel_nao_derruba(self):
-        (self.tmp / "estacao.json").write_text("{{{", encoding="utf-8")
+        (self.tmp / "central.json").write_text("{{{", encoding="utf-8")
         self.assertEqual(config.plataformas(), [])
 
     def test_ativar_troca_a_ativa_e_grava(self):
-        config.escrever_estacao({"plataformas": [
+        config.escrever_central({"plataformas": [
             {"nome": "a", "caminho": str(self.tmp / "a"), "ativa": True},
             {"nome": "b", "caminho": str(self.tmp / "b"), "ativa": False},
         ]})
@@ -233,9 +233,49 @@ class TestEstacaoJson(unittest.TestCase):
         self.assertFalse(config.plataformas()[0]["ativa"])
 
     def test_ativar_caminho_nao_registrado_levanta(self):
-        config.escrever_estacao({"plataformas": []})
+        config.escrever_central({"plataformas": []})
         with self.assertRaises(KeyError):
             config.ativar(str(self.tmp / "nao-registrada"))
+
+    # -- o nome até a 0.9 ------------------------------------------------
+    def _antigo(self, dados):
+        (self.tmp / "estacao.json").write_text(json.dumps(dados), encoding="utf-8")
+
+    def test_estacao_json_antigo_ainda_e_lido(self):
+        """Quem vem da 0.9 tem `estacao.json` e nenhum `central.json`."""
+        self._antigo({"plataformas": [{"nome": "velha", "caminho": "v", "ativa": True}]})
+        self.assertEqual([p["nome"] for p in config.plataformas()], ["velha"])
+
+    def test_estacao_json_sem_formato_de_central_nao_e_lido(self):
+        """`estacao.json` é também a config de uma estação: uma taxonomia não
+        pode ser lida como lista de registros."""
+        self._antigo({"nome": "uma estação", "estagios": []})
+        self.assertEqual(config.plataformas(), [])
+
+    def test_central_json_vence_o_antigo(self):
+        self._antigo({"plataformas": [{"nome": "velha", "caminho": "v"}]})
+        config.escrever_central({"plataformas": [{"nome": "nova", "caminho": "n"}]})
+        self.assertEqual([p["nome"] for p in config.plataformas()], ["nova"])
+
+    def test_central_json_ilegivel_nao_cai_para_o_antigo(self):
+        """Arquivo novo quebrado é problema a mostrar, não motivo para ler outro."""
+        self._antigo({"plataformas": [{"nome": "velha", "caminho": "v"}]})
+        (self.tmp / "central.json").write_text("{{{", encoding="utf-8")
+        self.assertEqual(config.plataformas(), [])
+
+    def test_a_escrita_vai_para_o_nome_novo(self):
+        self._antigo({"plataformas": [{"nome": "a", "caminho": str(self.tmp / "a"), "ativa": False}]})
+        config.ativar(str(self.tmp / "a"))
+        self.assertTrue((self.tmp / "central.json").exists())
+        self.assertTrue(config.plataforma_ativa()["ativa"])
+
+    def test_o_nome_antigo_da_variavel_ainda_vale(self):
+        os.environ.pop("CENTRAL_DIR", None)
+        os.environ["ESTACAO_HUB"] = str(self.tmp / "pelo-nome-antigo")
+        try:
+            self.assertEqual(config.hub_dir(), self.tmp / "pelo-nome-antigo")
+        finally:
+            os.environ.pop("ESTACAO_HUB", None)
 
 
 if __name__ == "__main__":

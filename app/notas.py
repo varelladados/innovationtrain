@@ -26,12 +26,14 @@ PROJECT_DIR = APP_DIR.parent
 CACHE_DIR = PROJECT_DIR / "cache"
 BACKUPS_DIR = CACHE_DIR / "backups"
 
-SECAO_MARCADOR = "captura via console (Estação)"
+SECAO_MARCADOR = "captura via console (Central)"
+#: O marcador até a 0.9. Só é procurado, nunca escrito — ver a busca da seção do dia.
+SECAO_MARCADOR_ANTIGO = "captura via console (Estação)"
 
 TEMPLATE = """---
 id: {id}
 data: {data_iso}
-origem: nota criada pela UI do console (Estação) — captura crua, sem classificação
+origem: nota criada pela UI do console (Central) — captura crua, sem classificação
 tags: []
 status: vaga
 links: []
@@ -186,6 +188,11 @@ def _append_log(id_, texto):
 
     hoje = date.today().isoformat()
     heading = f"## Entradas {hoje} — {SECAO_MARCADOR}"
+    # a seção de hoje pode ter sido aberta antes do nome novo: acrescenta nela,
+    # em vez de abrir uma segunda seção para o mesmo dia
+    antigo = f"## Entradas {hoje} — {SECAO_MARCADOR_ANTIGO}"
+    if heading not in original and antigo in original:
+        heading = antigo
     header_tabela = "| ID | Data | Etapa/Tipo | Local | Resumo | Link |"
     separador = "|---|---|---|---|---|---|"
     resumo = _resumo_curto(texto)

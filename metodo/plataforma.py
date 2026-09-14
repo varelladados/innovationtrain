@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Utilitário da plataforma — `novo-id`, `gerar-sem-destino`, `verificar`.
 
-Derivado do utilitário do sistema em que a Estação nasceu, não escrito do zero: a
+Derivado do utilitário do sistema em que a Central nasceu, não escrito do zero: a
 lógica de sequência por dia e de hash sem colisão já estava testada em uso real,
 e reescrever isso só produziria bugs novos. O que mudou foi o vocabulário (os
 estágios saem do `plataforma.json`, não são três siglas fixas) e o tamanho —
@@ -9,7 +9,7 @@ aqui ficaram os três comandos que qualquer plataforma precisa.
 
 **A raiz vem por argumento.** Este script não sabe onde ele mora nem assume que
 está dentro da plataforma. `--raiz` vale para todos os comandos; quando omitido,
-vale a pasta atual — é assim que a Estação o chama, com o `cwd` já na raiz da
+vale a pasta atual — é assim que a Central o chama, com o `cwd` já na raiz da
 plataforma (e é o que deixa o mesmo código servir para o utilitário legado, que
 não conhece esse argumento).
 
@@ -54,7 +54,7 @@ class Plataforma:
                 "Este utilitário lê a taxonomia do plataforma.json da raiz — ele não\n"
                 "tem nomes de estágio embutidos, de propósito. Se esta pasta é mesmo\n"
                 "uma plataforma, crie o arquivo; se você ainda não tem plataforma\n"
-                "nenhuma, é a aba Embarque da Estação que cria a primeira."
+                "nenhuma, é a aba Embarque da Central que cria a primeira."
             )
         try:
             self.d = json.loads(arquivo.read_text(encoding="utf-8"))
@@ -334,7 +334,7 @@ def cmd_verificar(args):
     # 1. a raiz é mesmo uma plataforma
     if not (p.raiz / p.marcador).exists():
         problemas.append(f"{p.marcador} não existe — sem porta de entrada, "
-                         "a Estação não abre esta pasta")
+                         "a Central não abre esta pasta")
 
     # 2. as pastas dos estágios existem
     for e in p.estagios:
@@ -505,7 +505,7 @@ def cmd_reiniciar(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="Utilitário de uma plataforma da Estação.")
+        description="Utilitário de uma plataforma da Central.")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     def com_raiz(p):

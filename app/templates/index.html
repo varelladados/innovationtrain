@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estação</title>
+<title>Central</title>
 <style>/* ---------- fontes vendorizadas (Trecho 4, Parada 2) ----------
    Servidas do proprio repositorio, como marked.js e mermaid.js. Sem CDN:
    o app abre igual com a rede desligada. Licencas conferidas em
@@ -569,8 +569,8 @@ th{background:var(--surface-2)}
 <div id="layout">
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>Estação</h1>
-      <select id="plataforma-seletor" title="A plataforma que esta Estação está operando"></select>
+      <h1>Central</h1>
+      <select id="plataforma-seletor" title="A plataforma que esta Central está operando"></select>
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="plataforma-aviso" hidden></div>
@@ -595,7 +595,7 @@ th{background:var(--surface-2)}
       <div id="tree"></div>
     </div>
     <div id="sidebar-rodape">
-      <select id="tema-seletor" title="A identidade visual da Estação">
+      <select id="tema-seletor" title="A identidade visual da Central">
         <option value="">Tema padrão</option>
         <option value="areia">Areia</option>
       </select>
@@ -649,7 +649,7 @@ const plNome = (n, plural) => { const e = plEstagio(n); return e ? (plural ? (e.
 const plSigla = (n) => { const e = plEstagio(n); return e ? e.sigla : ""; };
 const plUltimo = () => plEstagios().length;
 const plCadeia = () => plEstagios().map(e => e.sigla).join("→");
-const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Estação") + " / ";
+const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Central") + " / ";
 let ACTIVE_TYPE_FILTER = null;
 let SELECTED_PATH = null;
 
@@ -740,12 +740,12 @@ async function loadIndex(){
 // ============================================================
 // Seletor de plataforma
 // ============================================================
-// A Estação opera N plataformas; esta é a única forma de trocar sem reiniciar.
+// A Central opera N plataformas; esta é a única forma de trocar sem reiniciar.
 // Quando a raiz ativa não é uma plataforma (pasta vazia, marcador ausente), o
 // servidor sobe assim mesmo e o aviso abaixo diz o motivo — nenhuma aba estoura.
 // A tela inicial diz qual plataforma está aberta e onde ela fica — antes ela
 // nomeava uma plataforma específica, o que virou mentira no momento em que a
-// Estação passou a operar mais de uma.
+// Central passou a operar mais de uma.
 function renderBoasVindas(data){
   const el = document.getElementById("welcome-lead");
   if (!el) return;
@@ -1402,7 +1402,7 @@ function drawPortfolio(){
   content.appendChild(head);
   const nota = document.createElement("p");
   nota.className = "pf-static-note";
-  nota.textContent = "Snapshot estático: links \"no ar\" e repositórios funcionam; abrir protótipos e launchers só na Estação local.";
+  nota.textContent = "Snapshot estático: links \"no ar\" e repositórios funcionam; abrir protótipos e launchers só na Central local.";
   content.appendChild(nota);
 
   const filtros = document.createElement("div");
@@ -2075,7 +2075,7 @@ async function openVersoesView(){
   document.getElementById("content").classList.remove("pf-wide");
   document.getElementById("breadcrumb").textContent = plPrefixo() + "Versões";
   document.getElementById("meta-bar").innerHTML =
-    `<span class="badge badge-type">versões</span><span id="meta-path">foto do momento da consulta — a Estação lê o git, nunca o executa</span>`;
+    `<span class="badge badge-type">versões</span><span id="meta-path">foto do momento da consulta — a Central lê o git, nunca o executa</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `<h1>Versões</h1><p class="dash-lead">Carregando…</p>`;
 
@@ -2113,7 +2113,7 @@ function vsRede(backups, repos){
   const salvos = repos.filter(r => r.e_repo).length;
   el.innerHTML = `<h2>A rede de proteção</h2>
     <div class="vs-camada"><span class="nome">1. Backup automático</span>
-      <span class="desc">A Estação copia o arquivo antes de toda escrita.
+      <span class="desc">A Central copia o arquivo antes de toda escrita.
         ${backups.quantos ? `<strong>${backups.quantos} cópia(s)</strong> guardadas${backups.desde ? `, desde ${escapeHtml(backups.desde)}` : ""}.`
                           : "Nenhuma cópia ainda — ela nasce na primeira vez que o app escreve."}
         Protege do erro <em>de agora</em>.</span></div>
@@ -2212,7 +2212,7 @@ function vsRepo(r){
 
   const nota = document.createElement("p");
   nota.style.cssText = "font-size:var(--fs-1);color:var(--text-2);margin:var(--sp-2) 0 0";
-  nota.textContent = "Estes botões geram o texto para você colar numa sessão de IA. A Estação nunca executa git.";
+  nota.textContent = "Estes botões geram o texto para você colar numa sessão de IA. A Central nunca executa git.";
   el.appendChild(nota);
   return el;
 }
@@ -2266,9 +2266,9 @@ function ebParadas(){
   return [
     {
       titulo: "1 — O que é isto",
-      corpo: `<p>A <strong>Estação</strong> é este app. Ela não pensa por você e não tem IA dentro: ela organiza o que você guarda, e prepara o texto que você cola numa sessão de IA quando quiser que algo seja feito.</p>
-        <p>Uma <strong>plataforma</strong> é um espaço de trabalho seu — uma pasta no seu computador, com as suas ideias. A Estação pode operar várias; você ainda não tem nenhuma.</p>
-        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria a primeira plataforma. A Estação não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
+      corpo: `<p>A <strong>Central</strong> é este app. Ela não pensa por você e não tem IA dentro: ela organiza o que você guarda, e prepara o texto que você cola numa sessão de IA quando quiser que algo seja feito.</p>
+        <p>Uma <strong>plataforma</strong> é um espaço de trabalho seu — uma pasta no seu computador, com as suas ideias. A Central pode operar várias; você ainda não tem nenhuma.</p>
+        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria a primeira plataforma. A Central não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
       valido: () => true,
     },
     {
@@ -2348,7 +2348,7 @@ async function openEmbarqueView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "Estação / Embarque";
+  document.getElementById("breadcrumb").textContent = "Central / Embarque";
   document.getElementById("meta-bar").innerHTML =
     `<span class="badge badge-type">embarque</span><span id="meta-path">primeiros passos</span>`;
   ebDesenhar();
@@ -2418,7 +2418,7 @@ async function ebGerar(){
     sub: `Cole numa sessão de IA <strong>com a pasta aberta</strong>. Este texto não criou nada — quem cria é a sessão, com você olhando.`,
   });
 
-  // registra no estacao.json para que a plataforma já apareça no seletor assim
+  // registra no central.json para que a plataforma já apareça no seletor assim
   // que a estrutura existir. Falhar aqui não pode atrapalhar: o texto, que é o
   // que importa, já está na tela.
   try {

@@ -1,4 +1,30 @@
-# Changelog — Estação
+# Changelog — Central
+
+## 0.10.0 — 2026-09-14
+
+**A Estação passa a se chamar Central** — o app, o arquivo da raiz e a config
+de quem usa.
+
+- **O arquivo da raiz é `CENTRAL.md`.** Todo outro arquivo desse tipo continua
+  `CLAUDE.md`; o da raiz ganha nome próprio. Ao lado dele fica um `CLAUDE.md` de
+  uma linha, `@CENTRAL.md`: o Claude Code só carrega sozinho um arquivo com
+  aquele nome exato, e sem o ponteiro toda sessão aberta aqui chegaria sem
+  contexto.
+- **`estacao.json` → `central.json`**, `estacao.exemplo.json` →
+  `central.exemplo.json`, `iniciar-estacao.bat` → `iniciar-central.bat`,
+  `ESTACAO_HUB` → `CENTRAL_DIR`. Os nomes antigos continuam valendo nesta versão.
+  Sem `central.json`, um `estacao.json` na raiz é lido — **só se tiver formato
+  de Central** (uma lista de registros), porque `estacao.json` passa a ser
+  também o nome da config de cada estação.
+- **O `.gitignore` foi ancorado na raiz** (`/central.json`, `/estacao.json`). O
+  padrão sem barra valia em qualquer pasta, e ignoraria a config versionada das
+  estações de exemplo.
+- **A captura da aba Nota** abre a seção do dia como "(Central)" e continua
+  acrescentando na seção "(Estação)" se ela já tiver sido aberta hoje — sem
+  isso, o dia da troca ganharia duas seções no registro.
+- **A vitrine** (`export_portfolio.py`) gravava um arquivo com nome fixo, vindo
+  de um sistema pessoal, e o docstring citava personas — num repositório
+  público. O nome agora sai da estação ativa, e o docstring não cita ninguém.
 
 ## 0.9.2 — 2026-09-11
 

@@ -48,7 +48,7 @@ projeto só não tem decisão nenhuma para tomar.
 **Nada é calculado.** Cada passo é uma pasta com a plataforma inteira já naquele
 estado, e o botão só a restaura. É um slideshow, não um motor.
 
-Isso é honesto sobre o que a Estação faz e o que ela não faz: numa plataforma
+Isso é honesto sobre o que a Central faz e o que ela não faz: numa plataforma
 sua, a passagem é **decisão** (os critérios da aba 🧩 Fluxo) e **escrita** (o
 texto do estágio novo). Nenhuma das duas cabe num botão. A aba **📋** gera o
 briefing para uma sessão de IA fazer a parte da escrita, com você olhando.

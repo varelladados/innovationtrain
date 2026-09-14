@@ -1,4 +1,4 @@
-"""PRJ-Estacao — servidor local (stdlib puro).
+"""Central — servidor local (stdlib puro).
 
 Navegador/portfólio da plataforma inteira: índices, backlogs, registro central.
 Modelo arquitetural: outro-app-local/app/server.py (ThreadingHTTPServer,
@@ -154,10 +154,10 @@ def repositorios():
 
     Eram três até a unificação de 2026-09-09; agora o app e o método vivem no
     mesmo repositório, então são dois: **o seu conteúdo** (a plataforma ativa) e
-    **a ferramenta** (a Estação). A separação que importa continua de pé — é
+    **a ferramenta** (a Central). A separação que importa continua de pé — é
     fácil salvar um e esquecer o outro, e é por isso que aparecem juntos.
     """
-    saida = [{"chave": "estacao", "rotulo": "A Estação (app, método e exemplo)",
+    saida = [{"chave": "central", "rotulo": "A Central (app, método e exemplo)",
               "pasta": PROJECT_DIR}]
     if config.definida():
         cfg = config.atual()
@@ -167,7 +167,7 @@ def repositorios():
 
 
 def plataformas_registradas():
-    """O que o seletor mostra: as plataformas do estacao.json mais a ativa."""
+    """O que o seletor mostra: as plataformas do central.json mais a ativa."""
     ativa = str(raiz()) if raiz() else None
     saida = []
     for r in config.plataformas():
@@ -179,7 +179,7 @@ def plataformas_registradas():
             "existe": Path(caminho).exists() if caminho else False,
         })
     if ativa and not any(p["caminho"] == ativa for p in saida):
-        # aberta por --raiz ou ESTACAO_PLATAFORMA, sem registro no estacao.json
+        # aberta por --raiz ou ESTACAO_PLATAFORMA, sem registro no central.json
         cfg = config.atual()
         saida.insert(0, {"nome": cfg.nome, "caminho": ativa, "ativa": True,
                          "existe": True, "avulsa": True})
@@ -216,7 +216,7 @@ def get_state():
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "Estacao/0.7"  # header HTTP: sem acento, e acompanha o VERSION
+    server_version = "Central/0.10"  # header HTTP: sem acento, e acompanha o VERSION
 
     def log_message(self, fmt, *args):
         pass  # silencioso — evitar poluir o terminal do usuário
@@ -351,7 +351,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/versoes/prompt":
             tipo = qs.get("tipo", [""])[0]
-            chave = qs.get("repo", ["estacao"])[0]
+            chave = qs.get("repo", ["central"])[0]
             alvo = next((r for r in repositorios() if r["chave"] == chave), None)
             if alvo is None:
                 self._send_json({"error": "repositório desconhecido"}, status=400)
@@ -508,7 +508,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(resultado)
 
     def _handle_embarque_registrar(self, payload):
-        """Registra plataforma nova no estacao.json do hub, para que ela já
+        """Registra plataforma nova no central.json do hub, para que ela já
         apareça no seletor assim que a estrutura existir. Escreve só no config
         do hub — nunca dentro de plataforma nenhuma."""
         try:
@@ -517,14 +517,14 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except OSError as e:
-            self._send_json({"error": f"não consegui escrever o estacao.json: {e}"}, status=500)
+            self._send_json({"error": f"não consegui escrever o central.json: {e}"}, status=500)
             return
         self._send_json({"ok": True, "plataforma": reg,
                          "plataformas": plataformas_registradas()})
 
     def _handle_plataforma_ativar(self, payload):
         """Troca plataforma ativa e reindexa. Não escreve em plataforma
-        nenhuma — só no `estacao.json` do hub, que é config do usuário, e é por
+        nenhuma — só no `central.json` do hub, que é config do usuário, e é por
         isso que não passa pela disciplina dos endpoints de escrita de corpus."""
         caminho = (payload.get("caminho") or "").strip()
         if not caminho:
@@ -534,7 +534,7 @@ class Handler(BaseHTTPRequestHandler):
             (r for r in config.plataformas() if str(Path(r.get("caminho", ""))) == str(Path(caminho))),
             None)
         if registro is None:
-            self._send_json({"error": "plataforma não registrada no estacao.json"}, status=400)
+            self._send_json({"error": "plataforma não registrada no central.json"}, status=400)
             return
         if not Path(caminho).exists():
             self._send_json({"error": f"a pasta não existe: {caminho}"}, status=400)
@@ -669,7 +669,7 @@ class Handler(BaseHTTPRequestHandler):
         - só aceita path que o portfolio.py já classificou como launcher/binario/servidor
           (nada de rodar caminho arbitrário vindo do navegador)
         - roda com cwd na pasta do próprio arquivo, numa janela de console própria
-          (`start`), sem esperar — a Estação não vira babá do processo
+          (`start`), sem esperar — a Central não vira babá do processo
         - só faz sentido no servidor local; o snapshot estático responde 'somente leitura'
         """
         rel = payload.get("path", "")
@@ -793,12 +793,12 @@ def main(argv=None):
     except OSError as e:
         print(f"Não consegui abrir a porta {PORT}: {e}")
         print("")
-        print("Quase sempre isto quer dizer que a Estação já está aberta noutra")
+        print("Quase sempre isto quer dizer que a Central já está aberta noutra")
         print(f"janela. Tente http://127.0.0.1:{PORT} antes de abrir de novo.")
         return 3
 
     url = f"http://127.0.0.1:{PORT}"
-    print(f"Estacao rodando em {url}")
+    print(f"Central rodando em {url}")
     print(f"Plataforma: {cfg.nome} — {cfg.raiz}  ({cfg.origem})")
     if primeira_vez:
         print("")
@@ -806,7 +806,7 @@ def main(argv=None):
         print("Abra o endereço acima: a aba Embarque cria a primeira.")
         print("")
         print("Se você já tem uma, aponte por --raiz, pela variável de ambiente")
-        print(f"ESTACAO_PLATAFORMA, ou registrando-a em {config.estacao_json()}")
+        print(f"ESTACAO_PLATAFORMA, ou registrando-a em {config.central_json()}")
     elif not ok:
         print(f"Atenção: a plataforma não pôde ser lida ({erro}).")
         print("O servidor subiu assim mesmo — abra o app para configurar.")

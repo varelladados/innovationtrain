@@ -135,7 +135,7 @@ zerada, não um problema.
 
 ## Quando a plataforma já tinha acervo — `siglas_legadas`
 
-Uma plataforma que adota a Estação depois de anos de uso chega com
+Uma plataforma que adota a Central depois de anos de uso chega com
 identificadores já emitidos, numa taxonomia própria, num registro que é
 append-only e com a sigla embutida em nome de pasta. Reescrever tudo custaria
 caro e mentiria sobre o histórico; ignorar as siglas antigas faria cada linha
@@ -208,7 +208,7 @@ oferece um tipo que ninguém usa nem esconde um que todo mundo usa.
 
 ---
 
-**Metáfora ferroviária — os únicos termos:** *Estação* (a aplicação),
+**Metáfora ferroviária — os únicos termos:** *Central* (a aplicação),
 *plataforma* (um espaço de trabalho), *projeto* (um trabalho dentro dela),
 *trem* (a fila de pendências passando uma por vez) e *embarque* (os primeiros
 passos). Não invente outros: chamar prompt de "bilhete" ou projeto de "vagão"
@@ -224,5 +224,5 @@ recria exatamente o vocabulário privado que este trabalho desfaz.
 - **As cores de cada estágio** — decisão do design system, no Trecho 4.
 - **O `plataforma.json` de uma plataforma que não pode receber arquivo novo**
   — uma pasta lida em modo somente-leitura, por exemplo. A taxonomia dela é
-  declarada inline no `estacao.json` do hub (Trecho 3), e nada é escrito lá
+  declarada inline no `central.json` do hub (Trecho 3), e nada é escrito lá
   dentro.

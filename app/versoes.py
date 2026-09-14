@@ -1,6 +1,6 @@
 """Versões — leitura do estado do git, e só leitura.
 
-A Estação **lê** o git e **gera o texto**; quem executa é a sessão de IA, com o
+A Central **lê** o git e **gera o texto**; quem executa é a sessão de IA, com o
 humano olhando. Não é timidez: automatismo de commit mora onde a IA está, não
 numa interface web onde um botão um dia é clicado sem querer.
 
@@ -270,7 +270,7 @@ def semaforo(e):
 # ---------------------------------------------------------------- prompts
 #
 # Os botões da aba geram texto; **não executam git**. O princípio é o do
-# Trecho 8 do itinerário: a Estação lê o estado e escreve o pedido, quem executa
+# Trecho 8 do itinerário: a Central lê o estado e escreve o pedido, quem executa
 # é a sessão de IA com o humano olhando. Um botão numa interface web um dia é
 # clicado sem querer; uma sessão de IA mostra o que vai fazer antes.
 

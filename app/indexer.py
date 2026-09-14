@@ -73,7 +73,7 @@ def classify(rel_posix: str, name: str, suffix: str) -> str:
     if prefixo and name.startswith(prefixo):
         return "orquestra"
 
-    if name == "CLAUDE.md":
+    if name in ("CLAUDE.md", "CENTRAL.md"):
         return "orquestra"
     if name.startswith("backlog-") or rel_posix.endswith("/docs/BACKLOG.md") or name == "BACKLOG.md":
         return "backlog"

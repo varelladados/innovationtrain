@@ -54,12 +54,12 @@ Prudência é sobre publicar. Salvar é sobre não perder.
 ## As três camadas que protegem você
 
 Elas protegem de coisas diferentes, e **uma não substitui a outra**. A aba
-**📦 Versões** da Estação mostra as três, porque proteção invisível não
+**📦 Versões** da Central mostra as três, porque proteção invisível não
 tranquiliza ninguém.
 
 | Camada | O que é | Protege de |
 |---|---|---|
-| **Backup automático** | a Estação copia o arquivo antes de toda escrita, em `cache/backups/` | o erro **de agora** — você acabou de estragar um arquivo |
+| **Backup automático** | a Central copia o arquivo antes de toda escrita, em `cache/backups/` | o erro **de agora** — você acabou de estragar um arquivo |
 | **Ponto salvo** (commit) | o histórico no seu computador | o erro **de ontem** — você quer voltar a como estava |
 | **Cópia na nuvem** (remoto) | uma cópia fora daqui | o computador que **morreu** |
 
@@ -130,7 +130,7 @@ git restore <caminho do arquivo>
 ```
 Traz de volta a versão do último ponto salvo.
 
-**"A Estação escreveu num arquivo e eu não gostei."**
+**"A Central escreveu num arquivo e eu não gostei."**
 Olhe em `cache/backups/` — ela copia antes de toda escrita. É a camada 1.
 
 **"Está tudo estranho e eu não entendo."**
@@ -161,7 +161,7 @@ lugares, para valer já na primeira sessão de quem acabou de instalar:
 1. **O `CLAUDE.md` da plataforma** nasce com a regra dentro, em português e no
    imperativo. É isso que faz a IA salvar sozinha desde o dia um, sem você saber
    que existe uma regra.
-2. **Os prompts que a Estação gera** carregam os guardrails junto — inclusive o
+2. **Os prompts que a Central gera** carregam os guardrails junto — inclusive o
    `git add` nominal e a proibição de `push --force`.
 3. **A rotina de fechamento** ([`salvar-tudo.md`](salvar-tudo.md)), que varre os
    repositórios, separa o que é da sessão do que não é, salva o que é da sessão
@@ -173,7 +173,7 @@ lugares, para valer já na primeira sessão de quem acabou de instalar:
 
 - [`regras.md`](regras.md) — as regras permanentes; esta é a de número 7
 - [`salvar-tudo.md`](salvar-tudo.md) — a rotina de fechamento de sessão
-- A aba **📦 Versões** da Estação — o retrato do estado, em português
+- A aba **📦 Versões** da Central — o retrato do estado, em português
 
 [^stage]: *Stage* (ou "área de preparação") é onde o git guarda o que vai entrar
     no próximo ponto salvo, antes de ele existir. É conceito de ferramenta, não

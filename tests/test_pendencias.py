@@ -1,6 +1,6 @@
 """Testes do parser e da escrita de pendência-formulário.
 
-Rodar: python -m unittest discover tests   (na raiz do PRJ-Estacao)
+Rodar: python -m unittest discover tests   (na raiz da Central)
 
 Cobre o que é arriscado regredir em silêncio: as variantes de formato que
 existem de fato na pasta execucao/ (se o parser voltar a exigir o heading
@@ -110,7 +110,7 @@ Só contexto, nenhuma opção — formato pré-canônico.
 
 class BaseTemp(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-test-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-test-"))
         self.exec_dir = self.tmp / "execucao"
         self.exec_dir.mkdir()
         self.backups = self.tmp / "backups"

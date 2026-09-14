@@ -1,10 +1,10 @@
-# Design system da Estação
+# Design system da Central
 
 > **Documento operacional** · escrito em 2026-09-08 (Trecho 4 do
 > `plano-hub-estacao-e-embarque-2026-09-08.md`) · sucede
 > [`plano-incorporacao-dashboard-nova-identidade.md`](plano-incorporacao-dashboard-nova-identidade.md)
 
-Este documento existe porque a identidade visual da Estação estava aplicada mas
+Este documento existe porque a identidade visual da Central estava aplicada mas
 não estava **escrita**: os tokens viviam num `:root` sem explicação, e 17 valores
 de cor tinham escapado para regras soltas — inclusive um azul da paleta anterior,
 que ninguém percebeu porque ninguém tinha olhado o modo escuro.
@@ -32,7 +32,7 @@ no `:root` **com par claro e escuro**, e só então use.
 
 ## Os temas
 
-A Estação tem **dois eixos independentes**: o *tema* (a identidade) e o *modo*
+A Central tem **dois eixos independentes**: o *tema* (a identidade) e o *modo*
 (claro ou escuro).
 
 | Eixo | Como se escolhe | Onde fica guardado |

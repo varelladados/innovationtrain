@@ -290,7 +290,7 @@ def build_portfolio():
         execs = _varrer(item, curadoria)
         meta = tabela.get(item.name, {})
         # nome exibido: a pasta não carrega acento (evita escape de caminho em git),
-        # então `portfolio.json` pode declarar o nome de verdade — ex.: "Estação"
+        # então `portfolio.json` pode declarar o nome de verdade — ex.: "Central"
         nome = curadoria.get("nome") or (
             item.name.split("-", 1)[1].replace("_", " ")
             if tem_prefixo and "-" in item.name else item.name.replace("_", " "))

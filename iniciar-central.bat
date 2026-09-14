@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 chcp 65001 >nul 2>&1
-title Estacao
+title Central
 
 rem ---------------------------------------------------------------------
 rem  Antes de qualquer coisa: o Python existe?
@@ -12,7 +12,7 @@ rem ---------------------------------------------------------------------
 where python >nul 2>&1
 if errorlevel 1 (
   echo.
-  echo   A Estacao precisa do Python, e ele nao esta instalado
+  echo   A Central precisa do Python, e ele nao esta instalado
   echo   neste computador ^(ou nao esta no PATH^).
   echo.
   echo   Baixe em https://www.python.org/downloads/ e, na primeira
@@ -35,14 +35,14 @@ if "%PORTA%"=="" (
 )
 
 rem ---------------------------------------------------------------------
-rem  A porta ja esta ocupada? Quase sempre e a propria Estacao ja aberta.
+rem  A porta ja esta ocupada? Quase sempre e a propria Central ja aberta.
 rem ---------------------------------------------------------------------
 netstat -ano | findstr /r /c:"127.0.0.1:%PORTA% .*LISTENING" >nul 2>&1
 if not errorlevel 1 (
   echo.
   echo   A porta %PORTA% ja esta ocupada.
   echo.
-  echo   Quase sempre isso quer dizer que a Estacao ja esta aberta
+  echo   Quase sempre isso quer dizer que a Central ja esta aberta
   echo   noutra janela. Vou abrir o navegador nela em vez de subir
   echo   um segundo servidor.
   echo.
@@ -57,7 +57,7 @@ rem  socket ja esta escutando. Abrir daqui antes fazia a primeira coisa
 rem  que a pessoa via ser "nao foi possivel acessar este site".
 rem ---------------------------------------------------------------------
 echo.
-echo   Subindo a Estacao em http://127.0.0.1:%PORTA%
+echo   Subindo a Central em http://127.0.0.1:%PORTA%
 echo   Feche esta janela para desligar.
 echo.
 python app\server.py --abrir
@@ -66,7 +66,7 @@ rem  Se o servidor caiu na hora, a janela precisa ficar aberta para a
 rem  pessoa ler o motivo.
 if errorlevel 1 (
   echo.
-  echo   A Estacao encerrou com erro. A mensagem esta acima.
+  echo   A Central encerrou com erro. A mensagem esta acima.
   echo.
   pause
 )

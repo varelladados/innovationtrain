@@ -90,7 +90,7 @@ class TestGuardrails(unittest.TestCase):
             self.assertNotIn("só commite depois", texto.lower())
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-gr-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-gr-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):
@@ -116,7 +116,7 @@ class TestGuardrails(unittest.TestCase):
 
 class TestPendencias(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-"))
         self.pend = self.tmp / "pendencias"
         self.pend.mkdir()
         plataforma_de_teste(self.tmp)
@@ -150,7 +150,7 @@ class TestPendencias(unittest.TestCase):
 
 class TestClassificar(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-cl-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-cl-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):
@@ -182,7 +182,7 @@ class TestAvancar(unittest.TestCase):
     PASTA = "projeto-de-teste"
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-av-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-av-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):
@@ -214,7 +214,7 @@ class TestAvancar(unittest.TestCase):
 
 class TestGerar(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-ge-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-ge-"))
         plataforma_de_teste(self.tmp)
 
     def tearDown(self):

@@ -16,7 +16,7 @@ import urllib.request
 
 TTL_SEGUNDOS = 6 * 60 * 60  # 6h
 TIMEOUT = 4
-UA = "Estação/0.6 (checagem local de disponibilidade)"
+UA = "Central/0.10 (checagem local de disponibilidade)"
 
 _CACHE = {}  # url -> {"ok": bool, "status": int|None, "checked_at": float}
 _LOCK = threading.Lock()

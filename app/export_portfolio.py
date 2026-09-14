@@ -1,6 +1,6 @@
 """Vitrine pública — página estática gerada do inventário da plataforma.
 
-Diferente do export_static.py (a Estação inteiro, pra uso interno), isto é a
+Diferente do export_static.py (a Central inteira, pra uso interno), isto é a
 VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
 
 - Todo projeto listado no índice de projetos da plataforma aparece (nome, tipo,
@@ -10,10 +10,9 @@ VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
   portfolio.json (`"repo_publico": true`). Repositório privado vira texto
   "repositório privado", sem link.
 - Nada de protótipo/launcher local (isso é a aba Portfólio interna).
-- Sem dados pessoais além do nome e das personas (Seu Beira, mR.bRiNk — decisão do
-  usuário em 2026-09-03: nenhum e-mail/link de contato por enquanto).
+- Sem dados pessoais: nenhum e-mail nem link de contato.
 
-Saída: dist/portfolio-seu-beira.html (formato Artifact: sem <html>/<head>/<body>);
+Saída: dist/portfolio-<nome da plataforma ativa>.html (formato Artifact: sem <html>/<head>/<body>);
 --full gera a variante autocontida.
 
     python app/export_portfolio.py [--full]
@@ -23,6 +22,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 import portfolio as portfolio_mod
@@ -240,7 +240,7 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
     </section>
   </main>
   <footer>
-    <span>Gerado em {esc(gerado)} a partir do inventário da Estação — a página muda quando os projetos mudam, não o contrário.</span>
+    <span>Gerado em {esc(gerado)} a partir do inventário da Central — a página muda quando os projetos mudam, não o contrário.</span>
     <span>Resumos são os textos canônicos do índice de projetos da plataforma.</span>
   </footer>
 </div>"""
@@ -256,7 +256,10 @@ def main():
     full = "--full" in sys.argv
     page, projetos, no_ar = montar(full)
     DIST_DIR.mkdir(exist_ok=True)
-    out = DIST_DIR / ("portfolio-seu-beira-full.html" if full else "portfolio-seu-beira.html")
+    # o nome sai da plataforma ativa, nunca fixo: este repositório é público
+    nome = unicodedata.normalize("NFKD", config.atual().nome).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", nome.lower()).strip("-") or "vitrine"
+    out = DIST_DIR / (f"portfolio-{slug}-full.html" if full else f"portfolio-{slug}.html")
     out.write_text(page, encoding="utf-8")
     print(f"{out} — {len(page.encode('utf-8'))/1e3:.0f} KB · {len(projetos)} projetos · {len(no_ar)} no ar")
 

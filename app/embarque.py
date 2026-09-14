@@ -195,7 +195,7 @@ def _claude_md(tax):
         "> que abrir nesta pasta. O que estiver aqui vale como contexto; o que",
         "> não estiver, a sessão não sabe.", "",
         "## O que é esta pasta", "",
-        f"Uma plataforma da Estação: {nomes}. Toda ideia entra crua no primeiro",
+        f"Uma plataforma da Central: {nomes}. Toda ideia entra crua no primeiro",
         "estágio e vai amadurecendo. A porta de entrada é o `_indice.md`.", "",
         "## As regras que valem aqui", "",
         "- **O registro é append-only.** Nunca edite nem apague linha existente;",
@@ -264,9 +264,9 @@ def gerar(respostas):
     p = Path(caminho)
 
     L = [
-        f"# Criar minha plataforma da Estação em `{p}`",
+        f"# Criar minha plataforma da Central em `{p}`",
         "",
-        f"Contexto: eu uso a **Estação**, um app local que organiza ideias em "
+        f"Contexto: eu uso a **Central**, um app local que organiza ideias em "
         f"estágios — do que acabou de chegar até o que virou projeto. Ela opera "
         f"*plataformas*, e eu ainda não tenho nenhuma. Você vai criar a primeira.",
         "",
@@ -321,7 +321,7 @@ def gerar(respostas):
           "**Se aparecer PROBLEMA, não tente consertar sozinho: me mostre.**", "",
           "## Passo 5 — o que eu faço depois", "",
           "Quando terminar, me diga estas três coisas, nesta ordem:", "",
-          f"1. que a plataforma está em `{p}` e já aparece no seletor da Estação;",
+          f"1. que a plataforma está em `{p}` e já aparece no seletor da Central;",
           "2. que o próximo passo é **abrir o app e criar a primeira nota** pela "
           "aba 📝 Nota — é a operação mais barata do sistema, e é assim que o "
           "registro ganha a primeira linha;",
@@ -341,7 +341,7 @@ def gerar(respostas):
               "ainda não há projeto.", ""]
 
     L += ["---", "",
-          f"*Este texto foi gerado pela aba Embarque da Estação para ser colado "
+          f"*Este texto foi gerado pela aba Embarque da Central para ser colado "
           f"em {destino}. Ele não criou nada sozinho: quem cria é você, com eu "
           f"olhando.*", ""]
 
@@ -355,7 +355,7 @@ def gerar(respostas):
 
 
 def registrar(caminho, nome):
-    """Acrescenta plataforma ao `estacao.json` do hub e a torna ativa.
+    """Acrescenta plataforma ao `central.json` do hub e a torna ativa.
 
     Escreve **só no config do hub** — nunca dentro de plataforma nenhuma. É a
     mesma disciplina do `/api/plataforma/ativar`. A pasta pode não existir ainda
@@ -364,14 +364,14 @@ def registrar(caminho, nome):
     caminho = str(Path((caminho or "").strip()))
     if len(caminho) < 3:
         raise ValueError("caminho inválido")
-    dados = config.ler_estacao()
+    dados = config.ler_central()
     regs = dados.setdefault("plataformas", [])
     for r in regs:
         if str(Path(r.get("caminho", ""))) == caminho:
             r["nome"] = nome or r.get("nome")
-            config.escrever_estacao(dados)
+            config.escrever_central(dados)
             return r
     novo = {"nome": nome or Path(caminho).name, "caminho": caminho, "ativa": False}
     regs.append(novo)
-    config.escrever_estacao(dados)
+    config.escrever_central(dados)
     return novo

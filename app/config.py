@@ -1,6 +1,6 @@
 """Configuração da plataforma ativa.
 
-Antes do Trecho 3 a Estação assumia que morava *dentro* da plataforma: a raiz
+Antes do Trecho 3 o app assumia que morava *dentro* da plataforma: a raiz
 era `PROJECT_DIR.parent` e cada módulo repetia caminhos de uma plataforma
 específica como constante literal. Este módulo é o que desfaz isso.
 
@@ -11,11 +11,11 @@ Duas coisas moram aqui:
    que é a fonte única. Uma plataforma pode sobrescrever qualquer chave no seu
    `plataforma.json`; uma plataforma que não pode receber arquivo novo — uma
    pasta lida em modo somente-leitura, por exemplo — sobrescreve pelo
-   `estacao.json` do hub em vez disso.
+   `central.json` do hub em vez disso.
 
 2. **A resolução da raiz**, nesta ordem: `--raiz` → `ESTACAO_PLATAFORMA` →
-   plataforma ativa no `estacao.json` do hub → erro claro em português. Não há
-   fallback para `PROJECT_DIR.parent`: fora da plataforma em que a Estação
+   plataforma ativa no `central.json` do hub → erro claro em português. Não há
+   fallback para `PROJECT_DIR.parent`: fora da plataforma em que a Central
    nasceu ele não faz sentido, e mascara erro de configuração como se fosse
    árvore vazia.
 
@@ -33,17 +33,21 @@ PROJECT_DIR = APP_DIR.parent          # a raiz do repositório
 #: **A raiz do repositório é o hub.** Até a unificação de 2026-09-09 o hub era a
 #: pasta acima (o app vivia num repositório próprio dentro dele); agora `app/`,
 #: `metodo/` e `plataformas/` são irmãos na mesma raiz, e é ali que vive o
-#: `estacao.json`. Quem quiser separar as coisas de novo usa `ESTACAO_HUB`.
+#: `central.json`. Quem quiser separar as coisas de novo usa `CENTRAL_DIR`.
 HUB_DIR = PROJECT_DIR
 
 #: A porta do servidor local. **Fonte única.** O `server.py` importa daqui e o
-#: `iniciar-estacao.bat` pergunta ao Python em vez de repetir o número. O único
+#: `iniciar-central.bat` pergunta ao Python em vez de repetir o número. O único
 #: lugar que continua literal é o `.claude/launch.json`, que é JSON lido pelo
 #: harness e não pode chamar código — e por isso tem um teste que cobra que os
 #: dois digam a mesma coisa.
 PORTA = 8744
 
-ESTACAO_JSON = "estacao.json"
+CENTRAL_JSON = "central.json"
+#: O nome do `central.json` até a 0.9. Ainda é lido, mas só quando tem formato de
+#: Central (uma lista de registros): a partir da 0.10 `estacao.json` é também o
+#: nome da config de cada estação, e as duas coisas não podem se confundir.
+CENTRAL_JSON_ANTIGO = "estacao.json"
 PLATAFORMA_JSON = "plataforma.json"
 
 
@@ -79,7 +83,7 @@ PADROES = {
     "projetos": {"pasta": "5-projetos", "prefixo_re": None},
     #: Siglas de uma taxonomia anterior, mapeadas para o número do estágio a que
     #: correspondem hoje (ex.: `{"SBC": 2, "SBI": 3, "SBZ": 5}`). Existe para uma
-    #: plataforma que **já tinha acervo** quando adotou a Estação: os
+    #: plataforma que **já tinha acervo** quando adotou a Central: os
     #: identificadores antigos continuam válidos, reconhecidos e agrupados no
     #: estágio certo, sem reescrever registro (que é append-only) nem renomear
     #: pasta. Identificador **novo** nunca usa sigla legada — o utilitário recusa.
@@ -260,7 +264,7 @@ class Config:
     def etapa_re(self):
         """Regex que casa a sigla de estágio (ex.: \\b(CAP|NOT|IDE|FUN|PRJ)\\b).
 
-        Reconhece também as legadas: um registro anterior à adoção da Estação
+        Reconhece também as legadas: um registro anterior à adoção da Central
         continua sendo lido, e é isso que impede 154 linhas de virarem "outro".
         """
         return re.compile(r"\b(" + self._alt_siglas() + r")\b")
@@ -323,13 +327,13 @@ def _fundir(base: dict, extra: dict) -> dict:
 def carregar(raiz, inline=None) -> Config:
     """Config de uma plataforma.
 
-    `inline` é a taxonomia declarada no `estacao.json` do hub — é assim que uma
+    `inline` é a taxonomia declarada no `central.json` do hub — é assim que uma
     plataforma é lida sem receber nenhum arquivo novo. Quando não há inline, lê o
     `plataforma.json` da própria raiz. Sem nenhum dos dois, valem os padrões.
     """
     raiz = Path(raiz)
     if inline:
-        return Config(raiz, _fundir(PADROES, inline), origem="estacao.json")
+        return Config(raiz, _fundir(PADROES, inline), origem=CENTRAL_JSON)
 
     arquivo = raiz / PLATAFORMA_JSON
     if arquivo.exists():
@@ -347,31 +351,46 @@ def carregar(raiz, inline=None) -> Config:
 # ---------------------------------------------------------------- hub
 
 def hub_dir() -> Path:
-    env = os.environ.get("ESTACAO_HUB")
+    """A pasta da Central. `ESTACAO_HUB` é o nome que a variável tinha até a 0.9."""
+    env = os.environ.get("CENTRAL_DIR") or os.environ.get("ESTACAO_HUB")
     return Path(env) if env else HUB_DIR
 
 
-def estacao_json() -> Path:
-    return hub_dir() / ESTACAO_JSON
+def central_json() -> Path:
+    return hub_dir() / CENTRAL_JSON
 
 
-def ler_estacao() -> dict:
-    """Conteúdo do estacao.json do hub. Ausente ou ilegível vira lista vazia —
-    isso é um estado normal (hub recém-criado), não um erro."""
-    p = estacao_json()
-    if not p.exists():
-        return {"plataformas": []}
+def _ler_json(p: Path):
+    """JSON de um arquivo, ou None se ele não existe ou não se lê."""
     try:
-        dados = json.loads(p.read_text(encoding="utf-8"))
+        return json.loads(p.read_text(encoding="utf-8"))
     except (OSError, ValueError):
+        return None
+
+
+def ler_central() -> dict:
+    """Conteúdo do central.json. Ausente ou ilegível vira lista vazia — isso é
+    um estado normal (Central recém-criada), não um erro.
+
+    Sem `central.json`, vale o `estacao.json` da mesma pasta **se tiver formato
+    de Central**. É o formato que separa os dois, porque `estacao.json` é também
+    a config de uma estação: sem essa checagem, a taxonomia de alguém seria lida
+    como lista de registros. A escrita vai sempre para o nome novo.
+    """
+    dados = _ler_json(central_json())
+    if dados is None and not central_json().exists():
+        antigo = _ler_json(hub_dir() / CENTRAL_JSON_ANTIGO)
+        if isinstance(antigo, dict) and isinstance(antigo.get("plataformas"), list):
+            dados = antigo
+    if not isinstance(dados, dict):
         return {"plataformas": []}
     if not isinstance(dados.get("plataformas"), list):
         dados["plataformas"] = []
     return dados
 
 
-def escrever_estacao(dados: dict):
-    p = estacao_json()
+def escrever_central(dados: dict):
+    p = central_json()
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(dados, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -380,7 +399,7 @@ def escrever_estacao(dados: dict):
 
 def plataformas() -> list:
     """As plataformas registradas, na ordem do arquivo."""
-    return ler_estacao().get("plataformas", [])
+    return ler_central().get("plataformas", [])
 
 
 def plataforma_ativa():
@@ -393,9 +412,9 @@ def plataforma_ativa():
 
 
 def ativar(caminho) -> dict:
-    """Marca uma plataforma como ativa no estacao.json e devolve a entrada."""
+    """Marca uma plataforma como ativa no central.json e devolve a entrada."""
     alvo = str(Path(caminho))
-    dados = ler_estacao()
+    dados = ler_central()
     achou = None
     for r in dados.get("plataformas", []):
         mesma = str(Path(r.get("caminho", ""))) == alvo
@@ -403,8 +422,8 @@ def ativar(caminho) -> dict:
         if mesma:
             achou = r
     if achou is None:
-        raise KeyError(f"plataforma não registrada no {ESTACAO_JSON}: {caminho}")
-    escrever_estacao(dados)
+        raise KeyError(f"plataforma não registrada no {CENTRAL_JSON}: {caminho}")
+    escrever_central(dados)
     return achou
 
 
@@ -417,7 +436,7 @@ class RaizNaoResolvida(RuntimeError):
 def resolver(argv=None):
     """Descobre qual plataforma usar. Devolve (raiz, inline, origem).
 
-    Ordem: --raiz → ESTACAO_PLATAFORMA → plataforma ativa no estacao.json.
+    Ordem: --raiz → ESTACAO_PLATAFORMA → plataforma ativa no central.json.
     Sem nenhuma delas, levanta RaizNaoResolvida com o texto que o usuário lê.
     """
     argv = list(argv if argv is not None else [])
@@ -434,15 +453,15 @@ def resolver(argv=None):
 
     reg = plataforma_ativa()
     if reg and reg.get("caminho"):
-        return Path(reg["caminho"]), reg.get("taxonomia"), ESTACAO_JSON
+        return Path(reg["caminho"]), reg.get("taxonomia"), CENTRAL_JSON
 
     raise RaizNaoResolvida(
         "Não sei qual plataforma abrir.\n"
         "\n"
-        "A Estação opera plataformas, e nenhuma foi indicada. Escolha uma destas:\n"
+        "A Central opera plataformas, e nenhuma foi indicada. Escolha uma destas:\n"
         f"  1. rode com --raiz C:\\caminho\\da\\plataforma\n"
         f"  2. defina a variável de ambiente ESTACAO_PLATAFORMA\n"
-        f"  3. registre uma plataforma em {estacao_json()}\n"
+        f"  3. registre uma plataforma em {central_json()}\n"
         "\n"
         "Se você ainda não tem plataforma nenhuma, é isso que a aba Embarque cria."
     )

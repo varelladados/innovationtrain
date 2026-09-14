@@ -1,4 +1,4 @@
-"""Siglas legadas — a plataforma que já tinha acervo quando adotou a Estação.
+"""Siglas legadas — a plataforma que já tinha acervo quando adotou a Central.
 
 O caso que motivou isto é concreto: um sistema pessoal com 154 identificadores
 já emitidos em três siglas próprias, num registro que é **append-only por

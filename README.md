@@ -1,9 +1,9 @@
-# Estação
+# Central
 
 Um app local que organiza ideias em estágios — do que acabou de chegar até o que
 virou projeto. Roda no seu computador, em Python puro, **sem instalar nada**.
 
-A Estação **não tem IA dentro.** Você trabalha nela, e ela prepara o texto que
+A Central **não tem IA dentro.** Você trabalha nela, e ela prepara o texto que
 você cola numa sessão de IA quando quiser que algo seja feito. Separar *onde eu
 penso* de *onde a IA executa* é a ideia central: a decisão fica visível, escrita
 e esperando por você, em vez de acontecer em silêncio três telas atrás.
@@ -13,7 +13,7 @@ python app/server.py --abrir
 ```
 
 Abre em `http://127.0.0.1:8744`. No Windows, um duplo clique em
-`iniciar-estacao.bat` faz o mesmo — e confere se o Python existe antes de tentar.
+`iniciar-central.bat` faz o mesmo — e confere se o Python existe antes de tentar.
 
 ---
 
@@ -21,11 +21,11 @@ Abre em `http://127.0.0.1:8744`. No Windows, um duplo clique em
 
 | Termo | O que é |
 |---|---|
-| **Estação** | a aplicação — o que se abre no navegador |
+| **Central** | a aplicação — o que se abre no navegador |
 | **Plataforma** | um espaço de trabalho seu: uma pasta, com as suas ideias |
 | **Projeto** | cada trabalho dentro de uma plataforma |
 
-Uma Estação opera **várias** plataformas, e troca entre elas sem reiniciar.
+Uma Central opera **várias** plataformas, e troca entre elas sem reiniciar.
 
 ## Os cinco estágios
 
@@ -55,7 +55,7 @@ estágio se preserva como estava, e a parte ativa da pasta continua respondendo
 
 Abra o app e vá na aba **🚂 Embarque**. São cinco perguntas, e você sai com um
 texto pronto para colar numa sessão de IA — é ele que cria a sua primeira
-plataforma. A Estação não cria nada sozinha: ela escreve o pedido, você olha, a
+plataforma. A Central não cria nada sozinha: ela escreve o pedido, você olha, a
 sessão executa.
 
 Sem plataforma nenhuma configurada, o servidor sobe assim mesmo e o Embarque
@@ -66,7 +66,7 @@ acabou de chegar.
 de exemplo:
 
 ```
-cp estacao.exemplo.json estacao.json      # no Windows: copy
+cp central.exemplo.json central.json      # no Windows: copy
 python app/server.py --abrir
 ```
 
@@ -140,7 +140,7 @@ quando der ruim.
   aberto, toda requisição vai para `127.0.0.1`.
 - **Nenhum valor literal de cor fora do bloco de tokens**, e há um teste que
   falha o build se um voltar.
-- **A Estação lê o git, nunca o executa.** A aba Versões mostra o estado e gera o
+- **A Central lê o git, nunca o executa.** A aba Versões mostra o estado e gera o
   texto; quem roda é a sessão de IA, com você olhando.
 - **Todo endpoint de escrita** tem allow-list, trava de concorrência por
   conteúdo (409) e backup antes de gravar.

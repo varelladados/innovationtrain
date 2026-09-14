@@ -5,9 +5,12 @@ dist/
 .env
 *.log
 
-# A sua configuracao, com os seus caminhos. Copie de estacao.exemplo.json.
+# A sua configuracao, com os seus caminhos. Copie de central.exemplo.json.
 # Sem ele o servidor sobe do mesmo jeito e o Embarque abre sozinho.
-estacao.json
+# Ancorado na raiz: `estacao.json` dentro de uma estacao e' a config dela,
+# e essa e' versionada. O da raiz e' o nome que o central.json tinha ate' a 0.9.
+/central.json
+/estacao.json
 
 # Suas decisoes sobre o proprio produto — pessoais, ficam de fora.
 pendencias/
