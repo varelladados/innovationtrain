@@ -60,7 +60,8 @@ PAPEIS = [re.compile(p) for p in (
 )]
 
 #: Configuração e decisões de quem usa — nunca versionadas.
-NUNCA_VERSIONADO = ("estacao.json", "pendencias/")
+NUNCA_VERSIONADO = ("central.json", "estacao.json", "pendencias/",
+                    "estacoes/plataforma/", "estacoes/admin_empresa/", "estacoes/vida_pessoal/")
 
 TEXTO = {".py", ".md", ".html", ".htm", ".txt", ".json", ".bat", ".css", ".js"}
 
@@ -97,7 +98,7 @@ class TestNadaPrivadoRastreado(unittest.TestCase):
     def test_o_gitignore_cobre_o_que_precisa(self):
         """Não basta não estar versionado hoje: tem que ser difícil entrar."""
         texto = (RAIZ / ".gitignore").read_text(encoding="utf-8")
-        for padrao in ("estacao.json", "pendencias/", "plano-", "propostas-",
+        for padrao in ("/central.json", "/estacao.json", "/estacoes/*", "pendencias/", "plano-", "propostas-",
                        "analise-", "portfolio.json"):
             self.assertIn(padrao, texto, f".gitignore não cobre `{padrao}`")
 
@@ -159,7 +160,7 @@ class TestHistoricoLimpo(unittest.TestCase):
 
 
 #: Radicais de vocabulário que não pode entrar aqui — os nomes próprios de uma
-#: plataforma privada, que descreveriam o sistema de origem mesmo sem citar
+#: estação privada, que descreveriam o sistema de origem mesmo sem citar
 #: projeto nenhum. Guardados por **hash**, e não em claro, pelo mesmo motivo da
 #: lista de permitidos acima: um teste que escrevesse as palavras proibidas
 #: publicaria exatamente o que deveria proteger.
@@ -305,14 +306,14 @@ JA_PUBLICADOS = {"ce68803976b2"}
 
 @PRECISA_GIT
 class TestVocabularioPrivado(unittest.TestCase):
-    """O produto é genérico. Nome próprio de plataforma de alguém não entra.
+    """O produto é genérico. Nome próprio de estação de alguém não entra.
 
     Isto não é preciosismo de estilo: o vocabulário estava em *código vivo* —
     chave de frontmatter que o app grava, caminho de arquivo de sistema, rótulo
     de métrica na interface. Tirar as palavras sem mover essas coisas para
-    configuração teria quebrado a leitura da plataforma de origem; por isso a
+    configuração teria quebrado a leitura da estação de origem; por isso a
     correção foi configuração, e por isso este teste vale a pena: ele falha no
-    momento em que alguém volta a escrever no código o que é de uma plataforma.
+    momento em que alguém volta a escrever no código o que é de uma estação.
     """
 
     def _nos_rastreados(self):
@@ -334,7 +335,7 @@ class TestVocabularioPrivado(unittest.TestCase):
     def test_arquivos_rastreados(self):
         self.assertEqual(
             self._nos_rastreados(), {},
-            "vocabulário de uma plataforma privada em arquivo rastreado. O que o "
+            "vocabulário de uma estação privada em arquivo rastreado. O que o "
             "app lê e escreve tem que vir do config (`frontmatter`, `arquivos`, "
             "os caminhos opcionais), nunca escrito no código.")
 
@@ -344,7 +345,7 @@ class TestVocabularioPrivado(unittest.TestCase):
             self.skipTest("não consegui ler o histórico")
         achados = _radicais_em(saida)
         self.assertEqual(achados, set(),
-                         "vocabulário de plataforma privada em mensagem de commit")
+                         "vocabulário de estação privada em mensagem de commit")
 
     def test_quarentena_nao_vale_para_o_topo(self):
         """Quarentena é sobre o que já foi publicado, não sobre o que se escreve.
@@ -372,7 +373,7 @@ class TestVocabularioPrivado(unittest.TestCase):
             self.skipTest("não consegui ler o histórico")
         achados = _radicais_em(saida) - JA_PUBLICADOS
         self.assertEqual(achados, set(),
-                         "vocabulário de plataforma privada em algum commit")
+                         "vocabulário de estação privada em algum commit")
 
 
 class TestOQueUmRepositorioPublicoPrecisa(unittest.TestCase):
@@ -391,13 +392,13 @@ class TestOQueUmRepositorioPublicoPrecisa(unittest.TestCase):
         self.assertIn("python app/server.py", texto, "o README não diz como rodar")
 
     def test_template_de_configuracao(self):
-        """Quem clona precisa de um ponto de partida para o `estacao.json`."""
+        """Quem clona precisa de um ponto de partida para o `central.json`."""
         import json
-        exemplo = RAIZ / "estacao.exemplo.json"
+        exemplo = RAIZ / "central.exemplo.json"
         self.assertTrue(exemplo.is_file())
         dados = json.loads(exemplo.read_text(encoding="utf-8"))
-        self.assertIn("plataformas", dados)
-        for p in dados["plataformas"]:
+        self.assertIn("estacoes", dados)
+        for p in dados["estacoes"]:
             caminho = p.get("caminho", "")
             self.assertFalse(re.match(r"^[A-Za-z]:[\\/]", caminho),
                              f"caminho absoluto de outra máquina no template: {caminho}")

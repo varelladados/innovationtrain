@@ -1,26 +1,26 @@
-"""Configuração da plataforma ativa.
+"""Configuração da estação ativa.
 
-Antes do Trecho 3 a Estação assumia que morava *dentro* da plataforma: a raiz
-era `PROJECT_DIR.parent` e cada módulo repetia caminhos de uma plataforma
+Antes do Trecho 3 o app assumia que morava *dentro* da estação: a raiz
+era `PROJECT_DIR.parent` e cada módulo repetia caminhos de uma estação
 específica como constante literal. Este módulo é o que desfaz isso.
 
 Duas coisas moram aqui:
 
 1. **A taxonomia** — nomes de estágio, siglas, arquivos de sistema, tipos de
    projeto. Os padrões abaixo são a cópia executável de `metodo/taxonomia.md`,
-   que é a fonte única. Uma plataforma pode sobrescrever qualquer chave no seu
-   `plataforma.json`; uma plataforma que não pode receber arquivo novo — uma
+   que é a fonte única. Uma estação pode sobrescrever qualquer chave no seu
+   `estacao.json`; uma estação que não pode receber arquivo novo — uma
    pasta lida em modo somente-leitura, por exemplo — sobrescreve pelo
-   `estacao.json` do hub em vez disso.
+   `central.json` do hub em vez disso.
 
-2. **A resolução da raiz**, nesta ordem: `--raiz` → `ESTACAO_PLATAFORMA` →
-   plataforma ativa no `estacao.json` do hub → erro claro em português. Não há
-   fallback para `PROJECT_DIR.parent`: fora da plataforma em que a Estação
+2. **A resolução da raiz**, nesta ordem: `--raiz` → `CENTRAL_ESTACAO` →
+   estação ativa no `central.json` do hub → erro claro em português. Não há
+   fallback para `PROJECT_DIR.parent`: fora da estação em que a Central
    nasceu ele não faz sentido, e mascara erro de configuração como se fosse
    árvore vazia.
 
 A configuração ativa é estado de módulo (`aplicar`/`atual`) e é lida **na hora
-da chamada**, nunca no import — é isso que faz o seletor de plataforma trocar
+da chamada**, nunca no import — é isso que faz o seletor de estação trocar
 de raiz sem reiniciar o servidor.
 """
 import json
@@ -32,26 +32,33 @@ APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent          # a raiz do repositório
 #: **A raiz do repositório é o hub.** Até a unificação de 2026-09-09 o hub era a
 #: pasta acima (o app vivia num repositório próprio dentro dele); agora `app/`,
-#: `metodo/` e `plataformas/` são irmãos na mesma raiz, e é ali que vive o
-#: `estacao.json`. Quem quiser separar as coisas de novo usa `ESTACAO_HUB`.
+#: `metodo/` e `estacoes/` são irmãos na mesma raiz, e é ali que vive o
+#: `central.json`. Quem quiser separar as coisas de novo usa `CENTRAL_DIR`.
 HUB_DIR = PROJECT_DIR
 
 #: A porta do servidor local. **Fonte única.** O `server.py` importa daqui e o
-#: `iniciar-estacao.bat` pergunta ao Python em vez de repetir o número. O único
+#: `iniciar-central.bat` pergunta ao Python em vez de repetir o número. O único
 #: lugar que continua literal é o `.claude/launch.json`, que é JSON lido pelo
 #: harness e não pode chamar código — e por isso tem um teste que cobra que os
 #: dois digam a mesma coisa.
 PORTA = 8744
 
+CENTRAL_JSON = "central.json"
+#: O nome do `central.json` até a 0.9. Ainda é lido, mas só quando tem formato de
+#: Central (uma lista de registros): a partir da 0.10 `estacao.json` é também o
+#: nome da config de cada estação, e as duas coisas não podem se confundir.
+CENTRAL_JSON_ANTIGO = "estacao.json"
 ESTACAO_JSON = "estacao.json"
-PLATAFORMA_JSON = "plataforma.json"
+#: O nome do `estacao.json` até a 0.9. Continua lido quando é o único que existe:
+#: há estações de fora deste repositório que ainda o usam.
+ESTACAO_JSON_ANTIGO = "plataforma.json"
 
 
 # ---------------------------------------------------------------- padrões
 
 #: Cópia executável de `metodo/taxonomia.md`. Mudou lá, muda aqui.
 PADROES = {
-    "nome": "Plataforma",
+    "nome": "Estação",
     "marcador": "_indice.md",
     "estagios": [
         {"n": 1, "pasta": "1-capturas", "nome": "Captura", "plural": "Capturas", "sigla": "CAP"},
@@ -67,9 +74,9 @@ PADROES = {
         "sem_destino": "_sem-destino.md",
     },
     "tipos": ["app", "dados", "serviço", "curso"],
-    #: Nomes de campo de frontmatter que a plataforma usa. Não são caminhos: são
+    #: Nomes de campo de frontmatter que a estação usa. Não são caminhos: são
     #: chaves que o produto **lê e escreve**. Ficam aqui, e não literais no
-    #: código, pelo mesmo motivo da raiz — uma plataforma com convenção própria
+    #: código, pelo mesmo motivo da raiz — uma estação com convenção própria
     #: declara a dela e continua sendo lida sem receber arquivo nenhum.
     "frontmatter": {
         "processado": "registro-id",  # o item já tem linha no registro
@@ -77,16 +84,23 @@ PADROES = {
         "origem": [],                 # campos de linhagem no CLAUDE.md do projeto
     },
     "projetos": {"pasta": "5-projetos", "prefixo_re": None},
+    #: Qual dos `MODELOS` esta estação segue. Sem estágio de projetos, a estação
+    #: declara `"projetos": null` — que é diferente de `"pasta": ""` (os projetos
+    #: morando na raiz).
+    "modelo": "plataforma",
+    #: Estação privada não sai daqui: exportação recusa e a aba Versões não oferece
+    #: git. Ausente, vale o que o modelo diz.
+    "privada": None,
     #: Siglas de uma taxonomia anterior, mapeadas para o número do estágio a que
     #: correspondem hoje (ex.: `{"SBC": 2, "SBI": 3, "SBZ": 5}`). Existe para uma
-    #: plataforma que **já tinha acervo** quando adotou a Estação: os
+    #: estação que **já tinha acervo** quando adotou a Central: os
     #: identificadores antigos continuam válidos, reconhecidos e agrupados no
     #: estágio certo, sem reescrever registro (que é append-only) nem renomear
     #: pasta. Identificador **novo** nunca usa sigla legada — o utilitário recusa.
     "siglas_legadas": {},
     "excluir": [".git", "node_modules", "__pycache__", ".claude", "dist", "build"],
     # Caminhos opcionais: quando ausentes, a aba correspondente degrada em vez
-    # de estourar. Uma plataforma madura preenche vários; uma recém-criada,
+    # de estourar. Uma estação madura preenche vários; uma recém-criada,
     # nenhum — e o app funciona nos dois casos.
     "perfis": None,             # pasta com os .json de maturidade do Portfólio
     "pendencias": None,         # pasta com pendencia-ativa-*.md
@@ -108,19 +122,54 @@ PADROES = {
     #: É de quem usa, não do produto: sem a chave a linha some, em vez de sair
     #: com um nome escrito no código.
     "assinatura": None,
-    #: Pasta com uma cópia intacta desta plataforma, para `plataforma.py
-    #: reiniciar` devolvê-la ao estado de origem. **Só as plataformas de exemplo
+    #: Pasta com uma cópia intacta desta estação, para `estacao.py
+    #: reiniciar` devolvê-la ao estado de origem. **Só as estações de exemplo
     #: declaram isto**, e a ausência dela é o que torna reiniciar impossível numa
-    #: plataforma de verdade: sem a chave, o comando recusa antes de olhar disco.
+    #: estação de verdade: sem a chave, o comando recusa antes de olhar disco.
     "estado_inicial": None,
-    #: Os instantâneos seguintes da trilha de exemplo — cada um é a plataforma
+    #: Os instantâneos seguintes da trilha de exemplo — cada um é a estação
     #: inteira num estado adiante. Só as de exemplo declaram.
     "tutorial": None,
 }
 
+#: As estações com que toda Central começa — cópia executável da seção "As
+#: estações de uma Central" de `metodo/taxonomia.md`, na ordem em que o Embarque
+#: as oferece. As três são trens: o que muda é o tamanho e para que servem.
+MODELOS = {
+    "plataforma": {
+        "nome": "Plataforma",
+        "pasta": "plataforma",
+        "estagios": 5,
+        "projetos": True,
+        "privada": False,
+        "resumo": "o trem de inovação",
+        "proposito": "O trem de inovação: ideias que podem virar funcionalidade, projeto e solução para outras pessoas.",
+    },
+    "admin_empresa": {
+        "nome": "Admin_empresa",
+        "pasta": "admin_empresa",
+        "estagios": 3,
+        "projetos": False,
+        "privada": False,
+        "resumo": "a burocracia da empresa",
+        "proposito": "A burocracia da empresa: RH, impostos, jurídico, contábil e tributário, financeiro.",
+    },
+    "vida_pessoal": {
+        "nome": "Vida_Pessoal",
+        "pasta": "vida_pessoal",
+        "estagios": 3,
+        "projetos": False,
+        "privada": True,
+        "resumo": "a vida fora do trabalho",
+        "proposito": "A vida fora do trabalho: deveres civis, família, tarefas, rotinas, lazer, amigos, a festa aqui em casa.",
+    },
+}
+#: O modelo de quem não declara `modelo` — o que toda estação era antes dos outros dois.
+MODELO_PADRAO = "plataforma"
+
 
 class Config:
-    """Configuração resolvida de uma plataforma. Só leitura."""
+    """Configuração resolvida de uma estação. Só leitura."""
 
     def __init__(self, raiz: Path, dados: dict, origem: str = "padrões"):
         self.raiz = Path(raiz)
@@ -156,10 +205,10 @@ class Config:
         return list(self._d.get("excluir") or [])
 
     def fm(self, qual):
-        """Nome do campo de frontmatter `qual`, como esta plataforma o chama.
+        """Nome do campo de frontmatter `qual`, como esta estação o chama.
 
         `processado` sempre devolve algo (o padrão); `nucleo` devolve `None`
-        quando a plataforma não tem esse conceito, e quem chama some com a
+        quando a estação não tem esse conceito, e quem chama some com a
         métrica em vez de contar zero como se fosse informação; `origem`
         devolve uma lista, possivelmente vazia.
         """
@@ -196,6 +245,23 @@ class Config:
         return self.raiz / pasta if pasta else self.raiz
 
     @property
+    def tem_projetos(self):
+        """`"projetos": null` quer dizer "esta estação não tem projetos"."""
+        return self._d.get("projetos") is not None
+
+    @property
+    def modelo(self):
+        return self._d.get("modelo") or MODELO_PADRAO
+
+    @property
+    def privada(self):
+        """A chave explícita vence; sem ela, vale o que o modelo diz."""
+        valor = self._d.get("privada")
+        if valor is None:
+            valor = (MODELOS.get(self.modelo) or {}).get("privada", False)
+        return bool(valor)
+
+    @property
     def projetos_prefixo_re(self):
         """Regex que reconhece pasta de projeto pelo nome, ou None.
 
@@ -224,7 +290,7 @@ class Config:
 
     @property
     def siglas_legadas(self):
-        """{sigla antiga: número do estágio}, da plataforma que já tinha acervo."""
+        """{sigla antiga: número do estágio}, da estação que já tinha acervo."""
         d = self._d.get("siglas_legadas") or {}
         return {str(k): int(v) for k, v in d.items() if str(k) not in self.siglas}
 
@@ -264,7 +330,7 @@ class Config:
     def etapa_re(self):
         """Regex que casa a sigla de estágio (ex.: \\b(CAP|NOT|IDE|FUN|PRJ)\\b).
 
-        Reconhece também as legadas: um registro anterior à adoção da Estação
+        Reconhece também as legadas: um registro anterior à adoção da Central
         continua sendo lido, e é isso que impede 154 linhas de virarem "outro".
         """
         return re.compile(r"\b(" + self._alt_siglas() + r")\b")
@@ -288,7 +354,7 @@ class Config:
             r"-(\d{3})-([a-z0-9-]+)-([a-f0-9]{4,5})\b")
 
     def ok(self):
-        """A raiz aponta mesmo para uma plataforma?"""
+        """A raiz aponta mesmo para uma estação?"""
         return (self.raiz / self.marcador).exists()
 
     def resumo(self):
@@ -304,7 +370,10 @@ class Config:
             "historico": self.historico,
             "siglas_legadas": self.siglas_legadas,
             "ok": self.ok(),
-            # A interface só oferece "reiniciar" onde ele existe. Uma plataforma
+            "modelo": self.modelo,
+            "privada": self.privada,
+            "tem_projetos": self.tem_projetos,
+            # A interface só oferece "reiniciar" onde ele existe. Uma estação
             # de verdade não declara `estado_inicial`, e o botão nem aparece —
             # a mesma chave que faz o utilitário recusar.
             "exemplo": bool(self.get("estado_inicial")),
@@ -325,17 +394,20 @@ def _fundir(base: dict, extra: dict) -> dict:
 
 
 def carregar(raiz, inline=None) -> Config:
-    """Config de uma plataforma.
+    """Config de uma estação.
 
-    `inline` é a taxonomia declarada no `estacao.json` do hub — é assim que uma
-    plataforma é lida sem receber nenhum arquivo novo. Quando não há inline, lê o
-    `plataforma.json` da própria raiz. Sem nenhum dos dois, valem os padrões.
+    `inline` é a taxonomia declarada no `central.json` do hub — é assim que uma
+    estação é lida sem receber nenhum arquivo novo. Quando não há inline, lê o
+    `estacao.json` da própria raiz — ou o `plataforma.json`, o nome até a 0.9,
+    quando é o único que existe. Sem nenhum dos dois, valem os padrões.
     """
     raiz = Path(raiz)
     if inline:
-        return Config(raiz, _fundir(PADROES, inline), origem="estacao.json")
+        return Config(raiz, _fundir(PADROES, inline), origem=CENTRAL_JSON)
 
-    arquivo = raiz / PLATAFORMA_JSON
+    arquivo = raiz / ESTACAO_JSON
+    if not arquivo.exists() and (raiz / ESTACAO_JSON_ANTIGO).exists():
+        arquivo = raiz / ESTACAO_JSON_ANTIGO
     if arquivo.exists():
         try:
             dados = json.loads(arquivo.read_text(encoding="utf-8"))
@@ -343,7 +415,7 @@ def carregar(raiz, inline=None) -> Config:
             raise RuntimeError(
                 f"{arquivo} existe mas não pôde ser lido como JSON: {e}"
             ) from e
-        return Config(raiz, _fundir(PADROES, dados), origem=PLATAFORMA_JSON)
+        return Config(raiz, _fundir(PADROES, dados), origem=arquivo.name)
 
     return Config(raiz, dict(PADROES), origem="padrões")
 
@@ -351,45 +423,63 @@ def carregar(raiz, inline=None) -> Config:
 # ---------------------------------------------------------------- hub
 
 def hub_dir() -> Path:
-    env = os.environ.get("ESTACAO_HUB")
+    """A pasta da Central. `ESTACAO_HUB` é o nome que a variável tinha até a 0.9."""
+    env = os.environ.get("CENTRAL_DIR") or os.environ.get("ESTACAO_HUB")
     return Path(env) if env else HUB_DIR
 
 
-def estacao_json() -> Path:
-    return hub_dir() / ESTACAO_JSON
+def central_json() -> Path:
+    return hub_dir() / CENTRAL_JSON
 
 
-def ler_estacao() -> dict:
-    """Conteúdo do estacao.json do hub. Ausente ou ilegível vira lista vazia —
-    isso é um estado normal (hub recém-criado), não um erro."""
-    p = estacao_json()
-    if not p.exists():
-        return {"plataformas": []}
+def _ler_json(p: Path):
+    """JSON de um arquivo, ou None se ele não existe ou não se lê."""
     try:
-        dados = json.loads(p.read_text(encoding="utf-8"))
+        return json.loads(p.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return {"plataformas": []}
-    if not isinstance(dados.get("plataformas"), list):
-        dados["plataformas"] = []
+        return None
+
+
+def ler_central() -> dict:
+    """Conteúdo do central.json. Ausente ou ilegível vira lista vazia — isso é
+    um estado normal (Central recém-criada), não um erro.
+
+    Sem `central.json`, vale o `estacao.json` da mesma pasta **se tiver formato
+    de Central**. É o formato que separa os dois, porque `estacao.json` é também
+    a config de uma estação: sem essa checagem, a taxonomia de alguém seria lida
+    como lista de registros. A escrita vai sempre para o nome novo.
+    """
+    dados = _ler_json(central_json())
+    if dados is None and not central_json().exists():
+        antigo = _ler_json(hub_dir() / CENTRAL_JSON_ANTIGO)
+        if isinstance(antigo, dict) and isinstance(antigo.get("plataformas"), list):
+            dados = antigo
+    if not isinstance(dados, dict):
+        return {"estacoes": []}
+    # a lista se chamava `plataformas` até a 0.9; a próxima escrita já sai com o nome novo
+    if "estacoes" not in dados and isinstance(dados.get("plataformas"), list):
+        dados["estacoes"] = dados.pop("plataformas")
+    if not isinstance(dados.get("estacoes"), list):
+        dados["estacoes"] = []
     return dados
 
 
-def escrever_estacao(dados: dict):
-    p = estacao_json()
+def escrever_central(dados: dict):
+    p = central_json()
     p.parent.mkdir(parents=True, exist_ok=True)
     tmp = p.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(dados, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, p)
 
 
-def plataformas() -> list:
-    """As plataformas registradas, na ordem do arquivo."""
-    return ler_estacao().get("plataformas", [])
+def estacoes() -> list:
+    """As estações registradas, na ordem do arquivo."""
+    return ler_central().get("estacoes", [])
 
 
-def plataforma_ativa():
+def estacao_ativa():
     """A entrada marcada `ativa`, ou a primeira, ou None."""
-    regs = plataformas()
+    regs = estacoes()
     for r in regs:
         if r.get("ativa"):
             return r
@@ -397,31 +487,43 @@ def plataforma_ativa():
 
 
 def ativar(caminho) -> dict:
-    """Marca uma plataforma como ativa no estacao.json e devolve a entrada."""
+    """Marca uma estação como ativa no central.json e devolve a entrada."""
     alvo = str(Path(caminho))
-    dados = ler_estacao()
+    dados = ler_central()
     achou = None
-    for r in dados.get("plataformas", []):
+    for r in dados.get("estacoes", []):
         mesma = str(Path(r.get("caminho", ""))) == alvo
         r["ativa"] = mesma
         if mesma:
             achou = r
     if achou is None:
-        raise KeyError(f"plataforma não registrada no {ESTACAO_JSON}: {caminho}")
-    escrever_estacao(dados)
+        raise KeyError(f"estação não registrada no {CENTRAL_JSON}: {caminho}")
+    escrever_central(dados)
     return achou
+
+
+class EstacaoPrivada(RuntimeError):
+    """Pediram para tirar daqui algo de uma estação privada."""
+
+
+def recusar_se_privada(cfg, acao):
+    """Levanta `EstacaoPrivada` se `cfg` é privada. `acao` é o que ia sair daqui."""
+    if cfg.privada:
+        raise EstacaoPrivada(
+            f"{cfg.nome} é uma estação privada: {acao} não a inclui. Ela não é "
+            "versionada nem compartilhada, de propósito.")
 
 
 # ---------------------------------------------------------------- resolução
 
 class RaizNaoResolvida(RuntimeError):
-    """Nenhuma das quatro fontes disse onde fica plataforma."""
+    """Nenhuma das quatro fontes disse onde fica estação."""
 
 
 def resolver(argv=None):
-    """Descobre qual plataforma usar. Devolve (raiz, inline, origem).
+    """Descobre qual estação usar. Devolve (raiz, inline, origem).
 
-    Ordem: --raiz → ESTACAO_PLATAFORMA → plataforma ativa no estacao.json.
+    Ordem: --raiz → CENTRAL_ESTACAO → estação ativa no central.json.
     Sem nenhuma delas, levanta RaizNaoResolvida com o texto que o usuário lê.
     """
     argv = list(argv if argv is not None else [])
@@ -432,23 +534,23 @@ def resolver(argv=None):
         if a.startswith("--raiz="):
             return Path(a.split("=", 1)[1]), None, "--raiz"
 
-    env = os.environ.get("ESTACAO_PLATAFORMA")
-    if env:
-        return Path(env), None, "ESTACAO_PLATAFORMA"
+    for nome in ("CENTRAL_ESTACAO", "ESTACAO_PLATAFORMA"):   # o segundo: o nome até a 0.9
+        if os.environ.get(nome):
+            return Path(os.environ[nome]), None, nome
 
-    reg = plataforma_ativa()
+    reg = estacao_ativa()
     if reg and reg.get("caminho"):
-        return Path(reg["caminho"]), reg.get("taxonomia"), ESTACAO_JSON
+        return Path(reg["caminho"]), reg.get("taxonomia"), CENTRAL_JSON
 
     raise RaizNaoResolvida(
-        "Não sei qual plataforma abrir.\n"
+        "Não sei qual estação abrir.\n"
         "\n"
-        "A Estação opera plataformas, e nenhuma foi indicada. Escolha uma destas:\n"
-        f"  1. rode com --raiz C:\\caminho\\da\\plataforma\n"
-        f"  2. defina a variável de ambiente ESTACAO_PLATAFORMA\n"
-        f"  3. registre uma plataforma em {estacao_json()}\n"
+        "A Central opera estações, e nenhuma foi indicada. Escolha uma destas:\n"
+        f"  1. rode com --raiz C:\\caminho\\da\\estacao\n"
+        f"  2. defina a variável de ambiente CENTRAL_ESTACAO\n"
+        f"  3. registre uma estação em {central_json()}\n"
         "\n"
-        "Se você ainda não tem plataforma nenhuma, é isso que a aba Embarque cria."
+        "Se você ainda não tem estação nenhuma, é isso que a aba Embarque cria."
     )
 
 
@@ -468,7 +570,7 @@ def atual() -> Config:
     o que é bug de boot, não estado de usuário."""
     if _ATUAL is None:
         raise RaizNaoResolvida(
-            "Nenhuma plataforma ativa: config.aplicar() não foi chamado no boot."
+            "Nenhuma estação ativa: config.aplicar() não foi chamado no boot."
         )
     return _ATUAL
 
@@ -481,19 +583,19 @@ def raiz() -> Path:
     return atual().raiz
 
 
-SEM_PLATAFORMA = "nenhuma plataforma configurada"
+SEM_ESTACAO = "nenhuma estação configurada"
 
 
-def sem_plataforma() -> Config:
-    """Config de quem ainda não tem plataforma nenhuma.
+def sem_estacao() -> Config:
+    """Config de quem ainda não tem estação nenhuma.
 
     A raiz aponta para o próprio hub, que não tem o marcador — então `ok()` é
     falso e **todo o resto degrada pelo caminho que já existe**, o mesmo da pasta
-    que não é plataforma. Sem isto, `config.atual()` levantaria em cada endpoint
+    que não é estação. Sem isto, `config.atual()` levantaria em cada endpoint
     e o primeiro contato com o produto seria um traceback.
     """
     cfg = carregar(hub_dir())
-    cfg.origem = SEM_PLATAFORMA
+    cfg.origem = SEM_ESTACAO
     return aplicar(cfg)
 
 
@@ -501,13 +603,13 @@ def iniciar(argv=None) -> Config:
     """Resolve a raiz, carrega o config e o marca como ativo.
 
     Quando nada resolve — o caso de quem acabou de clonar — **não levanta**:
-    devolve a config de `sem_plataforma()`, para o servidor subir e a aba
+    devolve a config de `sem_estacao()`, para o servidor subir e a aba
     Embarque abrir. Quem quiser o erro chama `resolver()` direto.
     """
     try:
         r, inline, origem = resolver(argv)
     except RaizNaoResolvida:
-        return sem_plataforma()
+        return sem_estacao()
     cfg = carregar(r, inline)
     cfg.origem = f"{origem} · {cfg.origem}"
     return aplicar(cfg)

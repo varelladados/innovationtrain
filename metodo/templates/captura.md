@@ -1,5 +1,5 @@
 ---
-id: <gere com: python metodo/plataforma.py novo-id --raiz <plataforma> --etapa CAP --slug "...">
+id: <gere com: python metodo/estacao.py novo-id --raiz <estação> --etapa CAP --slug "...">
 data: AAAA-MM-DD
 estagio: 1
 origem: <de onde veio — colado, transcrito, exportado de X, foto de quadro>

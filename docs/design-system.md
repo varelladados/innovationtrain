@@ -1,10 +1,10 @@
-# Design system da Estação
+# Design system da Central
 
 > **Documento operacional** · escrito em 2026-09-08 (Trecho 4 do
 > `plano-hub-estacao-e-embarque-2026-09-08.md`) · sucede
 > [`plano-incorporacao-dashboard-nova-identidade.md`](plano-incorporacao-dashboard-nova-identidade.md)
 
-Este documento existe porque a identidade visual da Estação estava aplicada mas
+Este documento existe porque a identidade visual da Central estava aplicada mas
 não estava **escrita**: os tokens viviam num `:root` sem explicação, e 17 valores
 de cor tinham escapado para regras soltas — inclusive um azul da paleta anterior,
 que ninguém percebeu porque ninguém tinha olhado o modo escuro.
@@ -32,7 +32,7 @@ no `:root` **com par claro e escuro**, e só então use.
 
 ## Os temas
 
-A Estação tem **dois eixos independentes**: o *tema* (a identidade) e o *modo*
+A Central tem **dois eixos independentes**: o *tema* (a identidade) e o *modo*
 (claro ou escuro).
 
 | Eixo | Como se escolhe | Onde fica guardado |
@@ -58,7 +58,7 @@ depois vence):
 ```
 
 **A paleta de tipo de arquivo é compartilhada pelos dois temas** — ela diz o que
-o arquivo *é*, não de quem é a plataforma. Só a paleta base e a escala de
+o arquivo *é*, não de quem é a estação. Só a paleta base e a escala de
 maturidade mudam com o tema.
 
 ---
@@ -87,7 +87,7 @@ maturidade mudam com o tema.
 | `--on-accent` | `#FFFFFF` | `#0F1317` | **texto sobre `--accent`.** Nunca escreva `#fff`: no escuro o acento é claro |
 | `--danger` / `--danger-bg` | `#8C2F3A` / `#F5DEE1` | `#D98A96` / `#322226` | erro, item essencial, aviso duro |
 | `--success` / `--success-bg` | `#2F6B45` / `#DDEDE3` | `#8FC5A3` / `#1B2A21` | pendência respondida, confirmação |
-| `--warn` / `--warn-bg` | `#7A5A1F` / `#F2E8D2` | `#E0BE7E` / `#2C2519` | adiado, atenção, plataforma não encontrada |
+| `--warn` / `--warn-bg` | `#7A5A1F` / `#F2E8D2` | `#E0BE7E` / `#2C2519` | adiado, atenção, estação não encontrada |
 
 ### Maturidade — `--estagio-1` a `--estagio-5`
 

@@ -3,7 +3,7 @@ id: <novo-id --etapa IDE>
 data: AAAA-MM-DD
 estagio: 3
 origem: <identificador da nota de onde isto veio>
-tipo: <um dos tipos declarados no plataforma.json, se a plataforma usa tipos>
+tipo: <um dos tipos declarados no estacao.json, se a estação usa tipos>
 tags: []
 ---
 

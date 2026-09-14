@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "estacao",
+      "name": "central",
       "runtimeExecutable": "python",
       "runtimeArgs": ["app/server.py"],
       "port": 8744

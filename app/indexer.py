@@ -1,10 +1,10 @@
-"""Indexer — varre a raiz da plataforma ativa, classifica cada arquivo
+"""Indexer — varre a raiz da estação ativa, classifica cada arquivo
 pertinente e produz um índice JSON.
 
-Até o Trecho 3 a raiz era `PROJECT_DIR.parent` e os nomes da plataforma estavam
-escritos aqui como constante. Agora tudo que é nome de plataforma sai de
+Até o Trecho 3 a raiz era `PROJECT_DIR.parent` e os nomes da estação estavam
+escritos aqui como constante. Agora tudo que é nome de estação sai de
 `config.atual()` — e é lido **na hora da chamada**, para que trocar de
-plataforma não exija reiniciar o servidor. Ver `metodo/taxonomia.md`.
+estação não exija reiniciar o servidor. Ver `metodo/taxonomia.md`.
 """
 import json
 import os
@@ -38,12 +38,12 @@ def sanity_check():
     if not cfg.ok():
         raise RuntimeError(
             f"{cfg.marcador} não encontrado em {cfg.raiz} — a raiz resolvida não "
-            "parece ser uma plataforma, abortando indexação em vez de varrer a "
+            "parece ser uma estação, abortando indexação em vez de varrer a "
             "árvore errada."
         )
 
 
-#: Sempre excluídos, em qualquer nível e em qualquer plataforma — não são
+#: Sempre excluídos, em qualquer nível e em qualquer estação — não são
 #: conteúdo de ninguém.
 EXCLUDE_DIR_NAMES = {".git", "node_modules", "__pycache__", ".claude"}
 
@@ -73,7 +73,7 @@ def classify(rel_posix: str, name: str, suffix: str) -> str:
     if prefixo and name.startswith(prefixo):
         return "orquestra"
 
-    if name == "CLAUDE.md":
+    if name in ("CLAUDE.md", "CENTRAL.md"):
         return "orquestra"
     if name.startswith("backlog-") or rel_posix.endswith("/docs/BACKLOG.md") or name == "BACKLOG.md":
         return "backlog"
@@ -153,7 +153,7 @@ def is_processed(name: str, frontmatter: dict):
 
 def lifecycle_stage(rel_posix: str):
     """Estágio de triagem física dentro de um estágio da taxonomia — ortogonal
-    à etapa. Uma plataforma pode declarar quantas quiser em `ciclo_vida`; na
+    à etapa. Uma estação pode declarar quantas quiser em `ciclo_vida`; na
     taxonomia padrão é só o `_historico/` de cada estágio."""
     cfg = config.atual()
     nomes = set(cfg.get("ciclo_vida") or [cfg.historico])
@@ -171,7 +171,7 @@ def is_stub(size_bytes: int, body: str) -> bool:
 
 
 def pastas_de_projeto():
-    """Nomes das pastas que são projeto, na pasta de projetos da plataforma.
+    """Nomes das pastas que são projeto, na pasta de projetos da estação.
 
     Com prefixo declarado (legado), só as que casam — inclusive as que ainda
     não têm `CLAUDE.md`, que é justamente o órfão que o índice existe para
@@ -179,6 +179,8 @@ def pastas_de_projeto():
     projetos é um projeto, menos o `_historico/`.
     """
     cfg = config.atual()
+    if not cfg.tem_projetos:
+        return set()        # `"projetos": null`: nenhuma pasta é projeto
     base = cfg.projetos_dir
     prefixo_re = cfg.projetos_prefixo_re
     achadas = set()

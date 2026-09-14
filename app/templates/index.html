@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estação</title>
+<title>Central</title>
 <style>/* ---------- fontes vendorizadas (Trecho 4, Parada 2) ----------
    Servidas do proprio repositorio, como marked.js e mermaid.js. Sem CDN:
    o app abre igual com a rede desligada. Licencas conferidas em
@@ -107,7 +107,7 @@
 
 /* tema "areia" — dourado sobre areia, um tema entre outros (Trecho 4,
    Parada 1). A paleta de tipo de arquivo é compartilhada: ela diz o que o
-   arquivo é, não de quem é a plataforma. */
+   arquivo é, não de quem é a estação. */
 :root[data-tema="areia"]{
   --bg:#F2ECDE; --surface:#FBF8F0; --surface-2:#EFE7D2; --border:rgba(27,22,15,0.14);
   --text:#1B160F; --text-2:#6E6555; --accent:#9C7A3C; --accent-bg:#F0E6CC;
@@ -149,22 +149,47 @@ table{border-collapse:collapse;width:100%;margin:var(--sp-2) 0}
 th,td{border:1px solid var(--border);padding:var(--sp-1) var(--sp-2);text-align:left;font-size:var(--fs-2);vertical-align:top}
 th{background:var(--surface-2)}
 
-#layout{display:grid;grid-template-columns:300px 1fr;height:100vh}
+#layout{display:grid;grid-template-columns:264px 1fr;height:100vh}
 
-/* ---------- sidebar ---------- */
-#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-#sidebar-header{padding:var(--sp-3);border-bottom:1px solid var(--border)}
-#sidebar-header h1{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-2)}
-#plataforma-seletor,#tema-seletor{width:100%;margin:0 0 var(--sp-2);padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);color:var(--text);font-family:inherit;font-size:var(--fs-2);cursor:pointer}
-#plataforma-seletor:focus,#tema-seletor:focus{outline:2px solid var(--accent);outline-offset:-1px}
-#plataforma-aviso{margin:0 var(--sp-3) var(--sp-3);padding:var(--sp-2) var(--sp-2);border:1px solid var(--warn);border-radius:var(--r-1);background:var(--warn-bg);color:var(--warn);font-size:var(--fs-1);line-height:1.45}
-#plataforma-aviso strong{display:block;margin-bottom:var(--sp-1)}
-#plataforma-aviso code{background:none;padding:0;color:inherit}
-#search-box{width:100%;padding:var(--sp-2) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);font-size:var(--fs-2)}
-#type-chips{display:flex;flex-wrap:wrap;gap:var(--sp-1);padding:var(--sp-2) var(--sp-3);border-bottom:1px solid var(--border)}
-.chip{font-size:var(--fs-1);padding:var(--sp-1) var(--sp-2);border-radius:var(--r-2);border:1px solid var(--border);background:var(--surface-2);cursor:pointer;color:var(--text-2)}
+/* ---------- sidebar ----------
+   A árvore é o que se usa o tempo todo; a navegação, uma vez por visita. Por
+   isso a navegação é grade compacta (duas colunas, sem borda, sem serifa) e a
+   árvore fica com todo o espaço que sobra. A versão anterior invertia isso:
+   oito botões de bloco empurravam a árvore para fora da tela. */
+#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#sidebar-header{padding:var(--sp-2) var(--sp-3)}
+#sidebar-header h1{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-3);margin:0 0 var(--sp-2);letter-spacing:.01em}
+#estacao-seletor,#tema-seletor{width:100%;padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);color:var(--text);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
+#estacao-seletor{margin:0 0 var(--sp-1)}
+#estacao-seletor:focus,#tema-seletor:focus{outline:2px solid var(--accent);outline-offset:-1px}
+#estacao-aviso{margin:0 var(--sp-3) var(--sp-2);padding:var(--sp-2);border:1px solid var(--warn);border-radius:var(--r-1);background:var(--warn-bg);color:var(--warn);font-size:var(--fs-1);line-height:1.45}
+#estacao-aviso strong{display:block;margin-bottom:var(--sp-1)}
+#estacao-aviso code{background:none;padding:0;color:inherit}
+#search-box{width:100%;padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);font-size:var(--fs-1)}
+
+/* navegação: 8 destinos em 4 linhas, não em 8 */
+#nav-abas{display:grid;grid-template-columns:1fr 1fr;gap:1px var(--sp-1);padding:var(--sp-2) var(--sp-2);margin:0 var(--sp-1) var(--sp-1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+#nav-abas button{display:flex;align-items:center;gap:var(--sp-1);padding:5px var(--sp-1);border:0;border-radius:var(--r-1);background:none;color:var(--text-2);font-family:inherit;font-size:var(--fs-1);cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nav-abas button:hover{background:var(--surface-2);color:var(--text)}
+#nav-abas button.ativa{background:var(--accent-bg);color:var(--accent);font-weight:600}
+#nav-abas button .ic{font-size:var(--fs-2);line-height:1;flex-shrink:0}
+
+/* a árvore, que é o que importa */
+#tree-painel{flex:1;display:flex;flex-direction:column;min-height:0}
+#tree-cab{display:flex;align-items:center;gap:var(--sp-1);padding:0 var(--sp-3) var(--sp-1);font-size:var(--fs-1);color:var(--text-2)}
+#tree-cab .titulo{font-weight:600;color:var(--text);letter-spacing:.04em;text-transform:uppercase;font-size:10px}
+#tree-cab .n{margin-right:auto;color:var(--stub)}
+#tree-cab button{border:0;background:none;color:var(--text-2);cursor:pointer;font-family:inherit;font-size:var(--fs-1);padding:2px var(--sp-1);border-radius:var(--r-1)}
+#tree-cab button:hover{background:var(--surface-2);color:var(--text)}
+#tree-cab button.ativa{background:var(--accent-bg);color:var(--accent)}
+#type-chips{display:flex;flex-wrap:wrap;gap:3px;padding:0 var(--sp-3) var(--sp-2)}
+/* `display:flex` numa regra vence o `[hidden]` do navegador — sem esta
+   linha a gaveta de filtros nasce aberta e o recolher não recolhe. */
+#type-chips[hidden]{display:none}
+.chip{font-size:10px;padding:2px var(--sp-1);border-radius:var(--r-2);border:1px solid var(--border);background:var(--surface-2);cursor:pointer;color:var(--text-2)}
 .chip.active{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-#tree{flex:1;overflow-y:auto;padding:var(--sp-1)}
+#tree{flex:1;overflow-y:auto;padding:0 var(--sp-1) var(--sp-2);min-height:0}
+#sidebar-rodape{padding:var(--sp-1) var(--sp-3) var(--sp-2);border-top:1px solid var(--border)}
 .tree-folder{margin-bottom:var(--sp-1)}
 .tree-folder-label{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);font-weight:600;color:var(--text-2);padding:var(--sp-1) var(--sp-1);cursor:pointer;display:flex;align-items:center;gap:var(--sp-1)}
 .tree-folder-label:hover{background:var(--surface-2);border-radius:var(--r-1)}
@@ -189,10 +214,7 @@ th{background:var(--surface-2)}
 .type-dot.t-dashboard-html{background:var(--tipo-dashboard-html)}
 .type-dot.t-other-markdown{background:var(--tipo-other-markdown)}
 .type-dot.t-other-pertinent{background:var(--tipo-other-pertinent)}
-#reindex-btn{margin:var(--sp-2) var(--sp-3);padding:var(--sp-1);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);cursor:pointer;font-size:var(--fs-1);color:var(--text-2)}
-#reindex-btn:hover{background:var(--border)}
-#embarque-nav-btn,#versoes-nav-btn,#portfolio-nav-btn,#tour-nav-btn,#dashboard-nav-btn,#workflow-nav-btn,#nota-nav-btn,#fluxo-nav-btn{margin:0 var(--sp-3) var(--sp-3);padding:var(--sp-2);border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-bg);cursor:pointer;font-size:var(--fs-2);font-weight:600;color:var(--accent);font-family:"Fraunces",serif}
-#embarque-nav-btn:hover,#versoes-nav-btn:hover,#portfolio-nav-btn:hover,#tour-nav-btn:hover,#dashboard-nav-btn:hover,#workflow-nav-btn:hover,#nota-nav-btn:hover,#fluxo-nav-btn:hover{background:var(--accent);color:var(--bg)}
+/* `reindex` mora no cabeçalho da árvore: é ela que ele relê. */
 .vs-repo{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-4);margin-bottom:var(--sp-4)}
 .vs-repo h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-1);display:flex;align-items:center;gap:var(--sp-2)}
 .vs-repo .caminho{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-3);word-break:break-all}
@@ -225,7 +247,6 @@ th{background:var(--surface-2)}
 .vs-camada .nome{font-weight:600;white-space:nowrap}
 .vs-camada .desc{color:var(--text-2);font-size:var(--fs-1);line-height:1.5}
 .vs-foto{font-size:var(--fs-1);color:var(--text-2);display:flex;align-items:center;gap:var(--sp-2);margin:0 0 var(--sp-4)}
-#embarque-nav-btn{border-width:2px}
 .eb-parada{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-4);margin-bottom:var(--sp-4);max-width:640px}
 .eb-parada h3{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-2)}
 .eb-parada p{font-size:var(--fs-2);color:var(--text-2);line-height:1.55;margin:0 0 var(--sp-3)}
@@ -325,9 +346,15 @@ th{background:var(--surface-2)}
 .fx-crit{display:flex;align-items:flex-start;gap:var(--sp-2);padding:var(--sp-1);border-radius:var(--r-1);cursor:pointer;font-size:var(--fs-2)}
 .fx-crit:hover{background:var(--surface-2)}
 .fx-crit.sim{background:var(--success-bg)}
-.fx-veredito{margin-top:var(--sp-2);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-2);font-size:var(--fs-2);font-weight:600}
+.fx-acao{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;margin:0 0 var(--sp-4);padding:var(--sp-3);border:1px solid var(--border);border-radius:var(--r-2);background:var(--surface-2)}
+.fx-acao-alvo{margin:0;margin-right:auto;font-size:var(--fs-1);color:var(--text-2)}
+.fx-acao-alvo code{font-size:var(--fs-1)}
+.fx-veredito{margin-top:var(--sp-2);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-2);font-size:var(--fs-2);font-weight:600;line-height:1.5}
 .fx-veredito.sbi{background:var(--success-bg);color:var(--success)}
 .fx-veredito.fica{background:var(--warn-bg);color:var(--warn)}
+/* Nada marcado ainda não é um aviso — é o estado inicial. Pintar de âmbar
+   desde o começo gasta a cor de alerta antes de haver alerta. */
+.fx-veredito.neutro{background:var(--surface-2);color:var(--text-2);font-weight:400}
 
 /* ---------- projeto (view de um projeto) ---------- */
 .pj-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--sp-2);margin-bottom:var(--sp-1)}
@@ -360,6 +387,10 @@ th{background:var(--surface-2)}
 
 /* ---------- main pane ---------- */
 #main{overflow-y:auto;padding:var(--sp-6) var(--sp-8)}
+/* Janela estreita: o conteudo perde a margem generosa antes de perder a
+   legibilidade, e a barra lateral encolhe em vez de espremer o texto. */
+@media (max-width:1000px){#layout{grid-template-columns:228px 1fr}#main{padding:var(--sp-4)}}
+@media (max-width:760px){#layout{grid-template-columns:200px 1fr}#nav-abas{grid-template-columns:1fr}}
 #breadcrumb{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2);margin-bottom:var(--sp-2)}
 #breadcrumb a{color:var(--text-2)}
 #meta-bar{display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-4);flex-wrap:wrap}
@@ -421,7 +452,7 @@ th{background:var(--surface-2)}
   color:var(--text-2);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
 #btn-reiniciar:hover{border-style:solid;color:var(--text)}
 
-/* Tour — o documento de trilha da plataforma, renderizado por parada */
+/* Tour — o documento de trilha da estação, renderizado por parada */
 .tour-nav{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin:var(--sp-2) 0 var(--sp-4);position:sticky;top:0;background:var(--bg);padding:var(--sp-2) 0;z-index:2;border-bottom:1px solid var(--border)}
 .tour-step{padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-pill);background:var(--surface);cursor:pointer;font-size:var(--fs-1);font-family:"IBM Plex Mono",monospace;color:var(--text-2)}
 .tour-step:hover{border-color:var(--accent);color:var(--text)}
@@ -446,9 +477,15 @@ th{background:var(--surface-2)}
 .pf-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-2) var(--sp-3);min-width:86px}
 .pf-kpi .n{font-family:"Fraunces",serif;font-size:var(--fs-lg);font-weight:600;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
 .pf-kpi .l{font-size:var(--fs-1);color:var(--text-2);margin-top:var(--sp-1);text-transform:uppercase;letter-spacing:.04em}
-.pf-filtros{display:flex;flex-wrap:wrap;gap:var(--sp-1);align-items:center;margin:0 0 var(--sp-4);padding:var(--sp-2) 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:2}
-.pf-filtros .sep{width:1px;height:18px;background:var(--border);margin:0 var(--sp-1)}
-.pf-filtros input{padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);font-size:var(--fs-1);min-width:180px;background:var(--surface);color:var(--text)}
+.pf-filtros{display:flex;flex-direction:column;gap:var(--sp-1);margin:0 0 var(--sp-4);padding:var(--sp-2) 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:2}
+.pf-linha-busca{display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-1)}
+.pf-filtros input{flex:1;padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);font-size:var(--fs-1);min-width:180px;max-width:420px;background:var(--surface);color:var(--text)}
+.pf-limpar{border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);color:var(--text-2);font-family:inherit;font-size:var(--fs-1);padding:var(--sp-1) var(--sp-2);cursor:pointer}
+.pf-limpar:hover{border-color:var(--danger);color:var(--danger)}
+/* grupo = uma pergunta; o rótulo fixo à esquerda mantém a leitura mesmo quando
+   os chips quebram em duas linhas */
+.pf-grupo{display:flex;flex-wrap:wrap;gap:var(--sp-1);align-items:baseline}
+.pf-grupo .rot{flex:0 0 72px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--stub)}
 .pf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:var(--sp-3)}
 #content.pf-wide{max-width:none}
 .pf-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-3) var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-2);min-width:0}
@@ -503,32 +540,66 @@ th{background:var(--surface-2)}
 .wf-card{border-left:3px solid var(--est,var(--border))}
 .wf-card .et{color:var(--est,var(--accent))}
 .pf-card{border-left:3px solid var(--estagio-5)}
+
+/* ---------- projeto (a tela que o Portfólio abre) ---------- */
+.pj-cab{display:flex;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-1)}
+.pj-pasta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2)}
+.pj-secao{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-4);margin-bottom:var(--sp-4)}
+.pj-secao h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-3);margin:0 0 var(--sp-3)}
+.pj-mat{display:grid;grid-template-columns:110px 1fr 28px;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-1);font-size:var(--fs-1)}
+.pj-mat .barra{height:var(--sp-2);border-radius:var(--r-pill);background:var(--surface-2);overflow:hidden}
+.pj-mat .barra i{display:block;height:100%;background:var(--accent)}
+.pj-mat .val{text-align:right;color:var(--text-2);font-variant-numeric:tabular-nums}
+.pj-lista{margin:0;padding-left:var(--sp-4);font-size:var(--fs-2);line-height:1.6}
+.pj-lista li{margin-bottom:var(--sp-1)}
+.pj-backlog{border-top:1px solid var(--border);padding-top:var(--sp-3);margin-top:var(--sp-3)}
+.pj-backlog:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.pj-backlog h3{font-size:var(--fs-2);margin:0 0 var(--sp-2);display:flex;gap:var(--sp-2);align-items:baseline}
+.pj-backlog h3 .n{color:var(--stub);font-weight:400;font-size:var(--fs-1)}
+.pj-item{display:flex;gap:var(--sp-2);align-items:flex-start;padding:3px 0;font-size:var(--fs-2);line-height:1.5}
+.pj-item.feito{color:var(--text-2);text-decoration:line-through}
+.pj-item.essencial{font-weight:600}
+.pj-anotar{display:flex;gap:var(--sp-2);margin-top:var(--sp-3);flex-wrap:wrap}
+.pj-anotar input{flex:1;min-width:240px;padding:var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);font-size:var(--fs-2);background:var(--surface-2);color:var(--text)}
+.pj-anotar select{padding:var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);font-size:var(--fs-1);background:var(--surface-2);color:var(--text);font-family:inherit}
+.pj-vazio{color:var(--text-2);font-size:var(--fs-2)}
 </style>
 </head>
 <body>
 <div id="layout">
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>Estação</h1>
-      <select id="plataforma-seletor" title="A plataforma que esta Estação está operando"></select>
-      <select id="tema-seletor" title="A identidade visual da Estação">
+      <h1>Central</h1>
+      <select id="estacao-seletor" title="A estação que esta Central está operando"></select>
+      <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
+    </div>
+    <div id="estacao-aviso" hidden></div>
+    <nav id="nav-abas">
+      <button id="workflow-nav-btn" title="Os estágios da estação e as decisões abertas, numa view só"><span class="ic" aria-hidden="true">🔀</span>Workflow</button>
+      <button id="dashboard-nav-btn" title="Os números da estação, recalculados do registro e do disco"><span class="ic" aria-hidden="true">📊</span>Dashboard</button>
+      <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto"><span class="ic" aria-hidden="true">🗂</span>Portfólio</button>
+      <button id="fluxo-nav-btn" title="O método na tela: as passagens entre estágios e os critérios de promoção"><span class="ic" aria-hidden="true">🧩</span>Fluxo</button>
+      <button id="nota-nav-btn" title="Captura rápida de ideia crua, sem abrir sessão de IA"><span class="ic" aria-hidden="true">📝</span>Nota</button>
+      <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem"><span class="ic" aria-hidden="true">📦</span>Versões</button>
+      <button id="tour-nav-btn" title="A leitura guiada desta estação, uma parada por vez"><span class="ic" aria-hidden="true">🧭</span>Tour</button>
+      <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira estação"><span class="ic" aria-hidden="true">🚂</span>Embarque</button>
+    </nav>
+    <div id="tree-painel">
+      <div id="tree-cab">
+        <span class="titulo">Árvore</span>
+        <span class="n" id="tree-contagem"></span>
+        <button id="chips-toggle" title="Filtrar a árvore por tipo de arquivo">tipo</button>
+        <button id="reindex-btn" title="Reler a estação do disco">↻</button>
+      </div>
+      <div id="type-chips" hidden></div>
+      <div id="tree"></div>
+    </div>
+    <div id="sidebar-rodape">
+      <select id="tema-seletor" title="A identidade visual da Central">
         <option value="">Tema padrão</option>
         <option value="areia">Areia</option>
       </select>
-      <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
-    <div id="plataforma-aviso" hidden></div>
-    <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira plataforma">🚂 Embarque</button>
-    <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem">📦 Versões</button>
-    <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto">🗂 Portfólio</button>
-    <button id="tour-nav-btn" title="A leitura guiada desta plataforma, uma parada por vez">🧭 Tour</button>
-    <button id="dashboard-nav-btn">📊 Dashboard</button>
-    <button id="workflow-nav-btn" title="Os estágios da plataforma e as decisões abertas, numa view só">🔀 Workflow</button>
-    <button id="nota-nav-btn" title="Captura rápida de ideia crua, sem abrir sessão do Claude Code">📝 Nota</button>
-    <button id="fluxo-nav-btn" title="O método na tela: Passo 0/1/2/3 e os 4 critérios de promoção">🧩 Fluxo</button>
-    <div id="type-chips"></div>
-    <div id="tree"></div>
-    <button id="reindex-btn">↻ reindexar</button>
   </div>
   <div id="main">
     <div id="breadcrumb"></div>
@@ -552,7 +623,7 @@ th{background:var(--surface-2)}
 <div id="brf-overlay">
   <div id="brf-box">
     <h2 id="brf-titulo">Briefing pra IA</h2>
-    <p class="sub" id="brf-sub-cwd">Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da plataforma. Os guardrails do método já vão junto.</p>
+    <p class="sub" id="brf-sub-cwd">Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da estação. Os guardrails do método já vão junto.</p>
     <textarea id="brf-texto" readonly></textarea>
     <div id="brf-acoes">
       <button type="button" id="brf-fechar">Fechar</button>
@@ -568,9 +639,9 @@ th{background:var(--surface-2)}
 // Estado global
 // ============================================================
 let ENTRIES = [];
-// Resumo da plataforma ativa (nome, caminho, estágios, tipos), vindo do
+// Resumo da estação ativa (nome, caminho, estágios, tipos), vindo do
 // /api/index. Tudo que a interface escreve sobre estágio, sigla ou caminho sai
-// daqui — nada de nome de plataforma escrito à mão na tela.
+// daqui — nada de nome de estação escrito à mão na tela.
 let PLAT = null;
 const plEstagios = () => (PLAT && PLAT.estagios) || [];
 const plEstagio = (n) => plEstagios()[n - 1] || null;
@@ -578,7 +649,7 @@ const plNome = (n, plural) => { const e = plEstagio(n); return e ? (plural ? (e.
 const plSigla = (n) => { const e = plEstagio(n); return e ? e.sigla : ""; };
 const plUltimo = () => plEstagios().length;
 const plCadeia = () => plEstagios().map(e => e.sigla).join("→");
-const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Estação") + " / ";
+const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Central") + " / ";
 let ACTIVE_TYPE_FILTER = null;
 let SELECTED_PATH = null;
 
@@ -589,9 +660,9 @@ const TYPE_LABELS = {
   "dashboard-html": "dashboard", "other-markdown": "outro (.md)", "other-pertinent": "outro"
 };
 
-// A trilha das plataformas de exemplo. **Não há motor de avanço aqui**: cada
-// passo é uma pasta com a plataforma inteira já naquele estado, e "avançar" só
-// pede ao servidor para restaurar a próxima. Numa plataforma de verdade este
+// A trilha das estações de exemplo. **Não há motor de avanço aqui**: cada
+// passo é uma pasta com a estação inteira já naquele estado, e "avançar" só
+// pede ao servidor para restaurar a próxima. Numa estação de verdade este
 // painel nem aparece — ver app/trilha.py.
 let TRILHA = {tem: false};
 
@@ -619,7 +690,7 @@ function renderTrilha(){
     onde.innerHTML = `<strong>Trilha de exemplo</strong><br>passo ${atual} de ${total}`;
     btn.hidden = false;
     btn.textContent = `▶ ${prox.rotulo || "próximo passo"}`;
-    btn.title = "Restaura o próximo estado desta plataforma de exemplo";
+    btn.title = "Restaura o próximo estado desta estação de exemplo";
   }
   rei.hidden = (atual === 0);
 }
@@ -653,55 +724,57 @@ async function loadIndex(){
   const r = await fetch("/api/index");
   const data = await r.json();
   ENTRIES = data.entries;
-  PLAT = data.plataforma || null;
-  renderPlataformaAviso(data);
+  PLAT = data.estacao || null;
+  renderEstacaoAviso(data);
   renderBoasVindas(data);
-  TOUR_PATH = (data.plataforma && data.plataforma.trilha) || null;
+  TOUR_PATH = (data.estacao && data.estacao.trilha) || null;
   document.getElementById("tour-nav-btn").hidden = !TOUR_PATH;
+  // sem estágio de projetos não há o que listar: o Portfólio sai da barra
+  document.getElementById("portfolio-nav-btn").hidden = !!(PLAT && PLAT.tem_projetos === false);
   renderTypeChips();
   renderTree();
-  // A trilha só aparece onde ela existe: a plataforma tem que declarar
-  // `estado_inicial`. Numa plataforma de verdade o painel nem é renderizado.
+  // A trilha só aparece onde ela existe: a estação tem que declarar
+  // `estado_inicial`. Numa estação de verdade o painel nem é renderizado.
   TRILHA = data.trilha || {tem: false};
   renderTrilha();
 }
 
 // ============================================================
-// Seletor de plataforma
+// Seletor de estação
 // ============================================================
-// A Estação opera N plataformas; esta é a única forma de trocar sem reiniciar.
-// Quando a raiz ativa não é uma plataforma (pasta vazia, marcador ausente), o
+// A Central opera N estações; esta é a única forma de trocar sem reiniciar.
+// Quando a raiz ativa não é uma estação (pasta vazia, marcador ausente), o
 // servidor sobe assim mesmo e o aviso abaixo diz o motivo — nenhuma aba estoura.
-// A tela inicial diz qual plataforma está aberta e onde ela fica — antes ela
-// nomeava uma plataforma específica, o que virou mentira no momento em que a
-// Estação passou a operar mais de uma.
+// A tela inicial diz qual estação está aberta e onde ela fica — antes ela
+// nomeava uma estação específica, o que virou mentira no momento em que a
+// Central passou a operar mais de uma.
 function renderBoasVindas(data){
   const el = document.getElementById("welcome-lead");
   if (!el) return;
-  const p = data.plataforma;
-  if (!p || data.plataforma_ok === false){
-    el.textContent = "Nenhuma plataforma aberta.";
+  const p = data.estacao;
+  if (!p || data.estacao_ok === false){
+    el.textContent = "Nenhuma estação aberta.";
     return;
   }
   const estagios = (p.estagios || []).map(e => e.plural || e.nome).join(" · ");
-  el.innerHTML = `Plataforma <strong>${escapeHtml(p.nome)}</strong>, em ` +
+  el.innerHTML = `Estação <strong>${escapeHtml(p.nome)}</strong>, em ` +
     `<code>${escapeHtml(p.caminho)}</code> — ${data.count} arquivos indexados` +
     (estagios ? `, em ${(p.estagios || []).length} estágios: ${escapeHtml(estagios)}.` : ".");
 }
 
-function renderPlataformaAviso(data){
-  const box = document.getElementById("plataforma-aviso");
-  // Sem plataforma, o app não tem nada a mostrar — e a única coisa útil que ele
+function renderEstacaoAviso(data){
+  const box = document.getElementById("estacao-aviso");
+  // Sem estação, o app não tem nada a mostrar — e a única coisa útil que ele
   // pode fazer é ajudar a criar a primeira. Por isso o Embarque abre sozinho.
-  if (data.plataforma_ok === false && !EB_JA_ABRIU){
+  if (data.estacao_ok === false && !EB_JA_ABRIU){
     EB_JA_ABRIU = true;
     setTimeout(openEmbarqueView, 0);
   }
-  if (data.plataforma_ok === false){
-    const nome = data.plataforma ? data.plataforma.caminho : "(raiz não resolvida)";
-    box.innerHTML = "<strong>Nenhuma plataforma aberta</strong>" +
+  if (data.estacao_ok === false){
+    const nome = data.estacao ? data.estacao.caminho : "(raiz não resolvida)";
+    box.innerHTML = "<strong>Nenhuma estação aberta</strong>" +
       "Esta pasta não tem <code>" +
-      escapeHtml(data.plataforma ? data.plataforma.marcador : "_indice.md") +
+      escapeHtml(data.estacao ? data.estacao.marcador : "_indice.md") +
       "</code>, então não há o que indexar:<br><code>" + escapeHtml(nome) + "</code>";
     box.hidden = false;
   } else {
@@ -709,16 +782,16 @@ function renderPlataformaAviso(data){
   }
 }
 
-async function carregarPlataformas(){
-  const sel = document.getElementById("plataforma-seletor");
+async function carregarEstacoes(){
+  const sel = document.getElementById("estacao-seletor");
   let dados;
   try {
-    dados = await (await fetch("/api/plataformas")).json();
+    dados = await (await fetch("/api/estacoes")).json();
   } catch (e) {
     sel.hidden = true;
     return;
   }
-  const lista = dados.plataformas || [];
+  const lista = dados.estacoes || [];
   sel.innerHTML = "";
   lista.forEach(p => {
     const opt = document.createElement("option");
@@ -729,32 +802,32 @@ async function carregarPlataformas(){
     opt.disabled = !p.existe;
     sel.appendChild(opt);
   });
-  // uma plataforma só: o seletor não decide nada, e ocupa espaço à toa
+  // uma estação só: o seletor não decide nada, e ocupa espaço à toa
   sel.hidden = lista.length < 2;
 }
 
-async function trocarPlataforma(caminho){
-  toast("Trocando de plataforma…");
+async function trocarEstacao(caminho){
+  toast("Trocando de estação…");
   let r;
   try {
-    r = await (await fetch("/api/plataforma/ativar", {
+    r = await (await fetch("/api/estacao/ativar", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({caminho})
     })).json();
   } catch (e) {
-    toast("Falha ao trocar de plataforma");
+    toast("Falha ao trocar de estação");
     return;
   }
-  if (r.error){ toast(r.error); await carregarPlataformas(); return; }
+  if (r.error){ toast(r.error); await carregarEstacoes(); return; }
   ACTIVE_TYPE_FILTER = null;
   document.getElementById("content").innerHTML = "";
   document.getElementById("breadcrumb").textContent = "";
   document.getElementById("meta-bar").innerHTML = "";
-  await carregarPlataformas();
+  await carregarEstacoes();
   await loadIndex();
-  toast(r.plataforma_ok ? `${r.plataforma.nome}: ${r.count} arquivos`
-                        : `${r.plataforma.nome}: nada a indexar`);
+  toast(r.estacao_ok ? `${r.estacao.nome}: ${r.count} arquivos`
+                        : `${r.estacao.nome}: nada a indexar`);
 }
 
 async function reindex(){
@@ -804,6 +877,14 @@ function buildTree(entries){
   return root;
 }
 
+// Qual aba está aberta. Sem isto o painel não respondia "onde eu estou?" — e
+// a resposta importa mais agora que os destinos viraram itens pequenos.
+function marcarAba(id){
+  document.querySelectorAll("#nav-abas button").forEach(b => {
+    b.classList.toggle("ativa", b.id === id);
+  });
+}
+
 function renderTree(){
   const q = document.getElementById("search-box").value.trim().toLowerCase();
   let filtered = ENTRIES;
@@ -814,6 +895,14 @@ function renderTree(){
   const container = document.getElementById("tree");
   container.innerHTML = "";
   renderTreeNode(tree, container, true);
+
+  // Quantos arquivos a árvore está mostrando — e, quando há filtro ou busca,
+  // de quantos. Sem isso, filtrar por tipo esconde metade do corpus em
+  // silêncio, e nada na tela diz que o que se vê é um recorte.
+  const n = document.getElementById("tree-contagem");
+  if (n) n.textContent = filtered.length === ENTRIES.length
+    ? `${ENTRIES.length}`
+    : `${filtered.length} de ${ENTRIES.length}`;
 }
 
 function renderTreeNode(node, container, isRoot){
@@ -866,6 +955,7 @@ function escapeHtml(s){
 // Main pane — abrir arquivo
 // ============================================================
 async function openFile(path){
+  marcarAba(null);
   SELECTED_PATH = path;
   renderTree();
   if (PLAT && PLAT.registro && path === PLAT.registro){
@@ -903,7 +993,7 @@ function renderMetaBar(entry){
     badges += `<span class="badge badge-raw">cru</span>`;
   }
   if (entry.orphaned){
-    badges += `<span class="badge badge-orphan" title="Pasta de projeto que o índice canônico da plataforma não lista">fora do índice</span>`;
+    badges += `<span class="badge badge-orphan" title="Pasta de projeto que o índice canônico da estação não lista">fora do índice</span>`;
   }
   if (entry.lifecycle_stage){
     const stageLabel = {"entrada": "entrada — ninguém viu ainda", "pendente": "pendente — sem destino", "historico": "histórico — já seguiu"}[entry.lifecycle_stage] || entry.lifecycle_stage;
@@ -1009,6 +1099,7 @@ async function toggleBacklogCheckbox(path, lineNumber, expectedText, inputEl){
 // LOG central — view estruturada
 // ============================================================
 async function openLogView(){
+  marcarAba(null);
   document.getElementById("content").classList.remove("pf-wide");
   renderBreadcrumb((PLAT && PLAT.registro) || "");
   document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">registro</span>`;
@@ -1065,7 +1156,7 @@ async function openLogView(){
 
 
 // ============================================================
-// Tour — a trilha declarada pela plataforma, renderizada uma parada por vez
+// Tour — a trilha declarada pela estação, renderizada uma parada por vez
 // ============================================================
 // A trilha é um .md comum (fonte única de verdade, editável fora daqui).
 // Esta view só a fatia por "## " (uma parada por seção de nível 2), mostra
@@ -1074,8 +1165,8 @@ async function openLogView(){
 // como em qualquer outro arquivo. Blocos ```mermaid são renderizados pelo
 // mermaid.min.js vendorizado (vendor/, carregado no <head>); erro de
 // sintaxe ou lib ausente caem em modo fonte — ver renderMermaidBlocks.
-// o caminho da trilha vem do config da plataforma ativa (chave `trilha`).
-// Plataforma que nao declara uma simplesmente nao tem aba Tour.
+// o caminho da trilha vem do config da estação ativa (chave `trilha`).
+// Estação que nao declara uma simplesmente nao tem aba Tour.
 let TOUR_PATH = null;
 const TOUR_DONE_KEY = "estacao.tour.done";
 let TOUR_STEPS = [];
@@ -1158,10 +1249,11 @@ async function renderMermaidBlocks(container){
 }
 
 async function openTourView(){
+  marcarAba("tour-nav-btn");
   if (!TOUR_PATH){
     document.getElementById("content").innerHTML =
-      `<p class="dash-lead">Esta plataforma nao declara uma trilha de leitura ` +
-      `(chave <code>trilha</code> do <code>plataforma.json</code>).</p>`;
+      `<p class="dash-lead">Esta estação nao declara uma trilha de leitura ` +
+      `(chave <code>trilha</code> do <code>estacao.json</code>).</p>`;
     return;
   }
   SELECTED_PATH = TOUR_PATH; // faz os links relativos resolverem a partir da pasta da trilha
@@ -1175,7 +1267,7 @@ async function openTourView(){
   const r = await fetch("/api/file?path=" + encodeURIComponent(TOUR_PATH));
   const data = await r.json();
   if (data.error){
-    content.innerHTML = `<p class="dash-lead">A trilha não está no índice (${escapeHtml(data.error)}). O <code>plataforma.json</code> aponta para <code>${escapeHtml(TOUR_PATH)}</code>.</p>`;
+    content.innerHTML = `<p class="dash-lead">A trilha não está no índice (${escapeHtml(data.error)}). O <code>estacao.json</code> aponta para <code>${escapeHtml(TOUR_PATH)}</code>.</p>`;
     return;
   }
   const stripped = data.raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
@@ -1253,6 +1345,7 @@ function pfStatusClass(status){
 }
 
 async function openPortfolioView(){
+  marcarAba("portfolio-nav-btn");
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("breadcrumb").textContent = plPrefixo() + "Portfólio";
@@ -1311,28 +1404,60 @@ function drawPortfolio(){
   content.appendChild(head);
   const nota = document.createElement("p");
   nota.className = "pf-static-note";
-  nota.textContent = "Snapshot estático: links \"no ar\" e repositórios funcionam; abrir protótipos e launchers só na Estação local.";
+  nota.textContent = "Snapshot estático: links \"no ar\" e repositórios funcionam; abrir protótipos e launchers só na Central local.";
   content.appendChild(nota);
 
   const filtros = document.createElement("div");
   filtros.className = "pf-filtros";
+
+  const linha1 = document.createElement("div");
+  linha1.className = "pf-linha-busca";
   const busca = document.createElement("input");
   busca.placeholder = "filtrar por nome, resumo, tag, arquivo…";
   busca.value = PF_FILTRO.q;
   busca.oninput = () => { PF_FILTRO.q = busca.value.trim(); drawPortfolioGrid(); };
-  filtros.appendChild(busca);
-  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
-  [["no-ar", "no ar"], ["local", "roda local"], ["prototipo", "tem protótipo"], ["docs", "tem docs"], ["nada", "sem nada ainda"]]
-    .forEach(([k, l]) => filtros.appendChild(pfChip(l, PF_FILTRO.kind === k, () => { PF_FILTRO.kind = PF_FILTRO.kind === k ? null : k; drawPortfolio(); })));
-  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
+  linha1.appendChild(busca);
+  const ativo = PF_FILTRO.q || PF_FILTRO.kind || PF_FILTRO.tipo || PF_FILTRO.status || PF_FILTRO.mostrarRascunho;
+  if (ativo){
+    const limpar = document.createElement("button");
+    limpar.className = "pf-limpar";
+    limpar.textContent = "✕ limpar filtros";
+    limpar.onclick = () => {
+      PF_FILTRO.q = ""; PF_FILTRO.kind = null; PF_FILTRO.tipo = null;
+      PF_FILTRO.status = null; PF_FILTRO.mostrarRascunho = false;
+      drawPortfolio();
+    };
+    linha1.appendChild(limpar);
+  }
+  filtros.appendChild(linha1);
+
+  // Cada grupo é uma pergunta diferente, e só um chip de cada vale por vez. Numa
+  // fila única isso não se lia: "DIG" e "ativo" pareciam a mesma coisa, e o
+  // separador de 1px sumia na primeira quebra de linha.
+  const grupo = (rotulo, itens) => {
+    if (!itens.length) return;
+    const g = document.createElement("div");
+    g.className = "pf-grupo";
+    const r = document.createElement("span");
+    r.className = "rot";
+    r.textContent = rotulo;
+    g.appendChild(r);
+    itens.forEach(c => g.appendChild(c));
+    filtros.appendChild(g);
+  };
+
+  grupo("o que tem", [["no-ar", "no ar"], ["local", "roda local"], ["prototipo", "tem protótipo"], ["docs", "tem docs"], ["nada", "sem nada ainda"]]
+    .map(([k, l]) => pfChip(l, PF_FILTRO.kind === k, () => { PF_FILTRO.kind = PF_FILTRO.kind === k ? null : k; drawPortfolio(); })));
+
   const tipos = [...new Set(PF.projetos.map(p => p.tipo))].filter(x => x && x !== "—").sort();
-  tipos.forEach(tp => filtros.appendChild(pfChip(tp, PF_FILTRO.tipo === tp, () => { PF_FILTRO.tipo = PF_FILTRO.tipo === tp ? null : tp; drawPortfolio(); },
+  grupo("tipo", tipos.map(tp => pfChip(tp, PF_FILTRO.tipo === tp, () => { PF_FILTRO.tipo = PF_FILTRO.tipo === tp ? null : tp; drawPortfolio(); },
     {DIG: "digital", DAD: "dados", CON: "consultoria", ADE: "adestramento/ensino"}[tp] || tp)));
-  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
-  [["pill-ativo", "ativo"], ["pill-idea", "idea-stage"], ["pill-early", "early-stage"], ["pill-versao", "versionado"]]
-    .forEach(([k, l]) => filtros.appendChild(pfChip(l, PF_FILTRO.status === k, () => { PF_FILTRO.status = PF_FILTRO.status === k ? null : k; drawPortfolio(); })));
-  filtros.appendChild(Object.assign(document.createElement("div"), {className: "sep"}));
-  filtros.appendChild(pfChip("mostrar rascunhos", PF_FILTRO.mostrarRascunho, () => { PF_FILTRO.mostrarRascunho = !PF_FILTRO.mostrarRascunho; drawPortfolio(); }, "cópias, versões antigas, relatórios de teste"));
+
+  grupo("estado", [["pill-ativo", "ativo"], ["pill-idea", "idea-stage"], ["pill-early", "early-stage"], ["pill-versao", "versionado"]]
+    .map(([k, l]) => pfChip(l, PF_FILTRO.status === k, () => { PF_FILTRO.status = PF_FILTRO.status === k ? null : k; drawPortfolio(); })));
+
+  grupo("também", [pfChip("mostrar rascunhos", PF_FILTRO.mostrarRascunho, () => { PF_FILTRO.mostrarRascunho = !PF_FILTRO.mostrarRascunho; drawPortfolio(); }, "cópias, versões antigas, relatórios de teste")]);
+
   content.appendChild(filtros);
 
   const grid = document.createElement("div");
@@ -1407,7 +1532,7 @@ function drawPortfolioGrid(){
     const card = document.createElement("div");
     card.className = "pf-card" + (nada ? " vazio" : "");
     const pills = [`<span class="pill pill-tipo">${escapeHtml(p.tipo)}</span>`, `<span class="pill ${pfStatusClass(p.status)}">${escapeHtml(p.status)}</span>`];
-    if (!p.listada) pills.push(`<span class="pill pill-sem" title="a pasta não está no índice canônico de projetos da plataforma">fora do índice</span>`);
+    if (!p.listada) pills.push(`<span class="pill pill-sem" title="a pasta não está no índice canônico de projetos da estação">fora do índice</span>`);
     card.innerHTML = `<div class="pf-card-top"><h2>${escapeHtml(p.nome)}<small>${escapeHtml(p.pasta)}</small></h2><div class="pf-pills">${pills.join("")}</div></div>`;
     if (p.resumo){ const r = document.createElement("p"); r.className = "pf-resumo"; r.title = p.resumo; r.textContent = p.resumo; card.appendChild(r); }
     if (p.nota){ const n = document.createElement("p"); n.className = "pf-nota"; n.textContent = p.nota; card.appendChild(n); }
@@ -1459,6 +1584,7 @@ function drawPortfolioGrid(){
 // Dashboard — view estruturada de métricas (GET /api/metricas)
 // ============================================================
 async function openDashboardView(){
+  marcarAba("dashboard-nav-btn");
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
@@ -1488,7 +1614,7 @@ async function openDashboardView(){
   const kpis = [
     {num: data.log.total_linhas_log, label: "Linhas no registro"},
   ];
-  // um cartão por estágio, com o nome que a plataforma declara: "quantos ainda
+  // um cartão por estágio, com o nome que a estação declara: "quantos ainda
   // não avançaram daqui". O último estágio não avança pra lugar nenhum — dele o
   // que interessa é o total.
   plEstagios().forEach((e, i) => {
@@ -1500,10 +1626,10 @@ async function openDashboardView(){
          label: `${e.plural || e.nome} no registro`});
   });
   kpis.push(
-    {num: data.arquivos.total_arquivos, label: "Arquivos na plataforma"},
+    {num: data.arquivos.total_arquivos, label: "Arquivos na estação"},
     {num: data.arquivos.total_md, label: "Arquivos .md"},
     {num: data.arquivos.linhas_codigo, label: "Linhas de código"});
-  // só aparece quando a plataforma declara um campo de núcleo; o rótulo é o
+  // só aparece quando a estação declara um campo de núcleo; o rótulo é o
   // nome que ELA dá ao campo, não um escrito aqui.
   if (data.nucleo && data.nucleo.marcados_nucleo !== undefined){
     kpis.push({num: data.nucleo.marcados_nucleo,
@@ -1576,15 +1702,16 @@ async function openDashboardView(){
 }
 
 // ============================================================
-// Workflow — os estágios da plataforma + decisões abertas (GET /api/workflow, /api/avanco)
+// Workflow — os estágios da estação + decisões abertas (GET /api/workflow, /api/avanco)
 // ============================================================
 // v1: só leitura. Resolver uma pendência continua sendo uma sessão do Claude
 // Code. Decisão inline dentro do card ficou para depois, de propósito.
 // os rótulos e a ordem das colunas vêm do servidor: dependem da taxonomia da
-// plataforma ativa, e não são mais uma lista fixa escrita aqui.
+// estação ativa, e não são mais uma lista fixa escrita aqui.
 let WF_STAGE_LABEL = {};
 
 async function openWorkflowView(){
+  marcarAba("workflow-nav-btn");
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
@@ -1891,7 +2018,7 @@ async function recarregarPendencias(){
 // O app não tem IA dentro: ele prepara o texto com os caminhos reais e os
 // guardrails do método, e o humano cola na sessão. Ver app/briefing.py.
 // O modal do prompt serve a dois donos: o briefing (que precisa de uma
-// plataforma pronta) e o Embarque (que existe justamente porque ela não
+// estação pronta) e o Embarque (que existe justamente porque ela não
 // existe). Título e subtítulo eram hardcoded no HTML e o fetch estava embutido
 // no abrirBriefing — extraídos daqui para que o segundo dono não precise de uma
 // segunda cópia do modal.
@@ -1899,7 +2026,7 @@ function mostrarPrompt(texto, opcoes){
   const o = opcoes || {};
   document.getElementById("brf-titulo").textContent = o.titulo || "Briefing pra IA";
   document.getElementById("brf-sub-cwd").innerHTML = o.sub ||
-    "Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da plataforma. Os guardrails do método já vão junto.";
+    "Cole numa sessão do Claude Code / Codex, com o <code>cwd</code> na pasta da estação. Os guardrails do método já vão junto.";
   const ta = document.getElementById("brf-texto");
   ta.value = texto;
   document.getElementById("brf-overlay").classList.add("open");
@@ -1944,12 +2071,13 @@ async function copiarBriefing(){
 // editor mexe, outra sessão salva: o estado pode ter mudado entre a consulta e
 // a leitura. Por isso a hora fica visível e existe um botão de atualizar.
 async function openVersoesView(){
+  marcarAba("versoes-nav-btn");
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
   document.getElementById("breadcrumb").textContent = plPrefixo() + "Versões";
   document.getElementById("meta-bar").innerHTML =
-    `<span class="badge badge-type">versões</span><span id="meta-path">foto do momento da consulta — a Estação lê o git, nunca o executa</span>`;
+    `<span class="badge badge-type">versões</span><span id="meta-path">foto do momento da consulta — a Central lê o git, nunca o executa</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `<h1>Versões</h1><p class="dash-lead">Carregando…</p>`;
 
@@ -1987,7 +2115,7 @@ function vsRede(backups, repos){
   const salvos = repos.filter(r => r.e_repo).length;
   el.innerHTML = `<h2>A rede de proteção</h2>
     <div class="vs-camada"><span class="nome">1. Backup automático</span>
-      <span class="desc">A Estação copia o arquivo antes de toda escrita.
+      <span class="desc">A Central copia o arquivo antes de toda escrita.
         ${backups.quantos ? `<strong>${backups.quantos} cópia(s)</strong> guardadas${backups.desde ? `, desde ${escapeHtml(backups.desde)}` : ""}.`
                           : "Nenhuma cópia ainda — ela nasce na primeira vez que o app escreve."}
         Protege do erro <em>de agora</em>.</span></div>
@@ -2017,9 +2145,12 @@ function vsRepo(r){
     <p class="caminho">${escapeHtml(r.pasta)}</p>`;
 
   if (!r.e_repo){
-    el.innerHTML += vsResposta("cinza", "Esta pasta está sendo versionada?",
-      "Não", escapeHtml(r.erro || "") +
-      " — o que está aqui não tem ponto salvo nenhum. Uma sessão de IA cria o repositório num comando, quando você quiser.");
+    el.innerHTML += r.privada
+      ? vsResposta("cinza", "Esta pasta está sendo versionada?", "Não, de propósito",
+          "Estação privada: fica fora de git, de nuvem e de exportação. O backup dela é cópia de pasta.")
+      : vsResposta("cinza", "Esta pasta está sendo versionada?",
+          "Não", escapeHtml(r.erro || "") +
+          " — o que está aqui não tem ponto salvo nenhum. Uma sessão de IA cria o repositório num comando, quando você quiser.");
     return el;
   }
 
@@ -2086,7 +2217,7 @@ function vsRepo(r){
 
   const nota = document.createElement("p");
   nota.style.cssText = "font-size:var(--fs-1);color:var(--text-2);margin:var(--sp-2) 0 0";
-  nota.textContent = "Estes botões geram o texto para você colar numa sessão de IA. A Estação nunca executa git.";
+  nota.textContent = "Estes botões geram o texto para você colar numa sessão de IA. A Central nunca executa git.";
   el.appendChild(nota);
   return el;
 }
@@ -2107,28 +2238,34 @@ async function vsPrompt(tipo, repo, rotulo){
 // ============================================================
 // Cinco paradas. As respostas ficam no localStorage com o mesmo try/catch
 // defensivo do Tour: navegador em modo privado ou dados de site bloqueados não
-// podem derrubar a única tela que serve a quem ainda não tem plataforma.
-const EB_KEY = "estacao.embarque.v1";
+// podem derrubar a única tela que serve a quem ainda não tem estação.
+const EB_KEY = "central.embarque.v2";
 let EB_JA_ABRIU = false;
 let EB_PASSO = 0;
-let EB = {caminho: "", nome: "", usos: ["notas"], tem_conteudo: "vazia", destino: "claude-code"};
+let EB = {caminho: "", estacoes: {}, tem_conteudo: "vazia", destino: "claude-code"};
+// Nome, pasta e propósito de cada estação padrão vêm do servidor
+// (config.MODELOS) — nada disso é escrito aqui.
+let EB_MODELOS = [];
 
 function ebCarregar(){
   try {
     const cru = localStorage.getItem(EB_KEY);
     if (cru) EB = Object.assign(EB, JSON.parse(cru));
   } catch(e){}
+  if (!EB.estacoes || typeof EB.estacoes !== "object") EB.estacoes = {};
 }
 function ebSalvar(){
   try { localStorage.setItem(EB_KEY, JSON.stringify(EB)); } catch(e){}
 }
-
-const EB_USOS = [
-  {id: "notas", rotulo: "Guardar e organizar ideias", sub: "o básico: capturar sem fricção e arrumar depois. Não dá pra desmarcar — é o motor.", fixo: true},
-  {id: "decisoes", rotulo: "Registrar decisões que dependem de mim", sub: "acrescenta uma pasta de pendências: cada dúvida vira uma pergunta com opções, que espera por você."},
-  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta dois estágios: funcionalidade (o que vai existir quando estiver pronto, e onde) e projeto. Sem isso a plataforma tem três, e funciona igual."},
-  {id: "portfolio", rotulo: "Ver num só lugar tudo que já roda", sub: "cada projeto declara o que publica; o app monta o Portfólio a partir disso. Precisa de \u201cprojetos\u201d."},
-];
+// A escolha de cada estação padrão: criar (o normal) ou só registrar uma que já existe.
+const ebEscolha = (id) => (EB.estacoes[id] = EB.estacoes[id] || {criar: true, caminho: ""});
+const ebCriando = () => EB_MODELOS.filter(m => ebEscolha(m.id).criar);
+function ebPrevia(){
+  const base = (EB.caminho || "").trim().replace(/[\\/]+$/, "");
+  if (!base || !ebCriando().length) return "";
+  const sep = base.indexOf("\\") >= 0 ? "\\" : "/";
+  return "Fica assim: " + ebCriando().map(m => `<code>${escapeHtml(base + sep + m.pasta)}</code>`).join(", ") + ".";
+}
 
 const EB_DESTINOS = [
   {id: "claude-code", rotulo: "Claude Code"},
@@ -2137,52 +2274,54 @@ const EB_DESTINOS = [
 ];
 
 function ebParadas(){
+  const nomes = EB_MODELOS.map(m => `a <strong>${escapeHtml(m.nome)}</strong> (${escapeHtml(m.resumo)})`);
+  const lista = nomes.length > 1 ? nomes.slice(0, -1).join(", ") + " e " + nomes[nomes.length - 1] : nomes.join("");
   return [
     {
       titulo: "1 — O que é isto",
-      corpo: `<p>A <strong>Estação</strong> é este app. Ela não pensa por você e não tem IA dentro: ela organiza o que você guarda, e prepara o texto que você cola numa sessão de IA quando quiser que algo seja feito.</p>
-        <p>Uma <strong>plataforma</strong> é um espaço de trabalho seu — uma pasta no seu computador, com as suas ideias. A Estação pode operar várias; você ainda não tem nenhuma.</p>
-        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria a primeira plataforma. A Estação não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
+      corpo: `<p>A <strong>Central</strong> é este app. Ela não pensa por você e não tem IA dentro: ela organiza o que você guarda, e prepara o texto que você cola numa sessão de IA quando quiser que algo seja feito.</p>
+        <p>Uma <strong>estação</strong> é um espaço de trabalho seu — uma pasta no seu computador, com um trem de ideias. ${lista ? `Toda Central começa com estas: ${lista}.` : ""}</p>
+        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria as estações. A Central não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
       valido: () => true,
     },
     {
-      titulo: "2 — Onde ela vai ficar",
-      corpo: `<label class="campo" for="eb-caminho">Caminho completo da pasta (ela pode nem existir ainda)</label>
-        <input type="text" id="eb-caminho" value="${escapeHtml(EB.caminho)}" placeholder="C:\\Users\\voce\\MinhasIdeias" spellcheck="false">
-        <label class="campo" for="eb-nome" style="margin-top:var(--sp-3)">Como você chama isso</label>
-        <input type="text" id="eb-nome" value="${escapeHtml(EB.nome)}" placeholder="Minhas ideias">
-        <p style="margin-top:var(--sp-3)">Escolha uma pasta que seja <strong>sua</strong> e que você vá lembrar. Ela não precisa estar vazia — a próxima parada trata disso.</p>`,
+      titulo: "2 — Onde elas vão ficar",
+      corpo: `<label class="campo" for="eb-caminho">Caminho completo da pasta que vai guardar as estações (ela pode nem existir ainda)</label>
+        <input type="text" id="eb-caminho" value="${escapeHtml(EB.caminho)}" placeholder="C:\\Users\\voce\\Central\\estacoes" spellcheck="false">
+        <p style="margin-top:var(--sp-3)" id="eb-previa">${ebPrevia()}</p>
+        <p style="margin-top:var(--sp-3)">Cada estação vira uma pasta lá dentro. Escolha uma pasta que seja <strong>sua</strong> e que você vá lembrar. Ela não precisa estar vazia — a quarta parada trata disso.</p>`,
       montar: (el) => {
-        el.querySelector("#eb-caminho").oninput = (e) => { EB.caminho = e.target.value; ebSalvar(); };
-        el.querySelector("#eb-nome").oninput = (e) => { EB.nome = e.target.value; ebSalvar(); };
+        el.querySelector("#eb-caminho").oninput = (e) => {
+          EB.caminho = e.target.value; ebSalvar();
+          el.querySelector("#eb-previa").innerHTML = ebPrevia();
+        };
       },
-      valido: () => (EB.caminho || "").trim().length >= 3,
+      valido: () => !ebCriando().length || (EB.caminho || "").trim().length >= 3,
       erro: "Preencha o caminho da pasta para seguir.",
     },
     {
-      titulo: "3 — O que você vai usar",
-      corpo: `<p>Cada escolha acrescenta pastas ao pedido. Você pode mudar de ideia depois — nada aqui é definitivo.</p>` +
-        EB_USOS.map(u => {
-          const marcado = EB.usos.indexOf(u.id) >= 0;
-          return `<label class="eb-opcao${marcado ? " sim" : ""}" data-uso="${u.id}">
-            <input type="checkbox" ${marcado ? "checked" : ""} ${u.fixo ? "disabled" : ""}>
-            <span><strong>${escapeHtml(u.rotulo)}</strong><small>${u.sub}</small></span></label>`;
-        }).join(""),
+      titulo: "3 — Quais estações criar agora",
+      corpo: `<p>Vêm todas marcadas. Desmarque a que você já tem — e diga onde ela está, para a Central registrar sem mexer nela.</p>` +
+        (EB_MODELOS.map(m => {
+          const esc = ebEscolha(m.id);
+          return `<label class="eb-opcao${esc.criar ? " sim" : ""}" data-modelo="${escapeHtml(m.id)}">
+            <input type="checkbox" ${esc.criar ? "checked" : ""}>
+            <span><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(m.proposito)}${m.privada ? " Nunca é versionada nem sai do seu computador." : ""}</small></span></label>` +
+            (esc.criar ? "" : `<div class="eb-existente" style="margin:0 0 var(--sp-3) var(--sp-3)">
+              <label class="campo" for="eb-ex-${escapeHtml(m.id)}">Já tenho a ${escapeHtml(m.nome)} em (vazio: não usar agora)</label>
+              <input type="text" id="eb-ex-${escapeHtml(m.id)}" data-modelo="${escapeHtml(m.id)}" value="${escapeHtml(esc.caminho || "")}" spellcheck="false"></div>`);
+        }).join("") || `<p class="eb-erro">Não consegui ler as estações padrão do servidor.</p>`),
       montar: (el) => {
         el.querySelectorAll(".eb-opcao").forEach(lab => {
-          const id = lab.dataset.uso;
           const cb = lab.querySelector("input");
-          cb.onchange = () => {
-            if (cb.checked){ if (EB.usos.indexOf(id) < 0) EB.usos.push(id); }
-            else EB.usos = EB.usos.filter(x => x !== id);
-            // portfólio sem projetos não faz sentido: um depende do outro
-            if (id === "projetos" && !cb.checked) EB.usos = EB.usos.filter(x => x !== "portfolio");
-            if (id === "portfolio" && cb.checked && EB.usos.indexOf("projetos") < 0) EB.usos.push("projetos");
-            ebSalvar(); ebDesenhar();
-          };
+          cb.onchange = () => { ebEscolha(lab.dataset.modelo).criar = cb.checked; ebSalvar(); ebDesenhar(); };
+        });
+        el.querySelectorAll(".eb-existente input").forEach(inp => {
+          inp.oninput = () => { ebEscolha(inp.dataset.modelo).caminho = inp.value; ebSalvar(); };
         });
       },
-      valido: () => true,
+      valido: () => EB_MODELOS.some(m => { const e = ebEscolha(m.id); return e.criar || (e.caminho || "").trim().length >= 3; }),
+      erro: "Escolha pelo menos uma estação para criar ou registrar.",
     },
     {
       titulo: "4 — Já tem coisa nessa pasta?",
@@ -2217,13 +2356,17 @@ function ebParadas(){
 }
 
 async function openEmbarqueView(){
+  marcarAba("embarque-nav-btn");
   ebCarregar();
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "Estação / Embarque";
+  document.getElementById("breadcrumb").textContent = "Central / Embarque";
   document.getElementById("meta-bar").innerHTML =
     `<span class="badge badge-type">embarque</span><span id="meta-path">primeiros passos</span>`;
+  if (!EB_MODELOS.length){
+    try { EB_MODELOS = (await (await fetch("/api/embarque/modelos")).json()).modelos || []; } catch(e){}
+  }
   ebDesenhar();
 }
 
@@ -2232,7 +2375,7 @@ function ebDesenhar(){
   const p = paradas[EB_PASSO];
   const content = document.getElementById("content");
   content.innerHTML = `<h1>Embarque</h1>
-    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria a sua primeira plataforma.</p>`;
+    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria as suas estações.</p>`;
 
   const dots = document.createElement("div");
   dots.className = "eb-passos";
@@ -2287,19 +2430,19 @@ async function ebGerar(){
   } catch(err){ toast("Falha ao gerar: " + err); return; }
 
   mostrarPrompt(data.texto, {
-    titulo: "Crie a sua primeira plataforma",
+    titulo: "Crie as suas estações",
     sub: `Cole numa sessão de IA <strong>com a pasta aberta</strong>. Este texto não criou nada — quem cria é a sessão, com você olhando.`,
   });
 
-  // registra no estacao.json para que a plataforma já apareça no seletor assim
+  // registra no central.json para que a estação já apareça no seletor assim
   // que a estrutura existir. Falhar aqui não pode atrapalhar: o texto, que é o
   // que importa, já está na tela.
   try {
     const r = await fetch("/api/embarque/registrar", {
       method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({caminho: data.caminho, nome: data.nome})});
+      body: JSON.stringify({estacoes: (data.estacoes || []).map(e => ({caminho: e.caminho, nome: e.nome}))})});
     const reg = await r.json();
-    if (reg.ok) await carregarPlataformas();
+    if (reg.ok) await carregarEstacoes();
   } catch(e){}
 }
 
@@ -2311,9 +2454,9 @@ async function ebGerar(){
 // de IA fazer o registro.
 //
 // Cada conjunto é escolhido pela sigla do estágio de DESTINO da passagem
-// (`para`). Quando a plataforma usa as siglas padrão, cada passagem acha o seu;
-// quando não usa (uma plataforma lida com taxonomia própria), os conjuntos são
-// alinhados pelo FIM da lista, sem o de funcionalidade — uma plataforma de
+// (`para`). Quando a estação usa as siglas padrão, cada passagem acha o seu;
+// quando não usa (uma estação lida com taxonomia própria), os conjuntos são
+// alinhados pelo FIM da lista, sem o de funcionalidade — uma estação de
 // três estágios cai em "serve de insumo?" e "tem corpo próprio?", que é o par
 // que qualquer taxonomia bruto → validado → corpo tem.
 // Ficam hardcoded de propósito, como
@@ -2386,6 +2529,7 @@ function fxPassagens(){
 }
 
 async function openFluxoView(){
+  marcarAba("fluxo-nav-btn");
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
@@ -2396,12 +2540,44 @@ async function openFluxoView(){
   const content = document.getElementById("content");
   const passagens = fxPassagens();
   content.innerHTML = `<h1>Fluxo</h1>
-    <p class="dash-lead">O caminho que toda entrada percorre nesta plataforma. Esta tela não classifica nada — ela ajuda você a decidir, e gera o briefing para a sessão de IA fazer o registro.</p>`;
+    <p class="dash-lead">O caminho que toda entrada percorre nesta estação. Esta tela não classifica nada — ela ajuda você a decidir, e gera o briefing para a sessão de IA fazer o registro.</p>`;
 
   if (!passagens.length){
-    content.innerHTML += `<p class="dash-lead">Esta plataforma declara menos de dois estágios: não há passagem para mostrar.</p>`;
+    content.innerHTML += `<p class="dash-lead">Esta estação declara menos de dois estágios: não há passagem para mostrar.</p>`;
     return;
   }
+
+  // A ação da tela, antes das perguntas. Ela não pertence a nenhuma passagem
+  // em particular: age sobre o item aberto na árvore. Estava dentro do primeiro
+  // passo, o que a fazia parecer consequência daquela pergunta — e não dizia
+  // sobre qual item ia agir até alguém clicar.
+  const alvoDoBriefing = () => {
+    const pasta = (plEstagio(1) || {}).pasta || "";
+    const hist = "/" + ((PLAT && PLAT.historico) || "_historico") + "/";
+    return ENTRIES.find(e => e.path === SELECTED_PATH && e.path.startsWith(pasta))
+      || ENTRIES.find(e => e.path.startsWith(pasta + "/") && !e.path.includes(hist) && e.path.endsWith(".md"))
+      || null;
+  };
+  const alvo = alvoDoBriefing();
+  const barra = document.createElement("div");
+  barra.className = "fx-acao";
+  const quem = document.createElement("p");
+  quem.className = "fx-acao-alvo";
+  quem.innerHTML = alvo
+    ? `Item em foco: <code>${escapeHtml(alvo.path)}</code>`
+    : `Nenhum item de <strong>${escapeHtml(plNome(1, true))}</strong> aberto — escolha um na árvore para gerar o briefing.`;
+  barra.appendChild(quem);
+  const btnBrf = document.createElement("button");
+  btnBrf.className = "brf-btn";
+  btnBrf.textContent = "Briefing de classificação →";
+  btnBrf.disabled = !alvo;
+  btnBrf.onclick = () => {
+    const a = alvoDoBriefing();
+    if (!a){ toast(`Abra ${plNome(1, true).toLowerCase()} antes`); return; }
+    abrirBriefing("classificar", {path: a.path});
+  };
+  barra.appendChild(btnBrf);
+  content.appendChild(barra);
 
   // a entrada: todo item nasce no primeiro estágio, sem exceção
   const zero = document.createElement("div");
@@ -2442,11 +2618,22 @@ async function openFluxoView(){
 
     const n = marcados.size;
     const promove = n >= minimo;
+    const faltam = minimo - n;
     const ver = document.createElement("div");
-    ver.className = "fx-veredito " + (promove ? "sbi" : "fica");
-    ver.textContent = promove
-      ? `${n} de ${total} → promove a ${plNome(i + 2)} (${plSigla(i + 2)})`
-      : `${n} de ${total} → fica como ${plNome(i + 1)}. Se a dúvida for genuína, vire pendência em vez de forçar.`;
+    ver.className = "fx-veredito " + (promove ? "sbi" : (n ? "fica" : "neutro"));
+    // O que o leitor precisa saber é a DISTÂNCIA até a régua, não o rótulo do
+    // estágio em que o item já está. Com régua de 2, dizer "fica como Captura"
+    // em 0 e em 1 marcado é a mesma frase para dois estados diferentes.
+    if (promove){
+      ver.textContent = `${n} de ${total} → promove a ${plNome(i + 2)} (${plSigla(i + 2)})`;
+    } else if (n === 0){
+      ver.textContent = p.set.regra === "todos"
+        ? `Marque o que vale: os ${total} precisam valer para virar ${plNome(i + 2)}.`
+        : `Marque o que vale: ${minimo} de ${total} promovem a ${plNome(i + 2)}.`;
+    } else {
+      ver.textContent = `${n} de ${total} — falta${faltam > 1 ? "m" : ""} ${faltam} para promover a ${plNome(i + 2)}. `
+        + `Sem isso o item fica como ${plNome(i + 1)}, e forçar é pior que esperar: dúvida genuína vira pendência.`;
+    }
     el.appendChild(ver);
 
     if (p.set.nota){
@@ -2456,20 +2643,6 @@ async function openFluxoView(){
       el.appendChild(obs);
     }
 
-    if (i === 0){
-      const btn = document.createElement("button");
-      btn.className = "brf-btn";
-      btn.style.marginTop = "var(--sp-2)";
-      btn.textContent = "Briefing de classificação →";
-      btn.onclick = () => {
-        const pasta = (plEstagio(1) || {}).pasta || "";
-        const alvo = ENTRIES.find(e => e.path === SELECTED_PATH && e.path.startsWith(pasta))
-          || ENTRIES.find(e => e.path.startsWith(pasta + "/") && !e.path.includes("/" + (PLAT && PLAT.historico || "_historico") + "/") && e.path.endsWith(".md"));
-        if (!alvo){ toast(`Abra ${plNome(1, true).toLowerCase()} antes`); return; }
-        abrirBriefing("classificar", {path: alvo.path});
-      };
-      el.appendChild(btn);
-    }
     content.appendChild(el);
   });
 
@@ -2481,6 +2654,209 @@ async function openFluxoView(){
 }
 
 // ============================================================
+// Projeto — a tela que o Portfólio abre (GET /api/projeto)
+// ============================================================
+// O rodapé do cartão sempre teve "abrir projeto →", e o back-end sempre
+// respondeu; esta função é que faltava, e o clique morria num ReferenceError.
+// Ela responde, nesta ordem: em que pé está · o que falta · o que fazer agora.
+let PJ = null;
+
+async function openProjetoView(pasta){
+  marcarAba(null);
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Projeto";
+  const content = document.getElementById("content");
+  content.innerHTML = `<p class="dash-lead">Abrindo ${escapeHtml(pasta)}…</p>`;
+  try {
+    const r = await fetch("/api/projeto?pasta=" + encodeURIComponent(pasta));
+    if (!r.ok) throw new Error((await r.json()).erro || r.statusText);
+    PJ = await r.json();
+  } catch(e){
+    content.innerHTML = `<h1>Projeto</h1><p class="dash-lead">Não deu para abrir <code>${escapeHtml(pasta)}</code>: ${escapeHtml(String(e.message || e))}</p>`;
+    return;
+  }
+  drawProjeto();
+}
+
+function pjVoltar(){
+  const b = document.createElement("button");
+  b.className = "pf-limpar";
+  b.textContent = "← voltar ao Portfólio";
+  b.onclick = openPortfolioView;
+  return b;
+}
+
+function drawProjeto(){
+  const d = PJ, p = d.projeto || {};
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+  document.getElementById("meta-bar").innerHTML =
+    `<span class="badge badge-type">projeto</span>` +
+    `<span id="meta-path">${escapeHtml(d.pasta)}</span>`;
+
+  const topo = document.createElement("div");
+  topo.className = "pj-cab";
+  topo.innerHTML = `<h1 style="margin:0">${escapeHtml(p.nome || d.pasta)}</h1>` +
+    `<span class="pj-pasta">${escapeHtml(d.pasta)}</span>`;
+  content.appendChild(topo);
+  const acoes = document.createElement("div");
+  acoes.className = "pj-anotar";
+  acoes.style.margin = "0 0 var(--sp-4)";
+  acoes.appendChild(pjVoltar());
+  const brf = document.createElement("button");
+  brf.className = "brf-btn";
+  brf.textContent = "Briefing pra avançar →";
+  brf.onclick = () => abrirBriefing("avancar", {pasta: d.pasta});
+  acoes.appendChild(brf);
+  const orq = document.createElement("button");
+  orq.className = "pf-limpar";
+  orq.textContent = "abrir CLAUDE.md";
+  orq.onclick = () => openFile(d.pasta + "/CLAUDE.md");
+  acoes.appendChild(orq);
+  content.appendChild(acoes);
+
+  if (p.resumo){
+    const res = document.createElement("p");
+    res.className = "dash-lead";
+    res.textContent = p.resumo;
+    content.appendChild(res);
+  }
+
+  // 1. em que pé está
+  const mat = d.maturidade;
+  if (mat && typeof mat === "object"){
+    const s = document.createElement("div");
+    s.className = "pj-secao";
+    s.innerHTML = "<h2>Em que pé está</h2>";
+    // o perfil costuma trazer a média junto das dimensões; ela não é uma
+    // dimensão, e listá-la ao lado das outras conta a mesma coisa duas vezes
+    const dims = Object.entries(mat).filter(([k, v]) =>
+      typeof v === "number" && !/^m[eé]dia$/i.test(k));
+    if (dims.length){
+      dims.forEach(([nome, v]) => {
+        const linha = document.createElement("div");
+        linha.className = "pj-mat";
+        const pct = Math.max(0, Math.min(100, Math.round((v / 5) * 100)));
+        linha.innerHTML = `<span>${escapeHtml(nome)}</span>` +
+          `<span class="barra"><i style="width:${pct}%"></i></span>` +
+          `<span class="val">${v}</span>`;
+        s.appendChild(linha);
+      });
+      const media = dims.reduce((a, [, v]) => a + v, 0) / dims.length;
+      const nota = document.createElement("p");
+      nota.className = "pj-vazio";
+      nota.style.marginTop = "var(--sp-2)";
+      nota.textContent = `Média ${media.toFixed(1)} de 5 — medida pelo artefato em disco, não pela intenção do backlog.`;
+      s.appendChild(nota);
+    } else {
+      s.innerHTML += `<p class="pj-vazio">O perfil não declara maturidade por dimensão.</p>`;
+    }
+    content.appendChild(s);
+  }
+
+  // 2. o que falta
+  const sb = document.createElement("div");
+  sb.className = "pj-secao";
+  sb.innerHTML = "<h2>O que falta</h2>";
+  if (!(d.backlogs || []).length){
+    sb.innerHTML += `<p class="pj-vazio">Nenhum backlog indexado nesta pasta. Um projeto sem backlog não diz o que falta — e é a régua da passagem para projeto.</p>`;
+  } else {
+    d.backlogs.forEach(b => pjBacklog(sb, b));
+  }
+  content.appendChild(sb);
+
+  // 3. lacunas e ligações, quando o perfil as declara
+  const extras = [["Lacunas", d.lacunas], ["Ligações com outros projetos", (d.ligacoes || []).map(l => typeof l === "string" ? l : `${l.projeto || ""} — ${l.detalhe || l.relacao || ""}`)]];
+  extras.forEach(([titulo, itens]) => {
+    if (!itens || !itens.length) return;
+    const s = document.createElement("div");
+    s.className = "pj-secao";
+    s.innerHTML = `<h2>${titulo}</h2>`;
+    const ul = document.createElement("ul");
+    ul.className = "pj-lista";
+    itens.forEach(x => {
+      const li = document.createElement("li");
+      li.textContent = typeof x === "string" ? x : JSON.stringify(x);
+      ul.appendChild(li);
+    });
+    s.appendChild(ul);
+    content.appendChild(s);
+  });
+}
+
+function pjBacklog(container, b){
+  const bloco = document.createElement("div");
+  bloco.className = "pj-backlog";
+  bloco.innerHTML = `<h3>${escapeHtml(b.path.split("/").pop())} <span class="n">${b.abertos} aberto(s)</span></h3>`;
+
+  (b.raw || "").split("\n").forEach((linha, idx) => {
+    const m = linha.match(/^\s*-\s*\[( |x|X)\]\s*(.*)$/);
+    if (!m) return;
+    const feito = m[1].toLowerCase() === "x";
+    const texto = m[2];
+    const essencial = texto.includes("**[ESSENCIAL]**");
+    const item = document.createElement("label");
+    item.className = "pj-item" + (feito ? " feito" : "") + (essencial ? " essencial" : "");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = feito;
+    cb.onchange = () => toggleBacklogCheckbox(b.path, idx, linha, cb);
+    item.appendChild(cb);
+    const sp = document.createElement("span");
+    sp.textContent = texto.replace("**[ESSENCIAL]**", "").replace(/\*\*/g, "").trim();
+    item.appendChild(sp);
+    bloco.appendChild(item);
+  });
+
+  const form = document.createElement("div");
+  form.className = "pj-anotar";
+  const campo = document.createElement("input");
+  campo.type = "text";
+  campo.placeholder = "anotar um item novo neste backlog…";
+  const btn = document.createElement("button");
+  btn.className = "brf-btn";
+  btn.textContent = "Anotar";
+  const erro = document.createElement("p");
+  erro.className = "pj-vazio";
+  erro.style.color = "var(--danger)";
+  erro.hidden = true;
+  btn.onclick = async () => {
+    const texto = campo.value.trim();
+    if (!texto){
+      erro.textContent = "Escreva o item antes de anotar.";
+      erro.hidden = false;
+      return;
+    }
+    erro.hidden = true;
+    btn.disabled = true;
+    try {
+      const r = await fetch("/api/projeto/anotar", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({pasta: PJ.pasta, backlog: b.path, texto, expected_sha1: b.sha1}),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.erro || r.statusText);
+      toast("anotado em " + b.path.split("/").pop());
+      campo.value = "";
+      await openProjetoView(PJ.pasta);
+    } catch(e){
+      erro.textContent = String(e.message || e);
+      erro.hidden = false;
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  campo.addEventListener("input", () => { erro.hidden = true; });
+  form.appendChild(campo);
+  form.appendChild(btn);
+  bloco.appendChild(form);
+  bloco.appendChild(erro);
+  container.appendChild(bloco);
+}
+
+// ============================================================
 // Nota — captura crua pela UI, no primeiro estágio (POST /api/nota/nova)
 // ============================================================
 // Só cria item cru no primeiro estágio, sem classificar: classificar é a
@@ -2488,6 +2864,7 @@ async function openFluxoView(){
 let NOTAS_CRIADAS_SESSAO = [];
 
 async function openNotaView(){
+  marcarAba("nota-nav-btn");
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
@@ -2671,6 +3048,18 @@ document.getElementById("search-box").addEventListener("keydown", (ev) => {
   }
 });
 document.getElementById("reindex-btn").addEventListener("click", reindex);
+// O filtro por tipo vira gaveta: ele é útil, mas era uma pilha permanente de
+// chips entre a navegação e a árvore — ocupando justamente o espaço que a
+// árvore precisava.
+(function(){
+  const btn = document.getElementById("chips-toggle");
+  const chips = document.getElementById("type-chips");
+  btn.addEventListener("click", () => {
+    chips.hidden = !chips.hidden;
+    btn.classList.toggle("ativa", !chips.hidden);
+  });
+})();
+
 document.getElementById("dashboard-nav-btn").addEventListener("click", openDashboardView);
 document.getElementById("tour-nav-btn").addEventListener("click", openTourView);
 document.getElementById("embarque-nav-btn").addEventListener("click", openEmbarqueView);
@@ -2693,20 +3082,20 @@ document.getElementById("btn-trilha").addEventListener("click", (ev) => {
   irParaPasso(TRILHA.passo + 1, ev.currentTarget);
 });
 document.getElementById("btn-reiniciar").addEventListener("click", (ev) => {
-  if (!confirm("Voltar esta plataforma de exemplo ao início?\n\n"
+  if (!confirm("Voltar esta estação de exemplo ao início?\n\n"
                + "Tudo que você mudou aqui some. Isto não toca em nenhuma outra "
-               + "plataforma.")) return;
+               + "estação.")) return;
   irParaPasso(0, ev.currentTarget);
 });
 
-document.getElementById("plataforma-seletor").addEventListener("change", (ev) => {
-  trocarPlataforma(ev.target.value);
+document.getElementById("estacao-seletor").addEventListener("change", (ev) => {
+  trocarEstacao(ev.target.value);
 });
 
 // ============================================================
 // Tema
 // ============================================================
-// Preferência de quem está olhando, não da plataforma: fica no localStorage,
+// Preferência de quem está olhando, não da estação: fica no localStorage,
 // com o mesmo try/catch defensivo do Tour (navegador em modo privado, dados de
 // site bloqueados — nada disso pode derrubar a interface).
 const TEMA_KEY = "estacao.tema.v1";
@@ -2724,7 +3113,7 @@ function aplicarTema(tema){
   sel.addEventListener("change", (ev) => aplicarTema(ev.target.value));
 })();
 
-carregarPlataformas();
+carregarEstacoes();
 loadIndex();
 </script>
 </body>

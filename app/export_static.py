@@ -1,4 +1,4 @@
-"""Exporta a Estação como UM arquivo HTML estático, somente leitura.
+"""Exporta a Central como UM arquivo HTML estático, somente leitura.
 
 Pra quando o servidor local não alcança quem precisa ver (celular, remote
 control, alguém de fora): o mesmo index.html, com os endpoints /api/* trocados
@@ -7,11 +7,11 @@ por um `fetch` falso que responde a partir de um snapshot embutido do corpus
 mostra) — árvore, busca, LOG, dashboard e aba Tour funcionam; toggle de backlog
 e reindexar respondem "somente leitura".
 
-Saída: dist/estacao-static.html (sem <html>/<head>/<body>, no formato que
+Saída: dist/central-static.html (sem <html>/<head>/<body>, no formato que
 o publicador de Artifacts do Claude espera — abre também direto no navegador,
 que tolera a ausência dessas tags).
 
-    python app/export_static.py            # gera dist/estacao-static.html
+    python app/export_static.py            # gera dist/central-static.html
     python app/export_static.py --full     # inclui o <html>/<head>/<body> pra abrir sozinho
 """
 import json
@@ -32,7 +32,7 @@ APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
 TEMPLATE_PATH = APP_DIR / "templates" / "index.html"
 DIST_DIR = PROJECT_DIR / "dist"
-OUT_PATH = DIST_DIR / "estacao-static.html"
+OUT_PATH = DIST_DIR / "central-static.html"
 
 HTML_TRUNCATE = 3000  # mesmo corte que renderFile() aplica a .html
 MARKED_CDN = "https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"
@@ -40,6 +40,7 @@ MERMAID_CDN = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min
 
 
 def build_snapshot():
+    config.recusar_se_privada(config.atual(), "o snapshot estático")
     entries, cache = indexer.build_index()
     raw = {}
     for e in entries:
@@ -66,7 +67,7 @@ def build_snapshot():
 SHIM = r"""
 // ---- modo estático: fetch falso sobre o snapshot embutido ----
 (function(){
-  const D = window.ESTACAO_STATIC;
+  const D = window.CENTRAL_STATIC;
   const resp = (obj, status) => ({ok: (status||200) < 300, status: status||200, json: async () => obj});
   function search(q){
     const ql = (q||"").trim().toLowerCase();
@@ -105,14 +106,14 @@ SHIM = r"""
     if (p === "/api/log") return resp({rows: D.log_rows});
     if (p === "/api/metricas") return resp(D.metricas);
     if (p === "/api/portfolio") return resp(D.portfolio);
-    if (p === "/api/launch") return resp({error: "snapshot estático: abrir executáveis só na Estação local"}, 400);
+    if (p === "/api/launch") return resp({error: "snapshot estático: abrir executáveis só na Central local"}, 400);
     if (p === "/api/reindex") return resp({count: D.entries.length});
-    if (p === "/api/backlog/toggle") return resp({error: "snapshot estático, somente leitura — edite na Estação local"}, 400);
+    if (p === "/api/backlog/toggle") return resp({error: "snapshot estático, somente leitura — edite na Central local"}, 400);
     if (p === "/api/workflow") return resp(D.workflow);
     if (p === "/api/avanco") return resp(D.avanco);
-    if (p === "/api/projeto") return resp({error: "snapshot estático: a view de projeto só existe na Estação local"}, 400);
+    if (p === "/api/projeto") return resp({error: "snapshot estático: a view de projeto só existe na Central local"}, 400);
     if (p === "/api/nota/nova" || p === "/api/pendencia/responder" || p === "/api/projeto/anotar")
-      return resp({error: "snapshot estático, somente leitura — escreva na Estação local"}, 400);
+      return resp({error: "snapshot estático, somente leitura — escreva na Central local"}, 400);
     return resp({error: "not found"}, 404);
   };
 })();
@@ -172,13 +173,13 @@ def build_html(full=False):
     # "</" escapado pra não fechar o <script>; U+FFFD literal (de arquivo com encoding ruim,
     # lido com errors="replace") quebra o publicador de Artifacts — vira escape JS
     data_js = json.dumps(snap, ensure_ascii=False).replace("</", "<\\/").replace("�", "\\ufffd")
-    shim = (f"<script>window.ESTACAO_STATIC = {data_js};\nconst MERMAID_CDN_URL = {json.dumps(MERMAID_CDN)};\n{SHIM}</script>\n")
+    shim = (f"<script>window.CENTRAL_STATIC = {data_js};\nconst MERMAID_CDN_URL = {json.dumps(MERMAID_CDN)};\n{SHIM}</script>\n")
     body = body.replace("<script>\n// ====", shim + "<script>\n// ====", 1)
 
     # banner de snapshot no cabeçalho da sidebar
     banner = (f'<div class="static-note">Snapshot estático · {snap["gerado_em"]} · somente leitura · '
               f'{len(snap["entries"])} arquivos</div>')
-    body = body.replace("<h1>Estação</h1>", "<h1>Estação</h1>" + banner, 1)
+    body = body.replace("<h1>Central</h1>", "<h1>Central</h1>" + banner, 1)
 
     # cauda: sobrescreve o renderizador de mermaid e esconde o reindexar
     body = body.replace("\nloadIndex();\n</script>", "\n" + STATIC_TAIL + "\nloadIndex();\n</script>", 1)
@@ -194,12 +195,17 @@ def build_html(full=False):
 
 def main():
     full = "--full" in sys.argv
-    page, snap = build_html(full=full)
+    config.iniciar(sys.argv[1:])   # sem isto, pela linha de comando não havia estação ativa
+    try:
+        page, snap = build_html(full=full)
+    except config.EstacaoPrivada as e:
+        print(e)
+        return 2
     DIST_DIR.mkdir(exist_ok=True)
-    out = OUT_PATH if not full else DIST_DIR / "estacao-static-full.html"
+    out = OUT_PATH if not full else DIST_DIR / "central-static-full.html"
     out.write_text(page, encoding="utf-8")
     print(f"{out} — {len(page.encode('utf-8'))/1e6:.2f} MB, {len(snap['entries'])} arquivos, gerado {snap['gerado_em']}")
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

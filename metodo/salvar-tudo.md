@@ -1,7 +1,7 @@
 # salvar-tudo — a rotina de fechamento de sessão
 
 > **Invoque pelo nome:** diga *"roda o salvar-tudo"* numa sessão de IA que esteja
-> trabalhando nesta plataforma. A sessão segue o que está escrito aqui.
+> trabalhando nesta estação. A sessão segue o que está escrito aqui.
 >
 > É a peça mais importante do versionamento, e não é a tela: é isto. Uma regra
 > escrita num documento que ninguém lê não protege ninguém. Esta rotina **roda**,
@@ -33,7 +33,7 @@ origem, salva o que é da sessão, e **reporta**. Nunca pergunta.
 
 Podem ser mais de um. O caso comum:
 
-- a **plataforma** (esta pasta);
+- a **estação** (esta pasta);
 - cada **projeto** dentro de `5-projetos/`, quando tem `.git` próprio;
 - e, se você estiver mexendo neles, o **método** e a **aplicação** do hub.
 
@@ -78,11 +78,11 @@ Não pergunte. Não peça confirmação. **Avise:**
 
 ```
 salvo:
-  plataforma        "organiza as capturas da semana"          3 arquivos
+  estação        "organiza as capturas da semana"          3 arquivos
   projeto/receitas  "primeira tela do protótipo"              2 arquivos
 
 deixado de fora (não foi esta sessão que mexeu):
-  plataforma        _registro.md   — modificado às 12:31, provavelmente a rotina agendada
+  estação        _registro.md   — modificado às 12:31, provavelmente a rotina agendada
 
 nada publicado.
 ```

@@ -19,7 +19,7 @@ if [ $? -ne 0 ]; then
     echo "──────────────────────────────────────────────────────────────" >&2
     echo " O guarda-corpo da publicação barrou este commit." >&2
     echo " Este repositório é público: papel de trabalho, configuração" >&2
-    echo " local ou vocabulário de plataforma privada não entram nele." >&2
+    echo " local ou vocabulário de estação privada não entram nele." >&2
     echo "──────────────────────────────────────────────────────────────" >&2
     exit 1
 fi

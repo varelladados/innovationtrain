@@ -22,7 +22,7 @@ não avançou.
 Sempre estas quatro coisas, nesta ordem:
 
 1. **Identificador novo**, pelo utilitário, com a sigla do estágio de destino:
-   `python metodo/plataforma.py novo-id --raiz <plataforma> --etapa <SIGLA> --slug "..."`
+   `python metodo/estacao.py novo-id --raiz <estação> --etapa <SIGLA> --slug "..."`
 2. **Cópia no estágio de destino**, com o campo `origem:` apontando para o
    identificador de onde veio.
 3. **O original vai para o `_historico/`** do estágio de onde saiu — não fica
@@ -136,6 +136,24 @@ Aqui os critérios **não são de maioria — são os quatro, juntos:**
 que dá a impressão de que existe um projeto. Uma funcionalidade parada em
 `4-funcionalidades/` é honesta; um projeto vazio em `5-projetos/` mente para
 você toda vez que você abre o Portfólio.
+
+---
+
+## Passagem entre estações — ideia → captura na Plataforma
+
+Vale para as estações de três estágios, a Vida_Pessoal e a Admin_empresa. A
+ideia **não sai** de onde está: o que nasce é uma captura na Plataforma.
+
+Critério único: **alguém que não é você teria esse problema, e a sua ideia
+resolveria para essa pessoa?**
+
+- [ ] O problema existe **fora** da sua vida ou da sua empresa — dá para
+      descrevê-lo sem citar ninguém?
+- [ ] A ideia resolve o problema para essa outra pessoa, e não só para você?
+- [ ] A captura nova foi **reescrita** sem nenhum dado pessoal ou da empresa?
+
+Os três, sempre. Dali em diante a captura segue o caminho normal da Plataforma,
+e a linhagem cita a estação de origem — ver [`taxonomia.md`](taxonomia.md).
 
 ---
 

@@ -1,6 +1,6 @@
 """Versões — leitura do estado do git, e só leitura.
 
-A Estação **lê** o git e **gera o texto**; quem executa é a sessão de IA, com o
+A Central **lê** o git e **gera o texto**; quem executa é a sessão de IA, com o
 humano olhando. Não é timidez: automatismo de commit mora onde a IA está, não
 numa interface web onde um botão um dia é clicado sem querer.
 
@@ -251,6 +251,10 @@ def semaforo(e):
     """Verde, âmbar ou vermelho para a pergunta que importa: tem trabalho meu
     que ainda não está salvo em lugar nenhum?"""
     if not e.get("e_repo"):
+        if e.get("privada"):
+            return {"cor": "cinza", "titulo": "Não versionada, de propósito",
+                    "texto": "Estação privada: fica fora de git, de nuvem e de "
+                             "exportação. O backup dela é cópia de pasta."}
         return {"cor": "cinza", "titulo": "Esta pasta não é versionada",
                 "texto": "Nada aqui tem ponto salvo. Uma sessão de IA cria o "
                          "repositório em um comando, quando você quiser."}
@@ -270,7 +274,7 @@ def semaforo(e):
 # ---------------------------------------------------------------- prompts
 #
 # Os botões da aba geram texto; **não executam git**. O princípio é o do
-# Trecho 8 do itinerário: a Estação lê o estado e escreve o pedido, quem executa
+# Trecho 8 do itinerário: a Central lê o estado e escreve o pedido, quem executa
 # é a sessão de IA com o humano olhando. Um botão numa interface web um dia é
 # clicado sem querer; uma sessão de IA mostra o que vai fazer antes.
 

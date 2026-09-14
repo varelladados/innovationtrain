@@ -3,10 +3,10 @@
 Dois riscos justificam este arquivo, e nenhum é hipotético:
 
 1. **A trilha apodrece em silêncio.** Ninguém *roda* um exemplo; se um
-   instantâneo sair do lugar ou o `plataforma.json` deixar de declarar os passos,
+   instantâneo sair do lugar ou o `estacao.json` deixar de declarar os passos,
    nada quebra até alguém clicar — e aí é tarde.
 2. **`reiniciar` apaga arquivos.** O que impede o comando de tocar numa
-   plataforma de verdade é uma chave de configuração, e uma chave é fácil de
+   estação de verdade é uma chave de configuração, e uma chave é fácil de
    afrouxar sem perceber. O teste do portão existe para que afrouxar quebre o
    build.
 """
@@ -21,12 +21,12 @@ import config  # noqa: E402
 import trilha  # noqa: E402
 
 RAIZ_REPO = Path(__file__).resolve().parent.parent
-PLATAFORMAS = RAIZ_REPO / "plataformas"
-EXEMPLO = PLATAFORMAS / "exemplo"
-PRECOS = PLATAFORMAS / "exemplo-precos"
+ESTACOES = RAIZ_REPO / "estacoes"
+EXEMPLO = ESTACOES / "exemplo"
+PRECOS = ESTACOES / "exemplo-precos"
 
-PRECISA = unittest.skipUnless((EXEMPLO / "plataforma.json").exists(),
-                              "plataformas/exemplo não está ao lado do app")
+PRECISA = unittest.skipUnless((EXEMPLO / "estacao.json").exists(),
+                              "estacoes/exemplo não está ao lado do app")
 
 
 class _ComConfig(unittest.TestCase):
@@ -49,10 +49,10 @@ class TestPortao(_ComConfig):
 
     RAIZ = PRECOS
 
-    def test_a_plataforma_de_precos_so_tem_o_passo_zero(self):
+    def test_a_estacao_de_precos_so_tem_o_passo_zero(self):
         estado = trilha.estado()
         self.assertTrue(estado["tem"])
-        self.assertEqual(estado["total"], 0, "esta plataforma não declara passos")
+        self.assertEqual(estado["total"], 0, "esta estação não declara passos")
 
     def test_restaurar_um_passo_que_nao_existe_recusa(self):
         with self.assertRaises(trilha.TrilhaError):
@@ -60,11 +60,11 @@ class TestPortao(_ComConfig):
 
 
 class TestPortaoSemChave(unittest.TestCase):
-    """Uma plataforma de verdade não pode ser restaurada, e nem sabe da trilha."""
+    """Uma estação de verdade não pode ser restaurada, e nem sabe da trilha."""
 
     def setUp(self):
         self._anterior = config._ATUAL
-        # uma config sem `estado_inicial`: é o que qualquer plataforma real é
+        # uma config sem `estado_inicial`: é o que qualquer estação real é
         cfg = config.carregar(EXEMPLO)
         dados = dict(cfg._d)
         dados.pop("estado_inicial", None)
@@ -86,17 +86,17 @@ class TestPortaoSemChave(unittest.TestCase):
 
 @PRECISA
 class TestPassos(_ComConfig):
-    def test_a_plataforma_versionada_esta_no_passo_zero(self):
+    def test_a_estacao_versionada_esta_no_passo_zero(self):
         """Se isto cair, alguém commitou o exemplo no meio da trilha."""
         self.assertEqual(trilha.estado()["passo"], 0)
 
     def test_todo_passo_declarado_existe_em_disco(self):
         for p in trilha.passos()[1:]:
             pasta = (EXEMPLO / str(p["pasta"]).replace("\\", "/")).resolve()
-            self.assertTrue((pasta / "plataforma.json").is_file(),
+            self.assertTrue((pasta / "estacao.json").is_file(),
                             f"instantâneo ausente: {pasta}")
             self.assertNotIn(EXEMPLO, pasta.parents,
-                             "instantâneo dentro da plataforma: seria apagado junto")
+                             "instantâneo dentro da estação: seria apagado junto")
 
     def test_os_arquivos_constantes_nao_derivaram(self):
         """O que não muda entre passos tem que ser igual em todos.
@@ -104,29 +104,29 @@ class TestPassos(_ComConfig):
         Sem isto, editar o `_indice.md` do exemplo e esquecer de propagar faz o
         primeiro clique em "voltar ao início" desfazer a edição — em silêncio.
         """
-        constantes = ["_indice.md", "_trilha.md", "CLAUDE.md", "plataforma.json"]
+        constantes = ["_indice.md", "_trilha.md", "CLAUDE.md", "estacao.json"]
         for p in trilha.passos():
             pasta = (EXEMPLO / str(p["pasta"]).replace("\\", "/")).resolve()
             for rel in constantes:
                 self.assertEqual(
                     (pasta / rel).read_bytes(), (EXEMPLO / rel).read_bytes(),
-                    f"{rel} do passo {p['n']} divergiu da plataforma")
+                    f"{rel} do passo {p['n']} divergiu da estação")
 
 
 @PRECISA
 class TestPercurso(unittest.TestCase):
     """Percorre a trilha inteira e volta — numa cópia, nunca no exemplo versionado.
 
-    A cópia mora dentro de `plataformas/` de propósito: os passos são declarados
+    A cópia mora dentro de `estacoes/` de propósito: os passos são declarados
     por caminho relativo (`../_passos/...`), e de fora deles nada resolveria.
     """
 
-    COPIA = PLATAFORMAS / "_teste-trilha"
+    COPIA = ESTACOES / "_teste-trilha"
 
     @classmethod
     def setUpClass(cls):
-        if not (EXEMPLO / "plataforma.json").exists():
-            raise unittest.SkipTest("sem plataforma de exemplo")
+        if not (EXEMPLO / "estacao.json").exists():
+            raise unittest.SkipTest("sem estação de exemplo")
         shutil.rmtree(cls.COPIA, ignore_errors=True)
         shutil.copytree(EXEMPLO, cls.COPIA)
 
@@ -157,7 +157,7 @@ class TestPercurso(unittest.TestCase):
             self.assertEqual(trilha.estado()["passo"], n,
                              f"o passo {n} não foi reconhecido depois de restaurado")
 
-        # no último passo a plataforma tem que ter mudado de verdade
+        # no último passo a estação tem que ter mudado de verdade
         self.assertNotEqual(self._impressao(self.COPIA), antes,
                             "percorrer a trilha inteira não mudou nada")
 

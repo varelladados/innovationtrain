@@ -5,16 +5,27 @@ dist/
 .env
 *.log
 
-# A sua configuracao, com os seus caminhos. Copie de estacao.exemplo.json.
+# A sua configuracao, com os seus caminhos. Copie de central.exemplo.json.
 # Sem ele o servidor sobe do mesmo jeito e o Embarque abre sozinho.
-estacao.json
+# Ancorado na raiz: `estacao.json` dentro de uma estacao e' a config dela,
+# e essa e' versionada. O da raiz e' o nome que o central.json tinha ate' a 0.9.
+/central.json
+/estacao.json
+
+# As estacoes de quem usa, que o Embarque cria dentro da Central: conteudo
+# seu, nao do produto (e a Vida_Pessoal nunca e' versionada). Os exemplos ficam.
+/estacoes/*
+!/estacoes/exemplo/
+!/estacoes/exemplo-precos/
+!/estacoes/_inicial/
+!/estacoes/_passos/
 
 # Suas decisoes sobre o proprio produto — pessoais, ficam de fora.
 pendencias/
 
 # Copia que o teste da trilha cria e apaga. Versionada nunca; se sobrar aqui,
 # foi uma execucao interrompida.
-plataformas/_teste-trilha/
+estacoes/_teste-trilha/
 
 # Papel de trabalho nao entra neste repositorio: ele e' publico.
 # Ver tests/test_publicacao.py, que falha o build se algum voltar.

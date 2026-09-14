@@ -1,4 +1,4 @@
-"""Siglas legadas — a plataforma que já tinha acervo quando adotou a Estação.
+"""Siglas legadas — a estação que já tinha acervo quando adotou a Central.
 
 O caso que motivou isto é concreto: um sistema pessoal com 154 identificadores
 já emitidos em três siglas próprias, num registro que é **append-only por
@@ -30,7 +30,7 @@ import apoio  # noqa: E402,F401  (insere app/ no sys.path)
 import config  # noqa: E402
 
 RAIZ_REPO = Path(__file__).resolve().parent.parent
-UTIL = RAIZ_REPO / "metodo" / "plataforma.py"
+UTIL = RAIZ_REPO / "metodo" / "estacao.py"
 
 #: A forma do caso real: três siglas antigas, cinco estágios novos. A do meio
 #: (`SBI`) cai em ideias; a última (`SBZ`) pula para projetos, porque o estágio
@@ -41,7 +41,7 @@ LEGADAS = {"SBC": 2, "SBI": 3, "SBZ": 5}
 
 def taxonomia(**extra):
     d = {
-        "nome": "Plataforma com acervo",
+        "nome": "Estação com acervo",
         "marcador": "_indice.md",
         "estagios": [dict(e) for e in config.PADROES["estagios"]],
         "historico": "_historico",
@@ -72,12 +72,12 @@ REGISTRO = (
 
 
 def montar(raiz: Path, **extra):
-    """Uma plataforma em disco, com registro misto e os arquivos citados."""
+    """Uma estação em disco, com registro misto e os arquivos citados."""
     tax = taxonomia(**extra)
     for e in tax["estagios"]:
         (raiz / e["pasta"] / tax["historico"]).mkdir(parents=True, exist_ok=True)
-    (raiz / "_indice.md").write_text("# plataforma\n", encoding="utf-8")
-    (raiz / "plataforma.json").write_text(
+    (raiz / "_indice.md").write_text("# estação\n", encoding="utf-8")
+    (raiz / "estacao.json").write_text(
         json.dumps(tax, ensure_ascii=False, indent=2), encoding="utf-8")
     (raiz / "_registro.md").write_text(REGISTRO, encoding="utf-8")
 
@@ -108,7 +108,7 @@ def util(*args):
                           encoding="utf-8", errors="replace")
 
 
-class _ComPlataforma(unittest.TestCase):
+class _ComEstacao(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="legadas-"))
         self.tax = montar(self.tmp)
@@ -121,7 +121,7 @@ class _ComPlataforma(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
 
-class TestConfig(_ComPlataforma):
+class TestConfig(_ComEstacao):
     def test_as_canonicas_nao_mudam(self):
         """A lista que a interface mostra e da qual sai identificador novo
         continua sendo só a de hoje. Se uma legada vazasse para cá, ela
@@ -160,14 +160,14 @@ class TestConfig(_ComPlataforma):
         self.assertEqual(cfg.estagio_de_sigla("IDE"), 3)
 
     def test_sem_a_chave_nada_muda(self):
-        """Plataforma normal não declara `siglas_legadas` — e o comportamento
+        """Estação normal não declara `siglas_legadas` — e o comportamento
         tem que ser exatamente o de antes desta feature existir."""
         cfg = config.carregar(self.tmp, taxonomia(siglas_legadas={}))
         self.assertEqual(cfg.siglas_todas, sorted(cfg.siglas, key=lambda s: (-len(s), s)))
         self.assertIsNone(cfg.estagio_de_sigla("SBC"))
 
 
-class TestRegexes(_ComPlataforma):
+class TestRegexes(_ComEstacao):
     def test_id_re_reconhece_nome_de_arquivo_legado(self):
         for stem in ("26.08.31-SBC-001-ideia-antiga-a1b2",
                      "26.08.31-SBI-DIG-002-output-lapidado-c3d4",
@@ -185,7 +185,7 @@ class TestRegexes(_ComPlataforma):
         self.assertEqual(self.cfg.etapa_re.search("SBZ-DIG").group(1), "SBZ")
 
 
-class TestWorkflow(_ComPlataforma):
+class TestWorkflow(_ComEstacao):
     def test_a_carta_legada_ganha_o_estagio_de_hoje(self):
         """Sem isto o item antigo aparece sem cor no meio dos outros — e a
         escala de maturidade passa a mentir sobre metade do acervo."""
@@ -196,7 +196,7 @@ class TestWorkflow(_ComPlataforma):
         self.assertIsNone(workflow._estagio_de("XPT"))
 
 
-class TestMetricas(_ComPlataforma):
+class TestMetricas(_ComEstacao):
     def test_a_legada_e_contada_no_cartao_do_estagio(self):
         """Os cartões do Dashboard são os estágios declarados: uma chave `SBC`
         não teria onde aparecer, e a linha sumiria da contagem."""
@@ -222,7 +222,7 @@ class TestMetricas(_ComPlataforma):
 
 
 class TestUtilitario(unittest.TestCase):
-    """O utilitário lê o `plataforma.json` direto — não passa pelo config."""
+    """O utilitário lê o `estacao.json` direto — não passa pelo config."""
 
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="legadas-util-"))
@@ -282,7 +282,7 @@ class TestUtilitario(unittest.TestCase):
         self.assertNotIn("PROBLEMA", r.stdout)
 
     def test_verificar_ainda_acusa_uma_sigla_que_ninguem_declarou(self):
-        """A tolerância é só para o que a plataforma declarou como legado.
+        """A tolerância é só para o que a estação declarou como legado.
 
         O aviso de "estágio desconhecido" olha a coluna **Etapa/Tipo**, e só
         chega a olhá-la em linha que já foi reconhecida como linha de registro —
@@ -334,7 +334,7 @@ class TestDuplicatasHistoricas(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def _declarar(self, ids):
-        pj = self.tmp / "plataforma.json"
+        pj = self.tmp / "estacao.json"
         d = json.loads(pj.read_text(encoding="utf-8"))
         d["duplicatas_historicas"] = ids
         pj.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")

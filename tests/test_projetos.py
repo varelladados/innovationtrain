@@ -45,7 +45,7 @@ class BaseProjeto(unittest.TestCase):
     PASTA = "PRJ-Teste_Console"
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-proj-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-proj-"))
         self.projeto_dir = self.tmp / self.PASTA
         self.projeto_dir.mkdir()
         apoio.aplicar(self.tmp, **apoio.qualquer_pasta_e_projeto())

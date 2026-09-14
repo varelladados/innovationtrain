@@ -3,7 +3,7 @@ id: <novo-id --etapa PRJ>
 data: AAAA-MM-DD
 estagio: 5
 origem: <identificador da funcionalidade de onde isto veio — a primeira do projeto>
-tipo: <um dos tipos declarados no plataforma.json>
+tipo: <um dos tipos declarados no estacao.json>
 status: <rascunho | em andamento | no ar | pausado | encerrado>
 ---
 
@@ -57,4 +57,4 @@ mais é zero.
   é a funcionalidade que originou o projeto
 - `funcionalidades/` — as que foram acopladas depois, com o identificador que
   já tinham (a pasta só existe quando a primeira chega)
-- <o `_indice.md` da plataforma>
+- <o `_indice.md` da estação>

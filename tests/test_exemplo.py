@@ -1,10 +1,10 @@
-"""O indexer rodando contra plataforma de exemplo.
+"""O indexer rodando contra estação de exemplo.
 
-A plataforma de exemplo é conteúdo, não código — e a tentação de gerá-la rápido
+A estação de exemplo é conteúdo, não código — e a tentação de gerá-la rápido
 e mal é real. Este teste é o que impede: se alguém quebrar uma cadeia, apagar um
 `_historico/` ou deixar um item sem linha no registro, ele cai.
 
-Ele roda contra os arquivos de verdade em `plataformas/exemplo`. Se a plataforma
+Ele roda contra os arquivos de verdade em `estacoes/exemplo`. Se a estação
 não estiver ao lado deste repositório (num clone só do app, por exemplo), os
 casos **pulam**.
 """
@@ -19,22 +19,22 @@ import config  # noqa: E402
 import indexer  # noqa: E402
 import workflow  # noqa: E402
 
-PLATAFORMAS = Path(__file__).resolve().parent.parent / "plataformas"
+ESTACOES = Path(__file__).resolve().parent.parent / "estacoes"
 RAIZ_REPO = Path(__file__).resolve().parent.parent
-EXEMPLO = PLATAFORMAS / "exemplo"
-PRECOS = PLATAFORMAS / "exemplo-precos"
+EXEMPLO = ESTACOES / "exemplo"
+PRECOS = ESTACOES / "exemplo-precos"
 
 
 def _existe(raiz):
-    return unittest.skipUnless((raiz / "plataforma.json").exists(),
+    return unittest.skipUnless((raiz / "estacao.json").exists(),
                                f"{raiz.name} não está ao lado do app")
 
 
 class _Exemplo:
-    """A mesma bateria, contra qualquer plataforma de exemplo.
+    """A mesma bateria, contra qualquer estação de exemplo.
 
     Isto é um mixin de propósito: sem herdar de `TestCase` ele não é coletado
-    sozinho, e cada plataforma vira uma subclasse que declara só a própria
+    sozinho, e cada estação vira uma subclasse que declara só a própria
     `RAIZ`. Um exemplo novo entra com três linhas e ganha a bateria inteira —
     que é o ponto: exemplo não coberto por teste apodrece em silêncio, porque
     ninguém roda um exemplo.
@@ -61,7 +61,7 @@ class _Exemplo:
         self.assertGreater(len(self.entries), 8)
 
     def test_toda_pasta_declarada_sobrevive_a_um_clone(self):
-        """Git não versiona pasta vazia — e uma plataforma de exemplo com
+        """Git não versiona pasta vazia — e uma estação de exemplo com
         `_historico/` vazio chega **quebrada** na máquina de quem clonar.
 
         O teste anterior conferia as pastas em disco, e por isso passava aqui e
@@ -76,7 +76,7 @@ class _Exemplo:
             self.skipTest("não é um repositório git, ou git fora do PATH")
         versionados = [l.strip() for l in r.stdout.splitlines() if l.strip()]
         if not versionados:
-            self.skipTest("esta plataforma não está versionada")
+            self.skipTest("esta estação não está versionada")
         rel_raiz = self.RAIZ.relative_to(RAIZ_REPO).as_posix()
         cfg = config.atual()
         for e in cfg.estagios:
@@ -87,7 +87,7 @@ class _Exemplo:
 
     def _frontmatter(self, caminho):
         """Usado pelos dois lados — por isso mora no mixin comum, não no da
-        plataforma madura, onde ele nasceu e onde a versão anterior o deixou."""
+        estação madura, onde ele nasceu e onde a versão anterior o deixou."""
         fm, _ = indexer.split_frontmatter(caminho.read_text(encoding="utf-8"))
         return fm
 
@@ -97,10 +97,10 @@ class _Exemplo:
         rel = config.atual().get("estado_inicial")
         self.assertTrue(rel, f"{self.RAIZ.name} não declara `estado_inicial`")
         snap = (self.RAIZ / str(rel).replace("\\", "/")).resolve()
-        self.assertTrue((snap / "plataforma.json").is_file(),
+        self.assertTrue((snap / "estacao.json").is_file(),
                         f"o instantâneo de {self.RAIZ.name} não existe: {snap}")
         self.assertNotIn(self.RAIZ, snap.parents,
-                         "o instantâneo está dentro da plataforma: seria apagado junto")
+                         "o instantâneo está dentro da estação: seria apagado junto")
 
     def test_os_cinco_estagios_existem_e_tem_historico(self):
         cfg = config.atual()
@@ -112,7 +112,7 @@ class _Exemplo:
 
 
 class _Madura:
-    """O que só uma plataforma povoada pode prometer.
+    """O que só uma estação povoada pode prometer.
 
     A de exemplo crua não tem nota, ideia nem projeto — de propósito, porque
     ela existe para ser dirigida. Cobrar dela uma cadeia inteira seria cobrar
@@ -131,7 +131,7 @@ class _Madura:
     def test_a_cadeia_1_2_3_4_5_esta_inteira(self):
         """Um mesmo grão do primeiro estágio até um projeto — passando pela
         funcionalidade, porque nenhum item pula estágio. Se isto quebrar, a
-        plataforma deixa de cumprir o propósito dela."""
+        estação deixa de cumprir o propósito dela."""
         cfg = config.atual()
         primeiro = cfg.estagios[0]["pasta"]
         inicios = sorted((c for c in (self.RAIZ / primeiro / cfg.historico).glob("*.md")
@@ -141,7 +141,7 @@ class _Madura:
         # Percorre TODAS as capturas que apontam para frente, não a primeira que o
         # `glob` devolver: a ordem dele muda entre sistemas de arquivos, e a
         # versão anterior deste teste passava no Windows e falhava no Linux por
-        # começar numa cadeia curta. O que a plataforma promete é ter **uma**
+        # começar numa cadeia curta. O que a estação promete é ter **uma**
         # cadeia inteira, não que toda captura tenha uma.
         cadeias = [self._percorrer(c) for c in inicios]
         inteiras = [c for c in cadeias if len(c) >= 5]
@@ -188,7 +188,7 @@ class _Madura:
 
 
 class _Comum2:
-    """Continuação do mixin comum, depois do bloco da plataforma madura."""
+    """Continuação do mixin comum, depois do bloco da estação madura."""
 
     def test_todo_link_de_linhagem_aponta_para_arquivo_que_existe(self):
         import re
@@ -221,7 +221,7 @@ class _Comum2:
 
 
 class _Abas:
-    """As abas contra uma plataforma povoada."""
+    """As abas contra uma estação povoada."""
 
     def test_o_kanban_usa_os_estagios_e_todos_tem_carta(self):
         wf = workflow.build_workflow(self.entries)
@@ -256,7 +256,7 @@ class _Trilha:
 
 
 class _Crua:
-    """O que só a plataforma que começa vazia promete.
+    """O que só a estação que começa vazia promete.
 
     Ela é o tutorial: nada avançou ainda, e há material de sobra para avançar.
     Se isto quebrar, ou alguém povoou o exemplo sem querer, ou o `reiniciar`
@@ -270,7 +270,7 @@ class _Crua:
         itens = [a for e in cfg.estagios for a in (self.RAIZ / e["pasta"]).rglob("*.md")]
         com_destino = [a.name for a in itens
                        if self._frontmatter(a).get("avancou_para")]
-        self.assertEqual(com_destino, [], "algo já avançou nesta plataforma")
+        self.assertEqual(com_destino, [], "algo já avançou nesta estação")
         for e in cfg.estagios:
             hist = self.RAIZ / e["pasta"] / cfg.historico
             # só ITEM conta: o `_leia-me.md` do histórico é documentação da
@@ -284,7 +284,7 @@ class _Crua:
         self.assertNotIn("→", texto.split("## Entradas")[1] if "## Entradas" in texto else "")
 
     def test_ha_material_de_sobra_no_primeiro_estagio(self):
-        """Uma plataforma para ser dirigida precisa de matéria-prima."""
+        """Uma estação para ser dirigida precisa de matéria-prima."""
         cfg = config.atual()
         primeiro = self.RAIZ / cfg.estagios[0]["pasta"]
         ativos = [a for a in primeiro.glob("*.md")]
@@ -312,16 +312,16 @@ class _Crua:
                                  f"arquivo de sistema virou carta: {carta['path']}")
 
     def test_a_trilha_tem_passos(self):
-        """Sem passos, a plataforma crua não ensina nada — fica só vazia."""
+        """Sem passos, a estação crua não ensina nada — fica só vazia."""
         import trilha
         estado = trilha.estado()
-        self.assertTrue(estado["tem"], "esta plataforma não declara trilha")
+        self.assertTrue(estado["tem"], "esta estação não declara trilha")
         self.assertGreaterEqual(estado["total"], 3, estado)
         self.assertEqual(estado["passo"], 0,
-                         "a plataforma versionada tem que estar no passo 0 da trilha")
+                         "a estação versionada tem que estar no passo 0 da trilha")
         for p in trilha.passos()[1:]:
             pasta = (self.RAIZ / str(p["pasta"]).replace("\\", "/")).resolve()
-            self.assertTrue((pasta / "plataforma.json").is_file(),
+            self.assertTrue((pasta / "estacao.json").is_file(),
                             f"instantâneo ausente: {pasta}")
 
 

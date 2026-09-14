@@ -1,9 +1,9 @@
 """Métricas do dashboard — GET /api/metricas.
 
-Lê o registro da plataforma ativa e reaproveita `indexer.is_excluded` para a
+Lê o registro da estação ativa e reaproveita `indexer.is_excluded` para a
 varredura de arquivos, em vez de duplicar regex. Até o Trecho 6 isto dependia do
-utilitário da plataforma, o que fazia o Dashboard sumir em
-qualquer outra plataforma; a regra de reconhecer uma linha de registro é a mesma
+utilitário da estação, o que fazia o Dashboard sumir em
+qualquer outra estação; a regra de reconhecer uma linha de registro é a mesma
 de lá, agora com o identificador vindo do config. Mesmo formato de saída do
 protótipo em `.design/mockups/gerar_metricas_dashboard.py`, contra o qual os
 números foram validados à mão.
@@ -24,17 +24,17 @@ TABLE_ROW_RE = re.compile(r"^\|(.+)\|\s*$")
 
 
 def _linhas_do_registro():
-    """As linhas de tabela do registro da plataforma ativa.
+    """As linhas de tabela do registro da estação ativa.
 
-    Antes isto era importado do utilitário da plataforma — o que fazia o
+    Antes isto era importado do utilitário da estação — o que fazia o
     Dashboard depender de um script que só existe
-    naquela plataforma. A regra é a mesma de lá (seis colunas, a primeira
+    naquela estação. A regra é a mesma de lá (seis colunas, a primeira
     contendo um identificador), agora com o identificador vindo do config.
     """
     cfg = config.atual()
     registro = cfg.arquivo("registro")
     if registro is None:
-        raise RuntimeError("esta plataforma não declara um arquivo de registro")
+        raise RuntimeError("esta estação não declara um arquivo de registro")
     if not registro.exists():
         raise FileNotFoundError(f"registro não encontrado: {registro}")
     ident = cfg.identificador_re
@@ -61,7 +61,7 @@ def _tipo_re():
     A versão herdada procurava o tipo em qualquer lugar da coluna, e por isso
     contava o tipo do DESTINO em toda linha que já tinha avançado: uma entrada
     crua (que não tem tipo nenhum) aparecia como `DIG` só porque a seta dela
-    apontava para um item já promovido. Numa plataforma real isso inflou a contagem em 8
+    apontava para um item já promovido. Numa estação real isso inflou a contagem em 8
     linhas. A coluna começa com a sigla do estágio, e o tipo, quando existe, vem
     logo depois — é só isso que conta.
     """
@@ -138,9 +138,9 @@ def _metricas_arquivos():
 
 
 def _metricas_nucleo():
-    """Conta o marcador de núcleo que a plataforma declarar em `frontmatter`.
+    """Conta o marcador de núcleo que a estação declarar em `frontmatter`.
 
-    Só faz sentido onde a plataforma declara **as duas coisas** — o campo e as
+    Só faz sentido onde a estação declara **as duas coisas** — o campo e as
     `metricas_pastas` onde procurá-lo. Sem isso a métrica sai do dashboard, em
     vez de contar zero como se fosse informação.
     """
@@ -167,7 +167,7 @@ def _metricas_nucleo():
 
 
 def compute_metrics():
-    """Custa uma varredura completa da plataforma — o server.py calcula no
+    """Custa uma varredura completa da estação — o server.py calcula no
     reindex e guarda em STATE, não chama isto a cada GET /api/metricas."""
     try:
         log, nucleo, erro = _metricas_log(), _metricas_nucleo(), None

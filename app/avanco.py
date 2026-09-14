@@ -1,5 +1,5 @@
 """Frente 3 do console operacional — GET /api/avanco: resumo da última rodada da
-rotina de avanço da plataforma, lido de historico.md (prosa livre, não estruturado — só
+rotina de avanço da estação, lido de historico.md (prosa livre, não estruturado — só
 extrai o último heading e o primeiro parágrafo, nunca inventa o que não está
 escrito lá). Disparar uma rodada nova continua exigindo uma sessão do Claude
 Code (a skill decide por julgamento, não é mecânica) — este módulo só mostra
@@ -22,7 +22,7 @@ LIMITE_RESUMO = 400
 def ultima_rodada():
     historico = config.atual().caminho("avanco_historico")
     if historico is None:
-        return {"erro": "esta plataforma não declara uma rotina de avanço",
+        return {"erro": "esta estação não declara uma rotina de avanço",
                 "titulo": None, "resumo": None, "path": None}
     if not historico.exists():
         return {"erro": f"{historico.name} não encontrado", "titulo": None, "resumo": None, "path": None}

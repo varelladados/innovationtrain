@@ -3,8 +3,8 @@
 O que importa aqui: o bloco de guardrails nunca pode sumir de um briefing (é o
 que impede a sessão de IA de commitar sozinha, apagar fisicamente ou fechar
 pendência por inferência), e os caminhos citados têm que ser os **reais da
-plataforma ativa** — desde o Trecho 3 eles saem do config, então o teste monta
-uma plataforma temporária em vez de depender de uma plataforma real existir.
+estação ativa** — desde o Trecho 3 eles saem do config, então o teste monta
+uma estação temporária em vez de depender de uma estação real existir.
 """
 import shutil
 import sys
@@ -20,11 +20,11 @@ import pendencias  # noqa: E402
 
 DOUTRINA = "metodo/regras.md"
 CHECKLIST = "metodo/classificar.md"
-UTILITARIO = "metodo/plataforma.py"
+UTILITARIO = "metodo/estacao.py"
 
 
-def plataforma_de_teste(raiz, **extra):
-    """Plataforma temporária com os documentos do método declarados, mais uma
+def estacao_de_teste(raiz, **extra):
+    """Estação temporária com os documentos do método declarados, mais uma
     pasta de projeto — é o mínimo que os três briefings citam."""
     raiz = Path(raiz)
     (raiz / "1-capturas").mkdir(exist_ok=True)
@@ -90,8 +90,8 @@ class TestGuardrails(unittest.TestCase):
             self.assertNotIn("só commite depois", texto.lower())
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-gr-"))
-        plataforma_de_teste(self.tmp)
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-gr-"))
+        estacao_de_teste(self.tmp)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -99,7 +99,7 @@ class TestGuardrails(unittest.TestCase):
     def _checar(self, texto):
         for regra in self.REGRAS:
             self.assertIn(regra, texto, f"guardrail ausente: {regra}")
-        # os caminhos citados são os que a plataforma declara, não literais
+        # os caminhos citados são os que a estação declara, não literais
         self.assertIn(DOUTRINA, texto)
         self.assertIn(UTILITARIO, texto)
         self.assertIn("CAP → NOT → IDE → FUN → PRJ", texto)
@@ -116,10 +116,10 @@ class TestGuardrails(unittest.TestCase):
 
 class TestPendencias(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-"))
         self.pend = self.tmp / "pendencias"
         self.pend.mkdir()
-        plataforma_de_teste(self.tmp)
+        estacao_de_teste(self.tmp)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -150,8 +150,8 @@ class TestPendencias(unittest.TestCase):
 
 class TestClassificar(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-cl-"))
-        plataforma_de_teste(self.tmp)
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-cl-"))
+        estacao_de_teste(self.tmp)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -182,14 +182,18 @@ class TestAvancar(unittest.TestCase):
     PASTA = "projeto-de-teste"
 
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-av-"))
-        plataforma_de_teste(self.tmp)
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-av-"))
+        estacao_de_teste(self.tmp)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_destaca_essenciais(self):
-        rel = f"{self.PASTA}/backlog-teste.md"
+        # O caminho indexado inclui a pasta de projetos da estação. A versão
+        # anterior deste teste criava a pasta em `5-projetos/` e montava a
+        # entrada sem o prefixo — incoerência que fazia o teste passar sobre um
+        # código errado, e escondeu por completo o bug de projeto em subpasta.
+        rel = f"5-projetos/{self.PASTA}/backlog-teste.md"
         entries = [{"path": rel, "type": "backlog", "title": "Backlog", "size_bytes": 1}]
         r = briefing.briefing_avancar(self.PASTA, entries, {rel: BACKLOG})
         self.assertIn("publicar a primeira versão", r["texto"])
@@ -210,8 +214,8 @@ class TestAvancar(unittest.TestCase):
 
 class TestGerar(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="estacao-brf-ge-"))
-        plataforma_de_teste(self.tmp)
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-ge-"))
+        estacao_de_teste(self.tmp)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

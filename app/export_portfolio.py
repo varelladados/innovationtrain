@@ -1,21 +1,19 @@
-"""Vitrine pública — página estática gerada do inventário da plataforma.
+"""Vitrine pública — página estática gerada do inventário da estação.
 
-Diferente do export_static.py (a Estação inteiro, pra uso interno), isto é a
+Diferente do export_static.py (a Central inteira, pra uso interno), isto é a
 VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
 
-- Todo projeto listado no índice de projetos da plataforma aparece (nome, tipo,
+- Todo projeto listado no índice de projetos da estação aparece (nome, tipo,
   status, resumo) — o resumo é o texto canônico da tabela, sem editar.
 - Link só se for público de verdade: URL "no ar" (portfolio.json `estavel` ou host
   público detectado) ou repositório GitHub marcado como público em
   portfolio.json (`"repo_publico": true`). Repositório privado vira texto
   "repositório privado", sem link.
 - Nada de protótipo/launcher local (isso é a aba Portfólio interna).
-- Sem dados pessoais além da assinatura que a própria plataforma declara
-  (`assinatura`, no config — decisão do usuário em 2026-09-03: nenhum e-mail ou
-  link de contato por enquanto). Sem a chave, a vitrine sai sem assinatura.
+- Sem dados pessoais: nenhum e-mail nem link de contato.
 
-Saída: dist/portfolio-<plataforma>.html (formato Artifact: sem
-<html>/<head>/<body>); --full gera a variante autocontida.
+Saída: dist/portfolio-<nome da estação ativa>.html (formato Artifact: sem <html>/<head>/<body>);
+--full gera a variante autocontida.
 
     python app/export_portfolio.py [--full]
 """
@@ -51,33 +49,11 @@ def _ler(p, limit=200_000):
         return ""
 
 
-def _slug(texto, limite=40):
-    """Nome de plataforma reduzido a nome de arquivo: sem acento, sem espaço."""
-    t = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode()
-    t = re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
-    if len(t) > limite:
-        t = t[:limite].rsplit("-", 1)[0]   # corta palavra inteira, não pela metade
-    return t.strip("-") or "plataforma"
-
-
-def nome_saida(full=False):
-    """O arquivo que a vitrine escreve, derivado do nome da plataforma ativa.
-
-    Era literal aqui dentro — e o literal era o nome do sistema pessoal de quem
-    escreveu o produto, num repositório público. Escapava do guarda-corpo por
-    estar escrito com hífen no meio: `tests/test_publicacao.py` só hasheava
-    palavra inteira, e `a-b` chegava lá como `a` e `b`. A brecha foi fechada
-    lá; aqui o nome passa a vir do config pelo mesmo motivo que todo o resto —
-    a vitrine de uma plataforma não pode sair com o nome de outra.
-    """
-    return f"portfolio-{_slug(config.atual().nome)}{'-full' if full else ''}.html"
-
-
 def frase_manifesto():
-    """A frase-tese da plataforma — fonte única, nunca reescrita aqui.
+    """A frase-tese da estação — fonte única, nunca reescrita aqui.
 
     Onde ela mora e por qual rótulo é reconhecida são declarados pela
-    plataforma (`manifesto` e `manifesto_marca`). Sem os dois, a vitrine sai
+    estação (`manifesto` e `manifesto_marca`). Sem os dois, a vitrine sai
     sem tese em vez de sair com uma frase inventada aqui dentro.
     """
     cfg = config.atual()
@@ -117,6 +93,7 @@ def status_label(status):
 
 
 def montar(full=False):
+    config.recusar_se_privada(config.atual(), "a vitrine")
     pf = portfolio_mod.build_portfolio()
     projetos = [p for p in pf["projetos"] if p["listada"]]
     for p in projetos:
@@ -266,8 +243,8 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
     </section>
   </main>
   <footer>
-    <span>Gerado em {esc(gerado)} a partir do inventário da Estação — a página muda quando os projetos mudam, não o contrário.</span>
-    <span>Resumos são os textos canônicos do índice de projetos da plataforma.</span>
+    <span>Gerado em {esc(gerado)} a partir do inventário da Central — a página muda quando os projetos mudam, não o contrário.</span>
+    <span>Resumos são os textos canônicos do índice de projetos da estação.</span>
   </footer>
 </div>"""
 
@@ -280,12 +257,20 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
 
 def main():
     full = "--full" in sys.argv
-    page, projetos, no_ar = montar(full)
+    config.iniciar(sys.argv[1:])   # sem isto, pela linha de comando não havia estação ativa
+    try:
+        page, projetos, no_ar = montar(full)
+    except config.EstacaoPrivada as e:
+        print(e)
+        return 2
     DIST_DIR.mkdir(exist_ok=True)
-    out = DIST_DIR / nome_saida(full)
+    # o nome sai da estação ativa, nunca fixo: este repositório é público
+    nome = unicodedata.normalize("NFKD", config.atual().nome).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", nome.lower()).strip("-") or "vitrine"
+    out = DIST_DIR / (f"portfolio-{slug}-full.html" if full else f"portfolio-{slug}.html")
     out.write_text(page, encoding="utf-8")
     print(f"{out} — {len(page.encode('utf-8'))/1e3:.0f} KB · {len(projetos)} projetos · {len(no_ar)} no ar")
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
