@@ -26,7 +26,7 @@ APP_DIR = Path(__file__).resolve().parent
 
 def _doc(chave, fallback):
     """Caminho relativo de um documento do método, como declarado pela
-    plataforma. Sem declaração, o briefing diz o nome genérico em vez de citar
+    estação. Sem declaração, o briefing diz o nome genérico em vez de citar
     um arquivo que não existe."""
     return config.atual().get(chave) or fallback
 
@@ -43,7 +43,7 @@ def guardrails():
     registro = cfg.arquivo_rel("registro") or "o registro"
     cadeia = " → ".join(cfg.siglas)
     util = cfg.get("utilitario")
-    comando_id = f"`python {util} novo-id`" if util else "o utilitário da plataforma"
+    comando_id = f"`python {util} novo-id`" if util else "o utilitário da estação"
     return f"""## Guardrails (regras permanentes — íntegra em `{doutrina}`)
 
 - **Apagar é sempre lógico, nunca físico.** Rebaixar/consolidar acontece em índice e `.md`; pasta de projeto não some.
@@ -53,7 +53,7 @@ def guardrails():
 - **Nunca fecha pendência por inferência** — só o campo `## Resposta` explícito fecha; "Deixar para depois" incrementa `**Adiada:**` e mantém ativa.
 - **Salvar é automático; publicar é decisão.** Commite local ao terminar, sem me pedir autorização — me **avise** o que entrou, não pergunte. `git add` **nominal**, nunca `git add .`. Mudança que não é sua fica de fora. **Push só com autorização explícita e separada.**
 - **Artefato de sessão vive no repositório**: plano, relatório ou análise substancial é copiado pra raiz do projeto com a convenção local (`plano-<assunto>-<AAAA-MM-DD>.md`) e commitado na mesma sessão.
-- O que a plataforma declarar em `excluir` fica de fora de tudo isso — nunca
+- O que a estação declarar em `excluir` fica de fora de tudo isso — nunca
   entra em stage automático."""
 
 
@@ -84,7 +84,7 @@ def briefing_pendencias():
             "Central (marcou a opção no próprio arquivo). Processe cada uma: "
             "aplique a decisão, renomeie o arquivo pra `pendencia-resolvida-*`, "
             "escreva o bloco `## Resolvida em <data>` explicando o que foi feito, "
-            "e regenere o `sem-destino` da plataforma.", "",
+            "e regenere o `sem-destino` da estação.", "",
         ]
         for c in respondidas:
             marcadas = []
@@ -141,7 +141,7 @@ def briefing_classificar(path, text_cache=None):
         linhas += ["", f"> {trecho}…"]
     checklist = _doc("checklist", "o checklist de classificação")
     fluxo = _doc("fluxo", "o documento do fluxo")
-    util = cfg.get("utilitario") or "o utilitário da plataforma"
+    util = cfg.get("utilitario") or "o utilitário da estação"
     tipos = "|".join(cfg.tipos) if cfg.tipos else "tipo"
     linhas += [
         "",
@@ -165,10 +165,10 @@ def briefing_avancar(pasta, entries, text_cache):
     """Avançar um projeto: o que está aberto e marcado como essencial."""
     from projetos import _pasta_valida  # import tardio: evita ciclo no boot
     if not _pasta_valida(pasta):
-        raise ValueError("pasta não é um projeto desta plataforma")
+        raise ValueError("pasta não é um projeto desta estação")
 
     # o mesmo prefixo que a view de projeto usa: o nome da pasta não é o
-    # caminho dela quando a plataforma guarda projeto em subpasta
+    # caminho dela quando a estação guarda projeto em subpasta
     from projetos import prefixo_do_projeto
     base = prefixo_do_projeto(pasta) + "/"
     backlogs = [e for e in entries if e["type"] == "backlog" and e["path"].startswith(base)]
@@ -193,7 +193,7 @@ def briefing_avancar(pasta, entries, text_cache):
         linhas += ["", "Essenciais (pré-requisito pra entregar):", ""]
         linhas += [f"- {texto}  \n  _em `{caminho}`_" for caminho, texto in essenciais]
     pend = config.atual().get("pendencias")
-    onde_regras = f"`{Path(pend).parent.as_posix()}/SKILL.md`" if pend else "o método da plataforma"
+    onde_regras = f"`{Path(pend).parent.as_posix()}/SKILL.md`" if pend else "o método da estação"
     linhas += [
         "",
         "Avance o que der sozinho (código, doc, pesquisa) e transforme em "

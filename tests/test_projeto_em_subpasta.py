@@ -7,9 +7,9 @@ Com a taxonomia padrão, a tela de projeto abria sem nenhum backlog e sem
 `CLAUDE.md`, e o briefing dizia "nenhum backlog indexado" para todo projeto.
 
 O que escondeu o bug foi o fixture: `apoio.qualquer_pasta_e_projeto()` põe
-`projetos.pasta = ""`, ou seja, a suíte exercitava só a plataforma em que o
+`projetos.pasta = ""`, ou seja, a suíte exercitava só a estação em que o
 projeto está na raiz — que é a exceção, não o padrão. Aqui é o contrário: a
-pasta de projetos é declarada, como numa plataforma de verdade.
+pasta de projetos é declarada, como numa estação de verdade.
 """
 import shutil
 import sys
@@ -51,7 +51,7 @@ class _Base(unittest.TestCase):
         apoio.aplicar(self.tmp,
                       projetos={"pasta": "5-projetos", "prefixo_re": None},
                       doutrina="metodo/regras.md",
-                      utilitario="metodo/plataforma.py",
+                      utilitario="metodo/estacao.py",
                       checklist="metodo/classificar.md")
         self.entries = [
             {"path": BACKLOG, "title": "Backlog", "type": "backlog",

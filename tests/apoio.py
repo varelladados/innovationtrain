@@ -1,4 +1,4 @@
-"""Apoio dos testes: montar uma plataforma temporária e ativá-la.
+"""Apoio dos testes: montar uma estação temporária e ativá-la.
 
 Desde o Trecho 3 os módulos não têm mais constantes de caminho — eles leem
 `config.atual()` na hora da chamada. Então o teste não monkeypatcha atributo de
@@ -14,9 +14,9 @@ import config  # noqa: E402
 
 
 def aplicar(raiz, **taxonomia):
-    """Ativa uma plataforma em `raiz`, com as sobrescritas dadas.
+    """Ativa uma estação em `raiz`, com as sobrescritas dadas.
 
-    Cria o arquivo marcador se ele ainda não existir, para que `plataforma_ok`
+    Cria o arquivo marcador se ele ainda não existir, para que `estacao_ok`
     seja verdadeiro — o teste que quer o modo degradado passa `marcador` para um
     nome que não existe.
     """
@@ -24,7 +24,7 @@ def aplicar(raiz, **taxonomia):
     cfg = config.carregar(raiz, taxonomia or {})
     marcador = raiz / cfg.marcador
     if not marcador.exists() and marcador.parent.exists():
-        marcador.write_text("# plataforma de teste\n", encoding="utf-8")
+        marcador.write_text("# estação de teste\n", encoding="utf-8")
     return config.aplicar(cfg)
 
 

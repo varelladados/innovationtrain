@@ -1,11 +1,11 @@
-# <nome da plataforma>
+# <nome da estação>
 
 > **A porta de entrada.** Quem chega aqui — pessoa ou sessão de IA — lê este
-> arquivo primeiro. Uma plataforma tem um só.
+> arquivo primeiro. Uma estação tem um só.
 
 ## Em 30 segundos
 
-<o que esta plataforma guarda, de quem é, e o que ela NÃO é. Três frases.>
+<o que esta estação guarda, de quem é, e o que ela NÃO é. Três frases.>
 
 ## Os cinco estágios
 
@@ -28,17 +28,17 @@ As regras da passagem estão em `metodo/classificar.md`.
 |---|---|
 | `_registro.md` | a linha do tempo de tudo. Append-only: nunca se apaga |
 | `_sem-destino.md` | gerado — o que está no registro e ainda não avançou |
-| `plataforma.json` | os nomes: estágios, siglas, tipos de projeto |
+| `estacao.json` | os nomes: estágios, siglas, tipos de projeto |
 
 ## Como trabalhar aqui
 
 1. **Capturar** é a operação mais barata: cole e siga em frente. Organizar é
    depois, e é uma etapa própria.
 2. **Nunca monte identificador à mão** —
-   `python metodo/plataforma.py novo-id --raiz . --etapa CAP --slug "..."`.
+   `python metodo/estacao.py novo-id --raiz . --etapa CAP --slug "..."`.
 3. **Nada é apagado.** Encerrar é mover para o `_historico/` do estágio.
 4. Antes de dar uma rodada por encerrada:
-   `python metodo/plataforma.py verificar --raiz .`
+   `python metodo/estacao.py verificar --raiz .`
 
 ## Links
 

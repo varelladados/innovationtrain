@@ -9,7 +9,7 @@ Fontes, em ordem de autoridade:
 1. `portfolio.json` na raiz do projeto (curadoria manual, opcional):
    {"estavel": "https://…", "destaque": ["app.html"], "ocultar": ["x.html"],
     "estavel_local": ["app-local-campo-v1.1.html"], "tags": ["b2b"], "nota": "…"}
-2. o índice de projetos da plataforma (status e resumo canônicos)
+2. o índice de projetos da estação (status e resumo canônicos)
 3. `CLAUDE.md` do projeto (id, tipo) + URLs citadas em CLAUDE.md/readme-*/backlog-*
 4. git do projeto (remote, último commit, nº de commits)
 5. varredura da pasta (heurística por extensão/nome — ver classificar_arquivo)
@@ -46,7 +46,7 @@ def _alt(valores):
 
 
 def _re_tipo():
-    """Casa a sigla de tipo de projeto declarada pela plataforma."""
+    """Casa a sigla de tipo de projeto declarada pela estação."""
     tipos = config.atual().tipos
     return re.compile(r"\b(" + _alt(tipos) + r")\b") if tipos else None
 

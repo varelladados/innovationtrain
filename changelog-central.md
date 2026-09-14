@@ -3,7 +3,7 @@
 ## 0.10.0 — 2026-09-14
 
 **A Estação passa a se chamar Central** — o app, o arquivo da raiz e a config
-de quem usa.
+de quem usa —, e o que ela opera deixa de se chamar plataforma: é uma **estação**.
 
 - **O arquivo da raiz é `CENTRAL.md`.** Todo outro arquivo desse tipo continua
   `CLAUDE.md`; o da raiz ganha nome próprio. Ao lado dele fica um `CLAUDE.md` de
@@ -25,6 +25,16 @@ de quem usa.
 - **A vitrine** (`export_portfolio.py`) gravava um arquivo com nome fixo, vindo
   de um sistema pessoal, e o docstring citava personas — num repositório
   público. O nome agora sai da estação ativa, e o docstring não cita ninguém.
+- **Plataforma → estação**, em todo o produto: `plataformas/` → `estacoes/`,
+  `plataforma.json` → `estacao.json`, `metodo/plataforma.py` →
+  `metodo/estacao.py`, `ESTACAO_PLATAFORMA` → `CENTRAL_ESTACAO`, a chave
+  `plataformas` do `central.json` → `estacoes`, e as rotas `/api/estacoes` e
+  `/api/estacao/ativar`. O que tinha o nome antigo continua sendo lido —
+  `metodo/plataforma.py` virou um shim de poucas linhas — porque há estações de
+  fora deste repositório que o chamam por ali.
+- **"Plataforma" nos textos dos exemplos** só mudou onde era a unidade. Onde é
+  palavra comum — a taxa da plataforma do marketplace, a plataforma do curso —
+  ficou como estava.
 
 ## 0.9.2 — 2026-09-11
 

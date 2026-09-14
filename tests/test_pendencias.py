@@ -114,7 +114,7 @@ class BaseTemp(unittest.TestCase):
         self.exec_dir = self.tmp / "execucao"
         self.exec_dir.mkdir()
         self.backups = self.tmp / "backups"
-        # a pasta de pendências vem do config da plataforma ativa, não de uma
+        # a pasta de pendências vem do config da estação ativa, não de uma
         # constante de módulo — é o mesmo caminho que o servidor percorre
         apoio.aplicar(self.tmp, pendencias="execucao")
         self._orig_backup = pendencias.BACKUPS_DIR

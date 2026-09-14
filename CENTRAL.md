@@ -25,7 +25,7 @@ checkbox de backlog). Hoje também:
   caminhos reais e os guardrails do método embutidos;
 - **mostra o fluxo** (aba Fluxo) — as passagens entre estágios e os critérios de
   promoção;
-- **cria a primeira plataforma** (aba Embarque) — cinco perguntas, um prompt.
+- **cria a primeira estação** (aba Embarque) — cinco perguntas, um prompt.
 
 A taxonomia padrão tem **cinco** estágios desde a 0.9.0 (capturas → notas →
 ideias → funcionalidades → projetos). O quarto é a unidade de trabalho: uma
@@ -49,41 +49,47 @@ HTML/CSS/JS, só pra mudança em arquivo `.py`.
 
 ## A raiz não é adivinhada — ela é resolvida
 
-A Central **não assume** que mora dentro da plataforma que lê. A raiz resolve
+A Central **não assume** que mora dentro da estação que lê. A raiz resolve
 nesta ordem, em `config.resolver()`:
 
 1. `--raiz <pasta>` na linha de comando;
-2. a variável de ambiente `ESTACAO_PLATAFORMA`;
-3. a plataforma marcada `ativa` no `central.json` do hub;
+2. a variável de ambiente `CENTRAL_ESTACAO`;
+3. a estação marcada `ativa` no `central.json` do hub;
 4. erro em português, dizendo as três saídas acima.
 
+Os nomes até a 0.9 continuam valendo nesta versão, só para leitura:
+`ESTACAO_PLATAFORMA`, `ESTACAO_HUB`, o `estacao.json` na raiz da Central, a chave
+`plataformas`, o `plataforma.json` de cada estação e o `metodo/plataforma.py` —
+que virou um shim de poucas linhas para `estacao.py`. Há estações de fora deste
+repositório que ainda usam esses nomes; a escrita é sempre no nome novo.
+
 **Não existe fallback para `PROJECT_DIR.parent`**, e a ausência dele é
-deliberada: fora da plataforma em que a Central nasceu ele resolvia para uma
+deliberada: fora da estação em que a Central nasceu ele resolvia para uma
 pasta qualquer e fazia erro de configuração aparecer como "árvore vazia". Há um
 teste que cobra que ele não voltou (`test_config.py`).
 
 Quando **nada** resolve — o caso de quem acabou de clonar — `config.iniciar()`
-não levanta: devolve `sem_plataforma()`, o servidor sobe e a aba Embarque abre
+não levanta: devolve `sem_estacao()`, o servidor sobe e a aba Embarque abre
 sozinha. É o único caminho que faz sentido oferecer a quem chega.
 
-## Nada de plataforma fica escrito no código
+## Nada de estação fica escrito no código
 
-Tudo que é nome de plataforma sai de `config.atual()`, **lido na hora da
-chamada**, nunca no import — é isso que faz o seletor trocar de plataforma sem
+Tudo que é nome de estação sai de `config.atual()`, **lido na hora da
+chamada**, nunca no import — é isso que faz o seletor trocar de estação sem
 reiniciar o servidor. Isso vale para três famílias de coisa, e a terceira é a que
 se esquece:
 
 | Família | Onde é declarada | Exemplos |
 |---|---|---|
 | **Taxonomia** | `estagios`, `siglas`, `tipos`, `historico` | pastas, nomes, siglas dos estágios |
-| **Caminhos** | as chaves opcionais (`perfis`, `trilha`, `pendencias`, `manifesto`…) | onde cada coisa mora dentro da plataforma |
+| **Caminhos** | as chaves opcionais (`perfis`, `trilha`, `pendencias`, `manifesto`…) | onde cada coisa mora dentro da estação |
 | **Campos de frontmatter** | `frontmatter.processado` · `.nucleo` · `.origem` | os nomes de campo que o app **lê e escreve** |
 | **Siglas de uma taxonomia anterior** | `siglas_legadas` | `{sigla: nº do estágio}` — lidas em todo lugar, nunca emitidas |
 | **Duplicatas que o acervo já trouxe** | `duplicatas_historicas` | identificadores repetidos de antes da convenção `-N`: viram AVISO, não PROBLEMA |
 
 A terceira existe porque nome de campo é comportamento, não prosa: o app grava
 `<processado>: <id>` no arquivo que cria e procura esse mesmo campo depois. Se
-ele estivesse escrito no código, uma plataforma com convenção própria só poderia
+ele estivesse escrito no código, uma estação com convenção própria só poderia
 ser lida mudando o produto. Chave ausente degrada: sem `nucleo`, a métrica
 correspondente simplesmente **sai** do dashboard, em vez de contar zero como se
 fosse informação.
@@ -113,14 +119,14 @@ central/                  ← a raiz do repositório É o hub
 │   ├── noar.py           checagem "está no ar?" das URLs públicas (cache 6h)
 │   ├── backfill_portfolio.py semeia portfolio.json a partir dos perfis (CLI, --dry-run padrão)
 │   ├── briefing.py       GET /api/briefing — texto pronto pra colar numa sessão de IA
-│   ├── embarque.py       POST /api/embarque/prompt — os primeiros passos de quem não tem plataforma
+│   ├── embarque.py       POST /api/embarque/prompt — os primeiros passos de quem não tem estação
 │   ├── versoes.py        GET /api/versoes — leitura do git, allow-list de subcomando, só leitura
-│   ├── trilha.py         a trilha das plataformas de exemplo — restaura instantâneos, não promove nada
+│   ├── trilha.py         a trilha das estações de exemplo — restaura instantâneos, não promove nada
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
-├── metodo/               regras, taxonomia, templates e plataforma.py (o utilitário)
-├── plataformas/
+├── metodo/               regras, taxonomia, templates e estacao.py (o utilitário)
+├── estacoes/
 │   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
 │   ├── _inicial/         cópias intactas das duas: é delas que "voltar ao início" copia
@@ -135,7 +141,7 @@ central/                  ← a raiz do repositório É o hub
 ```
 
 **Isto era três repositórios até 2026-09-09** (`app`, `metodo`,
-`plataformas/exemplo`, dentro de um hub). Na publicação viraram um só: quem
+`estacoes/exemplo`, dentro de um hub). Na publicação viraram um só: quem
 clona pega o produto inteiro e ele funciona de primeira. O efeito colateral bom
 é que os testes de `test_exemplo.py` e o de taxonomia deixaram de pular em
 silêncio — antes dependiam de repositórios irmãos que um clone não trazia.
@@ -147,7 +153,7 @@ atualizar os dois juntos:
 
 | Padrão de nome | Tipo | Observação |
 |---|---|---|
-| `<prefixo>*.md` | `orquestra` | o prefixo de índice é declarado pela plataforma (`indice_prefixo`); sinaliza "isto é um índice de pasta" |
+| `<prefixo>*.md` | `orquestra` | o prefixo de índice é declarado pela estação (`indice_prefixo`); sinaliza "isto é um índice de pasta" |
 | o documento de `trilha` | `trilha` | **caso único** — abre na aba Tour, não como markdown comum |
 | `CLAUDE.md` | `orquestra` | **exceção sem prefixo** — nome fixado pelo Claude Code (auto-carrega como contexto do projeto); nunca renomear |
 | `CENTRAL.md` | `orquestra` | o arquivo da raiz da Central — o `CLAUDE.md` ao lado dele é só `@CENTRAL.md` |
@@ -168,9 +174,9 @@ sem tocar no arquivo.
 
 ## Ciclo de vida físico dentro de um estágio
 
-Uma plataforma pode dividir um estágio em subpastas de **triagem**, ortogonais à
+Uma estação pode dividir um estágio em subpastas de **triagem**, ortogonais à
 etapa: o que entrou e ninguém tocou, o que está pendente, o que já foi
-encaminhado. A plataforma declara quais são em `ciclo_vida`; o indexer expõe
+encaminhado. A estação declara quais são em `ciclo_vida`; o indexer expõe
 isso como `entry.lifecycle_stage`, derivado só do caminho
 (`indexer.py::lifecycle_stage`), e a UI mostra um badge de cor por estágio. Na
 taxonomia padrão a única subpasta é o `_historico/` de cada estágio.
@@ -178,36 +184,36 @@ taxonomia padrão a única subpasta é o `_historico/` de cada estágio.
 ## Exclusões do indexer
 
 O padrão está em `config.PADROES["excluir"]` (`.git`, `node_modules`,
-`__pycache__`, `.claude`, `dist`, `build`) e **cada plataforma acrescenta o que
-quiser** no `plataforma.json` dela — acervos externos, pastas de build de
+`__pycache__`, `.claude`, `dist`, `build`) e **cada estação acrescenta o que
+quiser** no `estacao.json` dela — acervos externos, pastas de build de
 projetos, o que não deve entrar em varredura. Nada disso é escrito no código.
 
 ## A trilha de exemplo — e por que ela não é um motor
 
-As duas plataformas de exemplo declaram `estado_inicial`, e a de cozinha declara
+As duas estações de exemplo declaram `estado_inicial`, e a de cozinha declara
 também `tutorial.passos`. Isso liga duas coisas na interface: **voltar ao
 início** e **avançar a trilha**.
 
-**Não há promoção acontecendo.** Cada passo é uma pasta em `plataformas/_passos/`
-com a plataforma inteira já naquele estado; avançar copia essa pasta por cima. A
-lógica destrutiva mora num lugar só — `metodo/plataforma.py reiniciar`, chamado
+**Não há promoção acontecendo.** Cada passo é uma pasta em `estacoes/_passos/`
+com a estação inteira já naquele estado; avançar copia essa pasta por cima. A
+lógica destrutiva mora num lugar só — `metodo/estacao.py reiniciar`, chamado
 por subprocess, o mesmo caminho de `novo-id`.
 
 A fronteira é deliberada e vale a pena entender antes de propor mudá-la: numa
-plataforma de verdade, a passagem entre estágios é **decisão** (os critérios de
+estação de verdade, a passagem entre estágios é **decisão** (os critérios de
 `metodo/classificar.md`) e **escrita** (o texto do estágio novo). Um botão não faz
 nenhuma das duas. Automatizar a mecânica sem elas produziria notas que são cópia
 da captura — ruído com identificador. A trilha mostra **como fica**; quem faz
-acontecer numa plataforma sua é uma sessão de IA com o briefing da aba 📋.
+acontecer numa estação sua é uma sessão de IA com o briefing da aba 📋.
 
 | Peça | Onde |
 |---|---|
 | Quais são os passos, e em qual estamos | `app/trilha.py` |
-| Apagar e restaurar | `metodo/plataforma.py reiniciar [--de <pasta>]` |
-| O portão | a chave `estado_inicial` — **uma plataforma sua não a declara** |
+| Apagar e restaurar | `metodo/estacao.py reiniciar [--de <pasta>]` |
+| O portão | a chave `estado_inicial` — **uma estação sua não a declara** |
 
 O passo atual **não é guardado**: é deduzido comparando o `_registro.md` da
-plataforma com o de cada instantâneo. Sem arquivo de controle para
+estação com o de cada instantâneo. Sem arquivo de controle para
 dessincronizar, e quem editar o exemplo à mão vê "fora dos passos" em vez de um
 número mentiroso.
 
@@ -224,18 +230,18 @@ silêncio — `tests/test_trilha.py` cobra isso.
 | `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
 
-`POST /api/plataforma/ativar` e `POST /api/embarque/registrar` escrevem **só no
-`central.json` do hub** — que é config de quem usa, não corpus de plataforma. Por
+`POST /api/estacao/ativar` e `POST /api/embarque/registrar` escrevem **só no
+`central.json` do hub** — que é config de quem usa, não corpus de estação. Por
 isso não passam pela disciplina acima; a trava deles é outra: caminho tem que
 estar registrado (ou ser acrescentado por eles), e nada é tocado dentro de
-plataforma nenhuma.
+estação nenhuma.
 
 ### Endpoints que **não escrevem em disco** — e é de propósito
 
 | endpoint | o que faz | por que não escreve |
 |---|---|---|
 | `GET /api/briefing` | texto pra colar numa sessão de IA | a IA é que executa, com o humano olhando |
-| `POST /api/embarque/prompt` | texto que **cria a primeira plataforma** | é POST porque a entrada é um objeto de respostas, não porque escreve |
+| `POST /api/embarque/prompt` | texto que **cria a primeira estação** | é POST porque a entrada é um objeto de respostas, não porque escreve |
 | `GET /api/versoes` | estado do git dos repositórios | allow-list de subcomando, todos de leitura |
 | `GET /api/versoes/prompt` | "salvar um ponto", "mandar pra nuvem", "linha nova" | a Central lê o git e gera o texto; **nunca o executa** |
 
@@ -258,7 +264,7 @@ raiz só pra leitura (nunca `.git`/`node_modules`, sem sair da raiz) — é o qu
 protótipos HTML abrirem renderizados.
 
 **`POST /api/nota/nova`** cria um item do primeiro estágio a partir de texto
-solto, sem sessão de IA. Regras (`app/notas.py`): o utilitário da plataforma é
+solto, sem sessão de IA. Regras (`app/notas.py`): o utilitário da estação é
 chamado via `subprocess` (nunca import — `novo-id` faz `sys.exit()` em erro, o
 que mataria o servidor); grava o `.md` com gravação atômica (`os.replace`);
 acrescenta uma linha na seção do dia do registro central — nunca edita linha
@@ -296,7 +302,7 @@ Central nunca commita em nome de ninguém.
 - **A porta tem uma fonte só:** `config.PORTA`. O `.bat` pergunta ao Python; o
   `.claude/launch.json` é o único lugar que repete o número, porque é JSON lido
   pelo harness — e um teste cobra que os dois concordem.
-- **Este repositório é público, e nenhum nome de plataforma de ninguém entra
+- **Este repositório é público, e nenhum nome de estação de ninguém entra
   nele.** São **quatro camadas**, e a ordem importa — cada uma pega o que a
   anterior deixou passar:
 

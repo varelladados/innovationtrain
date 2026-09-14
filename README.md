@@ -22,10 +22,10 @@ Abre em `http://127.0.0.1:8744`. No Windows, um duplo clique em
 | Termo | O que é |
 |---|---|
 | **Central** | a aplicação — o que se abre no navegador |
-| **Plataforma** | um espaço de trabalho seu: uma pasta, com as suas ideias |
-| **Projeto** | cada trabalho dentro de uma plataforma |
+| **Estação** | um espaço de trabalho seu: uma pasta, com as suas ideias |
+| **Projeto** | cada trabalho dentro de uma estação |
 
-Uma Central opera **várias** plataformas, e troca entre elas sem reiniciar.
+Uma Central opera **várias** estações, e troca entre elas sem reiniciar.
 
 ## Os cinco estágios
 
@@ -55,14 +55,14 @@ estágio se preserva como estava, e a parte ativa da pasta continua respondendo
 
 Abra o app e vá na aba **🚂 Embarque**. São cinco perguntas, e você sai com um
 texto pronto para colar numa sessão de IA — é ele que cria a sua primeira
-plataforma. A Central não cria nada sozinha: ela escreve o pedido, você olha, a
+estação. A Central não cria nada sozinha: ela escreve o pedido, você olha, a
 sessão executa.
 
-Sem plataforma nenhuma configurada, o servidor sobe assim mesmo e o Embarque
+Sem estação nenhuma configurada, o servidor sobe assim mesmo e o Embarque
 abre por conta própria — é o único caminho que faz sentido oferecer a quem
 acabou de chegar.
 
-**Para ver o sistema funcionando antes de criar o seu**, registre a plataforma
+**Para ver o sistema funcionando antes de criar o seu**, registre a estação
 de exemplo:
 
 ```
@@ -72,37 +72,37 @@ python app/server.py --abrir
 
 São **duas**, e elas usam o mesmo método em assuntos opostos de propósito:
 
-| Plataforma | Do que trata |
+| Estação | Do que trata |
 |---|---|
-| `plataformas/exemplo` | cozinha e fotografia — doméstico, sem prazo. Começa com *"comprei coentro de novo"* rabiscado num ônibus e termina num projeto com backlog |
-| `plataformas/exemplo-precos` | preços, concorrência e lojas clone — trabalho, com dinheiro e advogada envolvidos |
+| `estacoes/exemplo` | cozinha e fotografia — doméstico, sem prazo. Começa com *"comprei coentro de novo"* rabiscado num ônibus e termina num projeto com backlog |
+| `estacoes/exemplo-precos` | preços, concorrência e lojas clone — trabalho, com dinheiro e advogada envolvidos |
 
 São duas de propósito, e elas se completam:
 
-- **`plataformas/exemplo` começa vazia** — só nove capturas. Ela vem com uma
-  **trilha de sete passos**: um clique e a plataforma inteira passa para o estado
+- **`estacoes/exemplo` começa vazia** — só nove capturas. Ela vem com uma
+  **trilha de sete passos**: um clique e a estação inteira passa para o estado
   seguinte, até uma captura virar projeto com backlog — passando pela
   funcionalidade, que é onde a ideia diz o que vai existir e onde entra. **↺ voltar ao início**
   desfaz tudo. Nada é calculado: cada passo é um instantâneo pronto, e o botão só
   o restaura.
-- **`plataformas/exemplo-precos` já rodou** — cinco cadeias, das quais **duas
+- **`estacoes/exemplo-precos` já rodou** — cinco cadeias, das quais **duas
   chegam a projeto e três empacam pelo caminho**, mais uma captura de julho nunca
-  tratada que bloqueia uma delas. É o estado normal de uma plataforma de verdade,
+  tratada que bloqueia uma delas. É o estado normal de uma estação de verdade,
   e é a metade que um exemplo costuma esconder.
 
 Uma existe para ser dirigida, a outra para ser lida. Troque entre elas pelo
 seletor no topo da barra lateral, sem reiniciar.
 
-A trilha e o reiniciar **só existem nas plataformas de exemplo**: é uma chave do
-`plataforma.json` que os libera, e uma plataforma sua não a declara.
+A trilha e o reiniciar **só existem nas estações de exemplo**: é uma chave do
+`estacao.json` que os libera, e uma estação sua não a declara.
 
 ## O que tem aqui
 
 ```
 app/                       o servidor e a interface (stdlib puro, zero dependência)
 metodo/                    as regras, a taxonomia, os templates e o utilitário
-plataformas/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 7 passos
-plataformas/exemplo-precos/ preços e lojas clone — já povoada, e o que ficou pelo caminho
+estacoes/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 7 passos
+estacoes/exemplo-precos/ preços e lojas clone — já povoada, e o que ficou pelo caminho
 docs/design-system.md  tokens, temas, fontes e a regra de ouro do CSS
 tests/                 137 testes, stdlib, sem dependência
 ```
@@ -118,7 +118,7 @@ tests/                 137 testes, stdlib, sem dependência
 ## Salvar é automático; publicar é decisão
 
 A regra que vale mais que as outras aqui, e a que talvez surpreenda: **a sessão
-de IA que trabalha numa plataforma commita sozinha e te avisa o que entrou.** Ela
+de IA que trabalha numa estação commita sozinha e te avisa o que entrou.** Ela
 nunca publica nada sem você dizer sim.
 
 Isso não é descuido — é o oposto. Commit é operação de *segurança*: local,

@@ -1,14 +1,14 @@
-"""Embarque — os primeiros passos de quem ainda não tem plataforma nenhuma.
+"""Embarque — os primeiros passos de quem ainda não tem estação nenhuma.
 
 Módulo **próprio**, e não mais um tipo dentro de `briefing.py`, por um motivo
-concreto: os guardrails de lá pressupõem uma plataforma existente ("linha no
+concreto: os guardrails de lá pressupõem uma estação existente ("linha no
 registro", "identificador pelo utilitário", "nunca pule etapa"). Aqui é
 exatamente isso que ainda não existe. Os guardrails são outros — os de quem vai
 criar arquivo numa pasta que talvez já tenha coisa dentro.
 
 `gerar()` é **gerador puro: não escreve nada em disco**. O endpoint
 `POST /api/embarque/prompt` é POST porque a entrada é um objeto de respostas
-vindo do cliente, não porque escreve. Quem cria plataforma é a sessão de IA
+vindo do cliente, não porque escreve. Quem cria estação é a sessão de IA
 onde o texto é colado, com a pessoa olhando.
 """
 import json
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import config
 
-#: O que cada resposta do passo 3 acrescenta à plataforma.
+#: O que cada resposta do passo 3 acrescenta à estação.
 USOS = {
     "notas": {
         "rotulo": "Guardar e organizar ideias",
@@ -72,11 +72,11 @@ def _barra_normal(caminho):
 def _slug(texto, limite=40):
     t = re.sub(r"[^A-Za-z0-9\-_ ]", "", texto or "").strip()
     t = re.sub(r"\s+", "-", t).lower()
-    return t[:limite].strip("-") or "plataforma"
+    return t[:limite].strip("-") or "estacao"
 
 
 def _estagios(usos):
-    """Os estágios da plataforma nova. Sem 'projetos', são três — e o produto
+    """Os estágios da estação nova. Sem 'projetos', são três — e o produto
     inteiro aguenta isso: o config aceita N estágios e a aba Fluxo mostra N-1
     passagens.
 
@@ -90,11 +90,11 @@ def _estagios(usos):
 
 
 def taxonomia(respostas):
-    """O `plataforma.json` que o prompt vai mandar criar."""
+    """O `estacao.json` que o prompt vai mandar criar."""
     usos = set(respostas.get("usos") or []) | {"notas"}
     estagios = _estagios(usos)
     d = {
-        "nome": (respostas.get("nome") or "").strip() or "Minha plataforma",
+        "nome": (respostas.get("nome") or "").strip() or "Minha estação",
         "marcador": config.PADROES["marcador"],
         "estagios": estagios,
         "historico": config.PADROES["historico"],
@@ -128,10 +128,10 @@ def _pastas(respostas):
 # ---------------------------------------------------------------- sementes
 
 def _indice(tax, respostas):
-    linhas = [f"# {tax['nome']}", "", "> A porta de entrada desta plataforma. Quem chega aqui — pessoa ou",
+    linhas = [f"# {tax['nome']}", "", "> A porta de entrada desta estação. Quem chega aqui — pessoa ou",
               "> sessão de IA — lê este arquivo primeiro.", "",
               "## Em 30 segundos", "",
-              "<escreva aqui, em três frases: o que esta plataforma guarda e o que ela não é>",
+              "<escreva aqui, em três frases: o que esta estação guarda e o que ela não é>",
               "", "## Os estágios", "",
               "| Pasta | O que tem aqui |", "|---|---|"]
     for e in tax["estagios"]:
@@ -142,7 +142,7 @@ def _indice(tax, respostas):
                "| Arquivo | O que é |", "|---|---|",
                f"| `{tax['arquivos']['registro']}` | a linha do tempo de tudo. Append-only: nunca se apaga |",
                f"| `{tax['arquivos']['sem_destino']}` | gerado — o que ainda não avançou |",
-               "| `plataforma.json` | os nomes: estágios, siglas, tipos |"]
+               "| `estacao.json` | os nomes: estágios, siglas, tipos |"]
     if "pendencias" in tax:
         linhas.append(f"| `{tax['pendencias']}/` | as decisões esperando por você |")
     linhas += ["", "## Como trabalhar aqui", "",
@@ -157,12 +157,12 @@ def _indice(tax, respostas):
 def _registro(tax):
     return "\n".join([
         "# Registro", "",
-        "> **A linha do tempo desta plataforma.** Toda entrada aparece aqui uma",
+        "> **A linha do tempo desta estação.** Toda entrada aparece aqui uma",
         "> vez, no dia em que nasceu. Este arquivo é **append-only**: linha",
         "> nenhuma é editada ou apagada, nunca. Quando um item avança, a linha",
         "> dele ganha o marcador `→` com o destino, e o item novo ganha uma linha",
         "> própria.", "",
-        "A tabela abaixo está vazia porque a plataforma acabou de nascer. A",
+        "A tabela abaixo está vazia porque a estação acabou de nascer. A",
         "primeira linha entra quando você criar a primeira nota.", "",
         "| ID | Data | Etapa/Tipo | Local | Resumo | Link |",
         "|---|---|---|---|---|---|", "",
@@ -177,7 +177,7 @@ def _sem_destino(tax):
     for e in tax["estagios"]:
         chave = e["sigla"].lower()
         # o corpo tem que ser o mesmo que o utilitario escreveria com zero
-        # itens; senao o `verificar` acusa "desatualizado" numa plataforma que
+        # itens; senao o `verificar` acusa "desatualizado" numa estação que
         # acabou de nascer, e o primeiro contato com o sistema e' um alarme falso
         linhas += [f"## {e.get('plural') or e['nome']}", "",
                    f"<!-- gerado:{chave}:inicio -->",
@@ -195,7 +195,7 @@ def _claude_md(tax):
         "> que abrir nesta pasta. O que estiver aqui vale como contexto; o que",
         "> não estiver, a sessão não sabe.", "",
         "## O que é esta pasta", "",
-        f"Uma plataforma da Central: {nomes}. Toda ideia entra crua no primeiro",
+        f"Uma estação da Central: {nomes}. Toda ideia entra crua no primeiro",
         "estágio e vai amadurecendo. A porta de entrada é o `_indice.md`.", "",
         "## As regras que valem aqui", "",
         "- **O registro é append-only.** Nunca edite nem apague linha existente;",
@@ -235,7 +235,7 @@ def sementes(tax, respostas):
     """(caminho relativo, conteúdo) de cada arquivo que o prompt manda criar."""
     arq = tax["arquivos"]
     return [
-        ("plataforma.json", json.dumps(tax, ensure_ascii=False, indent=2) + "\n"),
+        ("estacao.json", json.dumps(tax, ensure_ascii=False, indent=2) + "\n"),
         (arq["indice"], _indice(tax, respostas)),
         (arq["registro"], _registro(tax)),
         (arq["sem_destino"], _sem_destino(tax)),
@@ -251,7 +251,7 @@ def gerar(respostas):
     respostas = respostas or {}
     caminho = (respostas.get("caminho") or "").strip()
     if not caminho:
-        raise ValueError("informe onde a plataforma vai ficar")
+        raise ValueError("informe onde a estação vai ficar")
     if len(caminho) < 3:
         raise ValueError("o caminho parece curto demais para ser uma pasta de verdade")
 
@@ -260,15 +260,15 @@ def gerar(respostas):
     tem_conteudo = respostas.get("tem_conteudo") == "tem"
     usos = set(respostas.get("usos") or []) | {"notas"}
     hub = config.hub_dir()
-    util = hub / "metodo" / "plataforma.py"
+    util = hub / "metodo" / "estacao.py"
     p = Path(caminho)
 
     L = [
-        f"# Criar minha plataforma da Central em `{p}`",
+        f"# Criar minha estação da Central em `{p}`",
         "",
         f"Contexto: eu uso a **Central**, um app local que organiza ideias em "
         f"estágios — do que acabou de chegar até o que virou projeto. Ela opera "
-        f"*plataformas*, e eu ainda não tenho nenhuma. Você vai criar a primeira.",
+        f"*estações*, e eu ainda não tenho nenhuma. Você vai criar a primeira.",
         "",
         f"Não precisa entender o método inteiro para fazer isto: tudo que vai "
         f"dentro de cada arquivo está escrito abaixo, literal. O que eu preciso é "
@@ -321,7 +321,7 @@ def gerar(respostas):
           "**Se aparecer PROBLEMA, não tente consertar sozinho: me mostre.**", "",
           "## Passo 5 — o que eu faço depois", "",
           "Quando terminar, me diga estas três coisas, nesta ordem:", "",
-          f"1. que a plataforma está em `{p}` e já aparece no seletor da Central;",
+          f"1. que a estação está em `{p}` e já aparece no seletor da Central;",
           "2. que o próximo passo é **abrir o app e criar a primeira nota** pela "
           "aba 📝 Nota — é a operação mais barata do sistema, e é assim que o "
           "registro ganha a primeira linha;",
@@ -355,17 +355,17 @@ def gerar(respostas):
 
 
 def registrar(caminho, nome):
-    """Acrescenta plataforma ao `central.json` do hub e a torna ativa.
+    """Acrescenta estação ao `central.json` do hub e a torna ativa.
 
-    Escreve **só no config do hub** — nunca dentro de plataforma nenhuma. É a
-    mesma disciplina do `/api/plataforma/ativar`. A pasta pode não existir ainda
+    Escreve **só no config do hub** — nunca dentro de estação nenhuma. É a
+    mesma disciplina do `/api/estacao/ativar`. A pasta pode não existir ainda
     (o normal, logo depois do wizard): o seletor mostra isso e não deixa ativar.
     """
     caminho = str(Path((caminho or "").strip()))
     if len(caminho) < 3:
         raise ValueError("caminho inválido")
     dados = config.ler_central()
-    regs = dados.setdefault("plataformas", [])
+    regs = dados.setdefault("estacoes", [])
     for r in regs:
         if str(Path(r.get("caminho", ""))) == caminho:
             r["nome"] = nome or r.get("nome")

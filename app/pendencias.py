@@ -28,7 +28,7 @@ BACKUPS_DIR = PROJECT_DIR / "cache" / "backups"
 
 
 def _execucao_dir():
-    """Pasta das pendências da plataforma ativa, ou None se ela não declara uma."""
+    """Pasta das pendências da estação ativa, ou None se ela não declara uma."""
     return config.atual().caminho("pendencias")
 
 NOME_RE = re.compile(r"^pendencia-ativa-(\d{4}-\d{2}-\d{2})-(.+)\.md$")
@@ -68,7 +68,7 @@ class ConflitoError(PendenciaError):
 
 
 def _rel(caminho: Path):
-    """Caminho relativo à raiz da plataforma; devolve o absoluto se estiver fora
+    """Caminho relativo à raiz da estação; devolve o absoluto se estiver fora
     dela (acontece só em teste, com fixture em pasta temporária)."""
     try:
         return str(caminho.relative_to(config.atual().raiz)).replace("\\", "/")
@@ -257,7 +257,7 @@ def listar_pendencias_ativas():
     try:
         execucao = _execucao_dir()
         if execucao is None:
-            return {"cards": [], "erro": "esta plataforma não declara uma pasta de pendências"}
+            return {"cards": [], "erro": "esta estação não declara uma pasta de pendências"}
         if not execucao.exists():
             return {"cards": [], "erro": f"pasta não encontrada: {execucao}"}
         cards = [parse_pendencia(p) for p in sorted(execucao.glob("pendencia-ativa-*.md"))]
@@ -276,7 +276,7 @@ def _caminho_de(ref):
         raise PendenciaError("ref inválido")
     execucao = _execucao_dir()
     if execucao is None:
-        raise PendenciaError("esta plataforma não declara uma pasta de pendências")
+        raise PendenciaError("esta estação não declara uma pasta de pendências")
     caminho = execucao / f"pendencia-ativa-{ref}.md"
     try:
         caminho.resolve().relative_to(execucao.resolve())

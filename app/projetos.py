@@ -3,7 +3,7 @@ humano anotar no backlog do projeto sem abrir sessão do Claude Code.
 
 Fontes (nenhuma inventada aqui, todas já existiam):
 - `portfolio.build_portfolio()` — status, resumo canônico, git, links, execs;
-- os perfis declarados pela plataforma (`perfis`) — maturidade 0-5 × 6
+- os perfis declarados pela estação (`perfis`) — maturidade 0-5 × 6
   dimensões, lacunas, ligações, documentos-chave, quando existirem;
 - índice do app — os `backlog-*.md` daquele projeto;
 - `CLAUDE.md` do projeto.
@@ -37,7 +37,7 @@ BACKUPS_DIR = PROJECT_DIR / "cache" / "backups"
 
 def _pasta_valida(pasta):
     """Allow-list de verdade: a pasta tem que ser uma das pastas de projeto que
-    o indexer enxerga na plataforma ativa. Substitui o regex de prefixo, que
+    o indexer enxerga na estação ativa. Substitui o regex de prefixo, que
     deixou de existir na taxonomia nova — e é mais forte, porque valida contra
     o disco em vez de contra um formato de nome."""
     if not pasta or "/" in pasta or "\\" in pasta or pasta in (".", ".."):
@@ -84,11 +84,11 @@ def _perfil(pasta):
 
 
 def prefixo_do_projeto(pasta):
-    """Caminho da pasta do projeto **relativo à raiz da plataforma**.
+    """Caminho da pasta do projeto **relativo à raiz da estação**.
 
     `pastas_de_projeto()` devolve só o nome (`Anotai`); o índice guarda o
     caminho inteiro (`5-projetos/Anotai/...`). Quem junta os dois é isto. Sem
-    ele, toda plataforma que guarda projeto em subpasta — que é a taxonomia
+    ele, toda estação que guarda projeto em subpasta — que é a taxonomia
     padrão — abre a tela de projeto vazia.
     """
     cfg = config.atual()
@@ -111,7 +111,7 @@ def _backlogs_do(entries, pasta):
 def detalhe(pasta, entries, text_cache, portfolio=None):
     """Tudo que a view de projeto precisa, numa chamada só."""
     if not _pasta_valida(pasta):
-        raise ProjetoError("pasta não é um projeto desta plataforma")
+        raise ProjetoError("pasta não é um projeto desta estação")
 
     pf = portfolio or portfolio_mod.build_portfolio()
     projeto = next((p for p in pf.get("projetos", []) if p["pasta"] == pasta), None)
@@ -169,7 +169,7 @@ def _posicao_de_insercao(linhas):
 def anotar(pasta, backlog_path, texto, expected_sha1, entries, text_cache):
     """Acrescenta `- [ ] <texto> _(via console, AAAA-MM-DD)_` no backlog do projeto."""
     if not _pasta_valida(pasta):
-        raise ProjetoError("pasta não é um projeto desta plataforma")
+        raise ProjetoError("pasta não é um projeto desta estação")
 
     permitidos = {b["path"] for b in _backlogs_do(entries, pasta)}
     if backlog_path not in permitidos:

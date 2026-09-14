@@ -1,6 +1,6 @@
 """Central — servidor local (stdlib puro).
 
-Navegador/portfólio da plataforma inteira: índices, backlogs, registro central.
+Navegador/portfólio da estação inteira: índices, backlogs, registro central.
 Modelo arquitetural: outro-app-local/app/server.py (ThreadingHTTPServer,
 roteamento manual, template lido fresco do disco a cada request).
 
@@ -54,12 +54,12 @@ CACHE_DIR = PROJECT_DIR / "cache"
 BACKUPS_DIR = CACHE_DIR / "backups"
 
 STATE_LOCK = threading.Lock()
-#: `plataforma_ok` é falso quando a raiz resolvida não é uma plataforma (pasta
+#: `estacao_ok` é falso quando a raiz resolvida não é uma estação (pasta
 #: vazia, marcador ausente, config inexistente). Nesse estado o servidor **sobe
 #: assim mesmo** e cada aba mostra o motivo em vez de estourar — é o que faz o
-#: Embarque poder existir: quem ainda não tem plataforma precisa abrir o app.
+#: Embarque poder existir: quem ainda não tem estação precisa abrir o app.
 STATE = {"entries": [], "text_cache": {}, "portfolio": None, "metricas": None,
-         "plataforma_ok": False, "plataforma_erro": None}
+         "estacao_ok": False, "estacao_erro": None}
 
 
 def raiz():
@@ -70,19 +70,19 @@ CHECKBOX_RE_CHECKED = "- [x] "
 
 
 def _estado_vazio(erro):
-    """Zera o STATE e registra por que a plataforma não pôde ser lida."""
+    """Zera o STATE e registra por que a estação não pôde ser lida."""
     with STATE_LOCK:
         STATE["entries"] = []
         STATE["text_cache"] = {}
         STATE["portfolio"] = {"gerado_em": None, "projetos": [], "totais": {}}
         STATE["metricas"] = {"erro": erro, "log": {}, "arquivos": {}, "nucleo": {}}
-        STATE["plataforma_ok"] = False
-        STATE["plataforma_erro"] = erro
+        STATE["estacao_ok"] = False
+        STATE["estacao_erro"] = erro
 
 
 def reindex():
-    """Reconstrói o índice. **Nunca levanta**: raiz que não é plataforma, pasta
-    vazia ou utilitário quebrado deixam o servidor no ar com `plataforma_ok`
+    """Reconstrói o índice. **Nunca levanta**: raiz que não é estação, pasta
+    vazia ou utilitário quebrado deixam o servidor no ar com `estacao_ok`
     falso, em vez de derrubar o boot."""
     try:
         entries, text_cache = indexer.build_index()
@@ -110,8 +110,8 @@ def reindex():
         STATE["text_cache"] = text_cache
         STATE["portfolio"] = pf
         STATE["metricas"] = mt
-        STATE["plataforma_ok"] = True
-        STATE["plataforma_erro"] = None
+        STATE["estacao_ok"] = True
+        STATE["estacao_erro"] = None
     noar_mod.aquecer_em_background(pf)  # selo "no ar" fora do caminho do request
     return entries
 
@@ -120,10 +120,10 @@ def _cached(key, build, vazio):
     """Portfólio e métricas custam varredura de disco: calculados no reindex,
     servidos do STATE. Se ainda não houver valor, reconstrói **dentro de
     try/except** — antes disso um OSError aqui subia até o do_GET e virava
-    traceback com a plataforma vazia."""
+    traceback com a estação vazia."""
     with STATE_LOCK:
         val = STATE[key]
-        ok = STATE["plataforma_ok"]
+        ok = STATE["estacao_ok"]
     if val is not None:
         return val
     if not ok:
@@ -153,7 +153,7 @@ def repositorios():
     """Os repositórios que a aba Versões mostra lado a lado.
 
     Eram três até a unificação de 2026-09-09; agora o app e o método vivem no
-    mesmo repositório, então são dois: **o seu conteúdo** (a plataforma ativa) e
+    mesmo repositório, então são dois: **o seu conteúdo** (a estação ativa) e
     **a ferramenta** (a Central). A separação que importa continua de pé — é
     fácil salvar um e esquecer o outro, e é por isso que aparecem juntos.
     """
@@ -161,16 +161,16 @@ def repositorios():
               "pasta": PROJECT_DIR}]
     if config.definida():
         cfg = config.atual()
-        saida.insert(0, {"chave": "plataforma",
-                         "rotulo": f"Plataforma: {cfg.nome}", "pasta": cfg.raiz})
+        saida.insert(0, {"chave": "estacao",
+                         "rotulo": f"Estação: {cfg.nome}", "pasta": cfg.raiz})
     return saida
 
 
-def plataformas_registradas():
-    """O que o seletor mostra: as plataformas do central.json mais a ativa."""
+def estacoes_registradas():
+    """O que o seletor mostra: as estações do central.json mais a ativa."""
     ativa = str(raiz()) if raiz() else None
     saida = []
-    for r in config.plataformas():
+    for r in config.estacoes():
         caminho = str(Path(r.get("caminho", "")))
         saida.append({
             "nome": r.get("nome") or Path(caminho).name,
@@ -179,7 +179,7 @@ def plataformas_registradas():
             "existe": Path(caminho).exists() if caminho else False,
         })
     if ativa and not any(p["caminho"] == ativa for p in saida):
-        # aberta por --raiz ou ESTACAO_PLATAFORMA, sem registro no central.json
+        # aberta por --raiz ou CENTRAL_ESTACAO, sem registro no central.json
         cfg = config.atual()
         saida.insert(0, {"nome": cfg.nome, "caminho": ativa, "ativa": True,
                          "existe": True, "avulsa": True})
@@ -191,7 +191,7 @@ FILES_FORBIDDEN_PARTS = {".git", "node_modules", "__pycache__"}
 
 
 def resolver_arquivo_seguro(rel: str):
-    """Resolve um caminho relativo à raiz da plataforma pra servir em
+    """Resolve um caminho relativo à raiz da estação pra servir em
     /files/<path>. Só leitura, só dentro da raiz, nunca .git/node_modules.
     Devolve Path ou None."""
     root = raiz()
@@ -290,15 +290,15 @@ class Handler(BaseHTTPRequestHandler):
                 ql = q.lower()
                 result = [e for e in result if ql in e["path"].lower() or ql in e["title"].lower()]
             with STATE_LOCK:
-                ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
+                ok, erro = STATE["estacao_ok"], STATE["estacao_erro"]
             cfg = config.atual() if config.definida() else None
             self._send_json({
                 "count": len(result),
                 "entries": result,
-                "plataforma_ok": ok,
-                "plataforma_erro": erro,
-                "plataforma": cfg.resumo() if cfg else None,
-                # Onde a plataforma está na trilha de exemplo. Fora de exemplo
+                "estacao_ok": ok,
+                "estacao_erro": erro,
+                "estacao": cfg.resumo() if cfg else None,
+                # Onde a estação está na trilha de exemplo. Fora de exemplo
                 # vem `{"tem": false}` e a interface não mostra nada.
                 "trilha": trilha_mod.estado(cfg) if cfg else {"tem": False},
             })
@@ -330,8 +330,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"rows": rows})
             return
 
-        if path == "/api/plataformas":
-            self._send_json({"plataformas": plataformas_registradas()})
+        if path == "/api/estacoes":
+            self._send_json({"estacoes": estacoes_registradas()})
             return
 
         if path == "/api/versoes":
@@ -450,8 +450,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"count": len(entries)})
             return
 
-        if path == "/api/plataforma/ativar":
-            self._handle_plataforma_ativar(payload)
+        if path == "/api/estacao/ativar":
+            self._handle_estacao_ativar(payload)
             return
 
         if path == "/api/embarque/prompt":
@@ -490,11 +490,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_embarque_prompt(self, payload):
         """Gera o texto que a pessoa cola numa sessão de IA para criar a
-        primeira plataforma.
+        primeira estação.
 
         **É POST porque a entrada é um objeto de respostas do cliente, não
         porque escreve.** Este endpoint NÃO toca em disco — nem aqui, nem na
-        pasta que a pessoa escolheu. Quem cria plataforma é a sessão de IA
+        pasta que a pessoa escolheu. Quem cria estação é a sessão de IA
         onde o texto é colado, com a pessoa olhando. Ver `embarque.py`.
         """
         try:
@@ -508,9 +508,9 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(resultado)
 
     def _handle_embarque_registrar(self, payload):
-        """Registra plataforma nova no central.json do hub, para que ela já
+        """Registra estação nova no central.json do hub, para que ela já
         apareça no seletor assim que a estrutura existir. Escreve só no config
-        do hub — nunca dentro de plataforma nenhuma."""
+        do hub — nunca dentro de estação nenhuma."""
         try:
             reg = embarque_mod.registrar(payload.get("caminho"), payload.get("nome"))
         except ValueError as e:
@@ -519,22 +519,22 @@ class Handler(BaseHTTPRequestHandler):
         except OSError as e:
             self._send_json({"error": f"não consegui escrever o central.json: {e}"}, status=500)
             return
-        self._send_json({"ok": True, "plataforma": reg,
-                         "plataformas": plataformas_registradas()})
+        self._send_json({"ok": True, "estacao": reg,
+                         "estacoes": estacoes_registradas()})
 
-    def _handle_plataforma_ativar(self, payload):
-        """Troca plataforma ativa e reindexa. Não escreve em plataforma
+    def _handle_estacao_ativar(self, payload):
+        """Troca estação ativa e reindexa. Não escreve em estação
         nenhuma — só no `central.json` do hub, que é config do usuário, e é por
         isso que não passa pela disciplina dos endpoints de escrita de corpus."""
         caminho = (payload.get("caminho") or "").strip()
         if not caminho:
-            self._send_json({"error": "informe o caminho da plataforma"}, status=400)
+            self._send_json({"error": "informe o caminho da estação"}, status=400)
             return
         registro = next(
-            (r for r in config.plataformas() if str(Path(r.get("caminho", ""))) == str(Path(caminho))),
+            (r for r in config.estacoes() if str(Path(r.get("caminho", ""))) == str(Path(caminho))),
             None)
         if registro is None:
-            self._send_json({"error": "plataforma não registrada no central.json"}, status=400)
+            self._send_json({"error": "estação não registrada no central.json"}, status=400)
             return
         if not Path(caminho).exists():
             self._send_json({"error": f"a pasta não existe: {caminho}"}, status=400)
@@ -547,22 +547,22 @@ class Handler(BaseHTTPRequestHandler):
             return
         entries = reindex()
         with STATE_LOCK:
-            ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
+            ok, erro = STATE["estacao_ok"], STATE["estacao_erro"]
         self._send_json({
             "ok": True,
             "count": len(entries),
-            "plataforma_ok": ok,
-            "plataforma_erro": erro,
-            "plataforma": config.atual().resumo(),
+            "estacao_ok": ok,
+            "estacao_erro": erro,
+            "estacao": config.atual().resumo(),
         })
 
     def _handle_exemplo_passo(self, payload):
-        """Põe uma plataforma de EXEMPLO num passo da trilha. Passo 0 = reiniciar.
+        """Põe uma estação de EXEMPLO num passo da trilha. Passo 0 = reiniciar.
 
         Não há promoção acontecendo aqui: cada passo é uma pasta com a
-        plataforma inteira já naquele estado, e o utilitário só copia por cima.
+        estação inteira já naquele estado, e o utilitário só copia por cima.
         Ver `app/trilha.py` — inclusive sobre por que isto **não** é um motor de
-        avanço, e por que numa plataforma de verdade a passagem continua sendo
+        avanço, e por que numa estação de verdade a passagem continua sendo
         decisão e escrita de uma sessão de IA.
         """
         try:
@@ -775,18 +775,18 @@ class Handler(BaseHTTPRequestHandler):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    cfg = config.iniciar(argv)   # nunca levanta: sem plataforma, degrada
-    primeira_vez = cfg.origem == config.SEM_PLATAFORMA
+    cfg = config.iniciar(argv)   # nunca levanta: sem estação, degrada
+    primeira_vez = cfg.origem == config.SEM_ESTACAO
 
     reindex()  # nunca levanta: ver o docstring dele
     if primeira_vez:
         # a mensagem do sanity_check ("_indice.md não encontrado em …") descreve
         # o sintoma, não a situação. Quem acabou de clonar precisa ler a situação.
         with STATE_LOCK:
-            STATE["plataforma_erro"] = (
-                "nenhuma plataforma configurada ainda — a aba Embarque cria a primeira")
+            STATE["estacao_erro"] = (
+                "nenhuma estação configurada ainda — a aba Embarque cria a primeira")
     with STATE_LOCK:
-        ok, erro = STATE["plataforma_ok"], STATE["plataforma_erro"]
+        ok, erro = STATE["estacao_ok"], STATE["estacao_erro"]
 
     try:
         server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
@@ -799,16 +799,16 @@ def main(argv=None):
 
     url = f"http://127.0.0.1:{PORT}"
     print(f"Central rodando em {url}")
-    print(f"Plataforma: {cfg.nome} — {cfg.raiz}  ({cfg.origem})")
+    print(f"Estação: {cfg.nome} — {cfg.raiz}  ({cfg.origem})")
     if primeira_vez:
         print("")
-        print("Ainda não há plataforma nenhuma configurada — e tudo bem.")
+        print("Ainda não há estação nenhuma configurada — e tudo bem.")
         print("Abra o endereço acima: a aba Embarque cria a primeira.")
         print("")
         print("Se você já tem uma, aponte por --raiz, pela variável de ambiente")
-        print(f"ESTACAO_PLATAFORMA, ou registrando-a em {config.central_json()}")
+        print(f"CENTRAL_ESTACAO, ou registrando-a em {config.central_json()}")
     elif not ok:
-        print(f"Atenção: a plataforma não pôde ser lida ({erro}).")
+        print(f"Atenção: a estação não pôde ser lida ({erro}).")
         print("O servidor subiu assim mesmo — abra o app para configurar.")
 
     # o navegador abre DEPOIS de o socket estar escutando: era o .bat que

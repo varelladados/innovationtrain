@@ -1,5 +1,5 @@
 """Semeia `portfolio.json` nos projetos que ainda não têm, a partir dos perfis
-declarados pela plataforma (`perfis`).
+declarados pela estação (`perfis`).
 
 Fecha a Frente 4 do plano de 2026-09-06 ("Produção = link"): a aba Portfólio já
 lê curadoria de `portfolio.json`, mas só 2 dos 16 projetos tinham o arquivo — o

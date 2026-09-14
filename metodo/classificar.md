@@ -22,7 +22,7 @@ não avançou.
 Sempre estas quatro coisas, nesta ordem:
 
 1. **Identificador novo**, pelo utilitário, com a sigla do estágio de destino:
-   `python metodo/plataforma.py novo-id --raiz <plataforma> --etapa <SIGLA> --slug "..."`
+   `python metodo/estacao.py novo-id --raiz <estação> --etapa <SIGLA> --slug "..."`
 2. **Cópia no estágio de destino**, com o campo `origem:` apontando para o
    identificador de onde veio.
 3. **O original vai para o `_historico/`** do estágio de onde saiu — não fica

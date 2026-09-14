@@ -58,8 +58,8 @@ def _utilitario():
     util = config.atual().caminho("utilitario")
     if util is None:
         raise NotaError(
-            "esta plataforma não declara o utilitário que gera identificadores "
-            "(chave 'utilitario' do plataforma.json)"
+            "esta estação não declara o utilitário que gera identificadores "
+            "(chave 'utilitario' do estacao.json)"
         )
     if not util.exists():
         raise NotaError(f"utilitário declarado mas ausente: {util}")
@@ -75,7 +75,7 @@ def _entrada_dir():
 def _registro():
     reg = config.atual().arquivo("registro")
     if reg is None:
-        raise NotaError("esta plataforma não declara um arquivo de registro")
+        raise NotaError("esta estação não declara um arquivo de registro")
     return reg
 
 
@@ -95,7 +95,7 @@ def _gerar_id(texto):
             capture_output=True, text=True, timeout=10, cwd=str(cfg.raiz),
         )
     except Exception as e:
-        raise NotaError(f"falha ao chamar o utilitário da plataforma: {e}")
+        raise NotaError(f"falha ao chamar o utilitário da estação: {e}")
     if proc.returncode != 0:
         raise NotaError(f"novo-id falhou: {(proc.stderr or proc.stdout).strip()}")
     novo_id = proc.stdout.strip().splitlines()[0].strip() if proc.stdout.strip() else ""
@@ -106,11 +106,11 @@ def _gerar_id(texto):
 
 
 def _marcas_frontmatter(id_):
-    """As linhas de frontmatter que a plataforma declara — nenhuma escrita aqui.
+    """As linhas de frontmatter que a estação declara — nenhuma escrita aqui.
 
     `processado` marca que o item já tem linha no registro (é por ele que o
     indexer sabe não cobrar classificação de novo); `nucleo`, quando a
-    plataforma tem esse conceito, separa maquinário de conteúdo. Uma plataforma
+    estação tem esse conceito, separa maquinário de conteúdo. Uma estação
     que não declara `nucleo` simplesmente não ganha a linha.
     """
     cfg = config.atual()
@@ -223,7 +223,7 @@ def _append_log(id_, texto):
 def _sincronizar_pendentes():
     try:
         cfg = config.atual()
-        # o nome do subcomando muda com o utilitário de cada plataforma —
+        # o nome do subcomando muda com o utilitário de cada estação —
         # por isso ele vem do config, e não escrito aqui.
         subprocess.run(
             [sys.executable, str(_utilitario()), cfg.get("comando_sem_destino")],

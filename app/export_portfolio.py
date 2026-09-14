@@ -1,9 +1,9 @@
-"""Vitrine pública — página estática gerada do inventário da plataforma.
+"""Vitrine pública — página estática gerada do inventário da estação.
 
 Diferente do export_static.py (a Central inteira, pra uso interno), isto é a
 VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
 
-- Todo projeto listado no índice de projetos da plataforma aparece (nome, tipo,
+- Todo projeto listado no índice de projetos da estação aparece (nome, tipo,
   status, resumo) — o resumo é o texto canônico da tabela, sem editar.
 - Link só se for público de verdade: URL "no ar" (portfolio.json `estavel` ou host
   público detectado) ou repositório GitHub marcado como público em
@@ -12,7 +12,7 @@ VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
 - Nada de protótipo/launcher local (isso é a aba Portfólio interna).
 - Sem dados pessoais: nenhum e-mail nem link de contato.
 
-Saída: dist/portfolio-<nome da plataforma ativa>.html (formato Artifact: sem <html>/<head>/<body>);
+Saída: dist/portfolio-<nome da estação ativa>.html (formato Artifact: sem <html>/<head>/<body>);
 --full gera a variante autocontida.
 
     python app/export_portfolio.py [--full]
@@ -50,10 +50,10 @@ def _ler(p, limit=200_000):
 
 
 def frase_manifesto():
-    """A frase-tese da plataforma — fonte única, nunca reescrita aqui.
+    """A frase-tese da estação — fonte única, nunca reescrita aqui.
 
     Onde ela mora e por qual rótulo é reconhecida são declarados pela
-    plataforma (`manifesto` e `manifesto_marca`). Sem os dois, a vitrine sai
+    estação (`manifesto` e `manifesto_marca`). Sem os dois, a vitrine sai
     sem tese em vez de sair com uma frase inventada aqui dentro.
     """
     cfg = config.atual()
@@ -241,7 +241,7 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
   </main>
   <footer>
     <span>Gerado em {esc(gerado)} a partir do inventário da Central — a página muda quando os projetos mudam, não o contrário.</span>
-    <span>Resumos são os textos canônicos do índice de projetos da plataforma.</span>
+    <span>Resumos são os textos canônicos do índice de projetos da estação.</span>
   </footer>
 </div>"""
 
@@ -256,7 +256,7 @@ def main():
     full = "--full" in sys.argv
     page, projetos, no_ar = montar(full)
     DIST_DIR.mkdir(exist_ok=True)
-    # o nome sai da plataforma ativa, nunca fixo: este repositório é público
+    # o nome sai da estação ativa, nunca fixo: este repositório é público
     nome = unicodedata.normalize("NFKD", config.atual().nome).encode("ascii", "ignore").decode()
     slug = re.sub(r"[^a-z0-9]+", "-", nome.lower()).strip("-") or "vitrine"
     out = DIST_DIR / (f"portfolio-{slug}-full.html" if full else f"portfolio-{slug}.html")

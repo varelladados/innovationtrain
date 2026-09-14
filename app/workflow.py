@@ -1,5 +1,5 @@
 """Frente 2 do console operacional — GET /api/workflow: os estágios da
-plataforma ativa e as pendências, juntos numa view só, em vez de espalhados (pendentes.md, LOG,
+estação ativa e as pendências, juntos numa view só, em vez de espalhados (pendentes.md, LOG,
 trem avulso gerado sob pedido). Leitura pura sobre o índice já calculado pelo
 indexer (STATE["entries"]) — nenhum write, nenhuma varredura de disco extra.
 
@@ -15,7 +15,7 @@ import pendencias
 
 
 def _etapa_re():
-    # siglas_todas, não siglas: numa plataforma que já tinha acervo, o arquivo
+    # siglas_todas, não siglas: numa estação que já tinha acervo, o arquivo
     # antigo carrega a sigla antiga no nome — e sem reconhecê-la a carta dele
     # apareceria sem estágio, cinza, no meio das outras.
     cfg = config.atual()
@@ -40,7 +40,7 @@ def _estagio_de(etapa):
 def colunas_do_quadro():
     """As colunas do kanban, e como um item cai numa delas.
 
-    Onde a plataforma declara um ciclo de vida dentro do estágio (uma
+    Onde a estação declara um ciclo de vida dentro do estágio (uma
     legado, com .entrada/.pendente/.historico), as colunas são ele. Onde não
     declara — a taxonomia nova — as colunas são os próprios estágios, que é o
     quadro que faz sentido quando o item muda de pasta ao avançar.

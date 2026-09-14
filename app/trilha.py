@@ -1,17 +1,17 @@
-"""A trilha de exemplo: um slideshow de estados reais da plataforma.
+"""A trilha de exemplo: um slideshow de estados reais da estação.
 
 **Não há motor de promoção aqui, e é de propósito.** "Avançar" na trilha não
 calcula nada: ele restaura o próximo instantâneo, que é uma pasta com a
-plataforma inteira já no estado seguinte. O mesmo comando que devolve o exemplo
-ao início (`plataforma.py reiniciar`) serve os dois casos — muda só de onde ele
+estação inteira já no estado seguinte. O mesmo comando que devolve o exemplo
+ao início (`estacao.py reiniciar`) serve os dois casos — muda só de onde ele
 copia.
 
-Isso mantém a fronteira que importa: numa plataforma de verdade a passagem entre
+Isso mantém a fronteira que importa: numa estação de verdade a passagem entre
 estágios é decisão e escrita, feita por uma sessão de IA com o roteiro do
 briefing. O que a trilha mostra é **como fica**, não como se automatiza.
 
 O passo atual não é guardado em lugar nenhum: ele é **deduzido** comparando o
-`_registro.md` da plataforma com o de cada instantâneo. Sem estado, sem arquivo
+`_registro.md` da estação com o de cada instantâneo. Sem estado, sem arquivo
 de controle para dessincronizar — e se alguém editar o exemplo à mão, a trilha
 responde honestamente "fora dos passos" em vez de mentir um número.
 """
@@ -38,7 +38,7 @@ def passos(cfg=None):
     """Os estados da trilha, do inicial ao último. Vazio fora de exemplo.
 
     O passo 0 é o `estado_inicial` — o mesmo que o botão reiniciar usa. Os
-    demais vêm da chave `tutorial.passos` do `plataforma.json`.
+    demais vêm da chave `tutorial.passos` do `estacao.json`.
     """
     cfg = cfg or config.atual()
     inicial = cfg.get("estado_inicial")
@@ -52,10 +52,10 @@ def passos(cfg=None):
 
 
 def estado(cfg=None):
-    """Onde a plataforma está na trilha, deduzido do registro.
+    """Onde a estação está na trilha, deduzido do registro.
 
     `passo` é `None` quando o conteúdo não bate com instantâneo nenhum — o que
-    acontece assim que alguém mexe na plataforma à mão. Não é erro: é a resposta
+    acontece assim que alguém mexe na estação à mão. Não é erro: é a resposta
     honesta, e a interface a usa para oferecer "voltar ao início" em vez de
     "próximo passo".
     """
@@ -79,16 +79,16 @@ def estado(cfg=None):
 
 
 def restaurar(n, cfg=None):
-    """Deixa a plataforma no estado do passo `n`. Quem apaga e copia é o utilitário."""
+    """Deixa a estação no estado do passo `n`. Quem apaga e copia é o utilitário."""
     cfg = cfg or config.atual()
     lista = passos(cfg)
     if not lista:
-        raise TrilhaError("esta plataforma não é um exemplo: ela não tem trilha")
+        raise TrilhaError("esta estação não é um exemplo: ela não tem trilha")
     alvo = next((p for p in lista if p["n"] == n), None)
     if alvo is None:
         raise TrilhaError(f"a trilha tem os passos 0 a {len(lista) - 1}")
 
-    util = cfg.caminho("utilitario") or (config.hub_dir() / "metodo" / "plataforma.py")
+    util = cfg.caminho("utilitario") or (config.hub_dir() / "metodo" / "estacao.py")
     if not Path(util).is_file():
         raise TrilhaError(f"utilitário não encontrado: {util}")
     try:

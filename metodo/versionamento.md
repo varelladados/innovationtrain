@@ -153,12 +153,12 @@ improvisar — e a resposta certa é a de cima: pare e chame uma sessão de IA.
 
 ---
 
-## Como isso viaja junto com a plataforma
+## Como isso viaja junto com a estação
 
 Não adianta a regra existir num documento que ninguém lê. Ela viaja em três
 lugares, para valer já na primeira sessão de quem acabou de instalar:
 
-1. **O `CLAUDE.md` da plataforma** nasce com a regra dentro, em português e no
+1. **O `CLAUDE.md` da estação** nasce com a regra dentro, em português e no
    imperativo. É isso que faz a IA salvar sozinha desde o dia um, sem você saber
    que existe uma regra.
 2. **Os prompts que a Central gera** carregam os guardrails junto — inclusive o

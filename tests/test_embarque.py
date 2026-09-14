@@ -1,9 +1,9 @@
-"""Testes do Embarque — a tela de quem ainda não tem plataforma nenhuma.
+"""Testes do Embarque — a tela de quem ainda não tem estação nenhuma.
 
 Duas coisas que este módulo não pode errar. A primeira: **ele não pode escrever
-em disco.** Ele gera um texto; quem cria plataforma é a sessão de IA onde o
+em disco.** Ele gera um texto; quem cria estação é a sessão de IA onde o
 texto é colado, com a pessoa olhando. A segunda: **o prompt tem que produzir uma
-plataforma que abre.** Por isso o teste não confere o texto por leitura — ele
+estação que abre.** Por isso o teste não confere o texto por leitura — ele
 executa o que o texto manda, e depois carrega o resultado com o config de
 verdade.
 """
@@ -58,7 +58,7 @@ class TestValidacao(unittest.TestCase):
 
 
 class TestGuardrails(unittest.TestCase):
-    """Os do Embarque são OUTROS: aqui a plataforma ainda não existe, e o risco
+    """Os do Embarque são OUTROS: aqui a estação ainda não existe, e o risco
     é apagar coisa da pessoa numa pasta que ela escolheu."""
 
     REGRAS = ["Não apague e não sobrescreva", "Se a pasta já tiver conteúdo, pare",
@@ -86,7 +86,7 @@ class TestGuardrails(unittest.TestCase):
 
 
 class TestTaxonomia(unittest.TestCase):
-    def test_sem_projetos_a_plataforma_tem_tres_estagios(self):
+    def test_sem_projetos_a_estacao_tem_tres_estagios(self):
         tax = embarque.taxonomia({"usos": ["notas"], "nome": "X"})
         self.assertEqual([e["sigla"] for e in tax["estagios"]], ["CAP", "NOT", "IDE"])
         self.assertEqual(tax["projetos"]["pasta"], "")
@@ -106,7 +106,7 @@ class TestTaxonomia(unittest.TestCase):
         self.assertNotIn("pendencias", embarque.taxonomia({"usos": ["notas"], "nome": "X"}))
 
     def test_nome_vazio_ganha_padrao(self):
-        self.assertEqual(embarque.taxonomia({"nome": "  "})["nome"], "Minha plataforma")
+        self.assertEqual(embarque.taxonomia({"nome": "  "})["nome"], "Minha estação")
 
 
 class TestPromptCria(unittest.TestCase):
@@ -118,9 +118,9 @@ class TestPromptCria(unittest.TestCase):
 
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="embarque-cria-"))
-        self.raiz = self.tmp / "plataforma"
+        self.raiz = self.tmp / "estacao"
         self.texto = embarque.gerar(dict(COMPLETO, caminho=str(self.raiz),
-                                         nome="Plataforma do teste"))["texto"]
+                                         nome="Estação do teste"))["texto"]
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -140,20 +140,20 @@ class TestPromptCria(unittest.TestCase):
             criados.append(rel)
         return pastas, criados
 
-    def test_a_estrutura_criada_e_uma_plataforma_valida(self):
+    def test_a_estrutura_criada_e_uma_estacao_valida(self):
         pastas, criados = self._executar()
-        self.assertIn("plataforma.json", criados)
+        self.assertIn("estacao.json", criados)
         self.assertIn("_indice.md", criados)
         cfg = config.carregar(self.raiz)
         self.assertTrue(cfg.ok(), "o marcador não foi criado — a Central não abriria")
-        self.assertEqual(cfg.nome, "Plataforma do teste")
+        self.assertEqual(cfg.nome, "Estação do teste")
         for e in cfg.estagios:
             self.assertTrue((self.raiz / e["pasta"]).is_dir(), e["pasta"])
             self.assertTrue((self.raiz / e["pasta"] / cfg.historico).is_dir())
 
-    def test_o_plataforma_json_criado_e_json_valido(self):
+    def test_o_estacao_json_criado_e_json_valido(self):
         self._executar()
-        dados = json.loads((self.raiz / "plataforma.json").read_text(encoding="utf-8"))
+        dados = json.loads((self.raiz / "estacao.json").read_text(encoding="utf-8"))
         self.assertIn("estagios", dados)
         self.assertIn("arquivos", dados)
 
@@ -167,14 +167,14 @@ class TestPromptCria(unittest.TestCase):
         self.assertIn("Push só com autorização explícita e separada", texto)
 
     def test_o_gitignore_nasce_junto(self):
-        """Plataforma nova sem .gitignore é como o segredo entra no histórico."""
+        """Estação nova sem .gitignore é como o segredo entra no histórico."""
         self._executar()
         texto = (self.raiz / ".gitignore").read_text(encoding="utf-8")
         for padrao in ("cache/", "__pycache__/", ".env", "*.log"):
             self.assertIn(padrao, texto)
 
     def test_o_sem_destino_nasce_ja_sincronizado(self):
-        """Senão o `verificar` acusa 'desatualizado' numa plataforma com um
+        """Senão o `verificar` acusa 'desatualizado' numa estação com um
         minuto de vida, e o primeiro contato com o sistema é um alarme falso."""
         self._executar()
         texto = (self.raiz / "_sem-destino.md").read_text(encoding="utf-8")
@@ -186,7 +186,7 @@ class TestPromptCria(unittest.TestCase):
 
 
 class TestRegistrar(unittest.TestCase):
-    """Escreve só no config do hub — nunca dentro de plataforma nenhuma."""
+    """Escreve só no config do hub — nunca dentro de estação nenhuma."""
 
     def setUp(self):
         import os
@@ -204,20 +204,20 @@ class TestRegistrar(unittest.TestCase):
 
     def test_registra_e_aparece(self):
         embarque.registrar(r"C:\x\minha", "Minha")
-        nomes = [p["nome"] for p in config.plataformas()]
+        nomes = [p["nome"] for p in config.estacoes()]
         self.assertEqual(nomes, ["Minha"])
 
     def test_registrar_de_novo_nao_duplica(self):
         embarque.registrar(r"C:\x\minha", "Minha")
         embarque.registrar(r"C:\x\minha", "Renomeada")
-        regs = config.plataformas()
+        regs = config.estacoes()
         self.assertEqual(len(regs), 1)
         self.assertEqual(regs[0]["nome"], "Renomeada")
 
     def test_nao_nasce_ativa(self):
         """A pasta pode nem existir ainda — ativar sem estrutura só daria erro."""
         embarque.registrar(r"C:\x\minha", "Minha")
-        self.assertFalse(config.plataformas()[0]["ativa"])
+        self.assertFalse(config.estacoes()[0]["ativa"])
 
     def test_caminho_invalido(self):
         with self.assertRaises(ValueError):

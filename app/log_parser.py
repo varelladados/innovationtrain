@@ -1,4 +1,4 @@
-"""Parser dedicado das tabelas markdown do registro central da plataforma.
+"""Parser dedicado das tabelas markdown do registro central da estação.
 Extrai linhas estruturadas {id, data, etapa, local, resumo, link, arrow_target}
 em vez de deixar o LOG renderizar como markdown genérico.
 """

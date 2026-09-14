@@ -1,14 +1,14 @@
-# Taxonomia de uma plataforma
+# Taxonomia de uma estação
 
 > **Este documento é a fonte única dos nomes.** Todo nome de estágio, sigla,
 > arquivo de sistema e tipo de projeto sai daqui. O código não repete essas
-> strings: ele lê do `plataforma.json` de cada plataforma, e os padrões de
+> strings: ele lê do `estacao.json` de cada estação, e os padrões de
 > `app/config.py` são uma cópia deste documento, não uma segunda opinião.
 >
 > Decidido em 2026-09-08 (Trecho 2 do `plano-hub-estacao-e-embarque-2026-09-08.md`),
 > em cinco paradas respondidas pelo usuário. O estágio 4, **Funcionalidade**,
 > entrou em 2026-09-10 (sexta parada, abaixo). Se algum nome mudar, três coisas
-> mudam **juntas**: este arquivo, o `plataforma.json` de cada plataforma e os
+> mudam **juntas**: este arquivo, o `estacao.json` de cada estação e os
 > padrões do `app/config.py`.
 
 ---
@@ -51,14 +51,14 @@ Os critérios de cada passagem estão em [`classificar.md`](classificar.md).
 
 ---
 
-## Estrutura de uma plataforma
+## Estrutura de uma estação
 
 ```
-<plataforma>/
-├── _indice.md          porta de entrada única — o que é esta plataforma
+<estação>/
+├── _indice.md          porta de entrada única — o que é esta estação
 ├── _registro.md        o registro, append-only: uma linha por item
 ├── _sem-destino.md     gerado: o que está no registro e ainda não avançou
-├── plataforma.json     nome + taxonomia desta plataforma
+├── estacao.json     nome + taxonomia desta estação
 ├── 1-capturas/
 │   └── _historico/     capturas que já viraram nota
 ├── 2-notas/
@@ -101,7 +101,7 @@ nome fixo do harness, o segundo já é claro.
 ```
 
 Identificador só se gera pelo utilitário
-([`plataforma.py`](plataforma.py) `novo-id`), nunca à mão — é ele que sabe qual
+([`estacao.py`](estacao.py) `novo-id`), nunca à mão — é ele que sabe qual
 é a próxima sequência do dia e garante que o hash não repete.
 
 ---
@@ -133,9 +133,9 @@ zerada, não um problema.
 
 ---
 
-## Quando a plataforma já tinha acervo — `siglas_legadas`
+## Quando a estação já tinha acervo — `siglas_legadas`
 
-Uma plataforma que adota a Central depois de anos de uso chega com
+Uma estação que adota a Central depois de anos de uso chega com
 identificadores já emitidos, numa taxonomia própria, num registro que é
 append-only e com a sigla embutida em nome de pasta. Reescrever tudo custaria
 caro e mentiria sobre o histórico; ignorar as siglas antigas faria cada linha
@@ -167,7 +167,7 @@ propósito; o futuro, não.
 ### O acervo também chega com as marcas do tempo sem regra
 
 Mesma ideia, outra chave: `duplicatas_historicas` lista identificadores que já
-chegaram repetidos, de antes de a plataforma ter a convenção do sufixo `-N`.
+chegaram repetidos, de antes de a estação ter a convenção do sufixo `-N`.
 
 ```json
 "duplicatas_historicas": ["26.08.31-XXX-062-assunto-d1ea"]
@@ -183,7 +183,7 @@ que sempre toca deixa de ser alarme.
 
 ## Tipos de projeto
 
-Cada plataforma declara os seus, na chave `tipos` do `plataforma.json`. Não há
+Cada estação declara os seus, na chave `tipos` do `estacao.json`. Não há
 lista fixa no produto. A sugestão inicial, para quem não quer decidir agora:
 
 ```json
@@ -202,14 +202,15 @@ oferece um tipo que ninguém usa nem esconde um que todo mundo usa.
 | 1 — nomes dos estágios | Capturas · Notas · Ideias · Projetos | palavra única em vez de "notas cruas / notas estruturadas": a progressão se lê sozinha (chegou → organizei → tomou forma → está sendo feito) e "Captura" cobre o que vem de fora — export, transcrição, print — que "rascunho" não cobre |
 | 2 — sigla no identificador | `CAP` / `NOT` / `IDE` / `PRJ` | três letras se lêem de relance no meio do nome do arquivo e o formato do identificador não muda, o que deixa o utilitário ser derivado do que já existia em vez de reescrito |
 | 3 — avançar move ou copia | **copia**, e o original vai para `_historico/` do estágio | preserva o texto de cada estágio sem depender do git para relê-lo, e ainda assim deixa a parte ativa da pasta esvaziar — que é o que a faz responder "tem coisa por tratar?" de relance |
-| 4 — tipos de projeto | livres, declarados no `plataforma.json` | cada pessoa classifica o próprio trabalho, e o filtro do Portfólio sai do config em vez de uma lista fixa que envelhece |
-| 5 — nomes de sistema | `_indice.md` · `_registro.md` · `_sem-destino.md` · `_historico/` · `plataforma.json` | o `_` marca "isto é maquinário, não conteúdo seu" e agrupa no topo da listagem; um prefixo com ponto *esconde* a pasta em boa parte das ferramentas. `plataforma.json` fica sem `_` porque a extensão já o separa |
-| 6 — o estágio entre ideia e projeto (2026-09-10) | **Funcionalidade** · `FUN` · `4-funcionalidades/`; projetos passam a `5-projetos/` | a plataforma de origem mediu, em uso real, que a maioria das ideias com forma era peça de projeto existente, não projeto novo — e não tinha para onde ir. O nome vem do fluxo literal escolhido lá (captura › anotação › ideia › funcionalidade › projeto); a sigla segue a regra das outras quatro (três primeiras letras). A pasta de projetos foi renumerada porque a numeração carrega a sequência — manter `4-projetos/` ao lado de `4-funcionalidades/` diria que os dois são o mesmo momento |
+| 4 — tipos de projeto | livres, declarados no `estacao.json` | cada pessoa classifica o próprio trabalho, e o filtro do Portfólio sai do config em vez de uma lista fixa que envelhece |
+| 5 — nomes de sistema | `_indice.md` · `_registro.md` · `_sem-destino.md` · `_historico/` · `estacao.json` | o `_` marca "isto é maquinário, não conteúdo seu" e agrupa no topo da listagem; um prefixo com ponto *esconde* a pasta em boa parte das ferramentas. `estacao.json` fica sem `_` porque a extensão já o separa |
+| 6 — o estágio entre ideia e projeto (2026-09-10) | **Funcionalidade** · `FUN` · `4-funcionalidades/`; projetos passam a `5-projetos/` | a estação de origem mediu, em uso real, que a maioria das ideias com forma era peça de projeto existente, não projeto novo — e não tinha para onde ir. O nome vem do fluxo literal escolhido lá (captura › anotação › ideia › funcionalidade › projeto); a sigla segue a regra das outras quatro (três primeiras letras). A pasta de projetos foi renumerada porque a numeração carrega a sequência — manter `4-projetos/` ao lado de `4-funcionalidades/` diria que os dois são o mesmo momento |
+| 7 — os nomes dos níveis (2026-09-14) | **Central** (o app e a pasta; o arquivo da raiz é `CENTRAL.md`) › **estação** (o espaço de trabalho) | a Central passa a operar espaços de propósitos diferentes — o trem de inovação, a vida pessoal, a administração da empresa — e "plataforma" virou o nome de um deles. Os outros arquivos de orquestra continuam `CLAUDE.md`, que é nome fixo do harness; o da raiz ganha nome próprio, e um `CLAUDE.md` de uma linha aponta para ele |
 
 ---
 
 **Metáfora ferroviária — os únicos termos:** *Central* (a aplicação),
-*plataforma* (um espaço de trabalho), *projeto* (um trabalho dentro dela),
+*estação* (um espaço de trabalho), *projeto* (um trabalho dentro dela),
 *trem* (a fila de pendências passando uma por vez) e *embarque* (os primeiros
 passos). Não invente outros: chamar prompt de "bilhete" ou projeto de "vagão"
 recria exatamente o vocabulário privado que este trabalho desfaz.
@@ -222,7 +223,7 @@ recria exatamente o vocabulário privado que este trabalho desfaz.
   (captura→nota, nota→ideia, ideia→funcionalidade, funcionalidade→projeto) e
   vivem em [`classificar.md`](classificar.md).
 - **As cores de cada estágio** — decisão do design system, no Trecho 4.
-- **O `plataforma.json` de uma plataforma que não pode receber arquivo novo**
+- **O `estacao.json` de uma estação que não pode receber arquivo novo**
   — uma pasta lida em modo somente-leitura, por exemplo. A taxonomia dela é
   declarada inline no `central.json` do hub (Trecho 3), e nada é escrito lá
   dentro.

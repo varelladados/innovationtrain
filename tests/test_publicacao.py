@@ -159,7 +159,7 @@ class TestHistoricoLimpo(unittest.TestCase):
 
 
 #: Radicais de vocabulário que não pode entrar aqui — os nomes próprios de uma
-#: plataforma privada, que descreveriam o sistema de origem mesmo sem citar
+#: estação privada, que descreveriam o sistema de origem mesmo sem citar
 #: projeto nenhum. Guardados por **hash**, e não em claro, pelo mesmo motivo da
 #: lista de permitidos acima: um teste que escrevesse as palavras proibidas
 #: publicaria exatamente o que deveria proteger.
@@ -198,14 +198,14 @@ def _radicais_em(texto):
 
 @PRECISA_GIT
 class TestVocabularioPrivado(unittest.TestCase):
-    """O produto é genérico. Nome próprio de plataforma de alguém não entra.
+    """O produto é genérico. Nome próprio de estação de alguém não entra.
 
     Isto não é preciosismo de estilo: o vocabulário estava em *código vivo* —
     chave de frontmatter que o app grava, caminho de arquivo de sistema, rótulo
     de métrica na interface. Tirar as palavras sem mover essas coisas para
-    configuração teria quebrado a leitura da plataforma de origem; por isso a
+    configuração teria quebrado a leitura da estação de origem; por isso a
     correção foi configuração, e por isso este teste vale a pena: ele falha no
-    momento em que alguém volta a escrever no código o que é de uma plataforma.
+    momento em que alguém volta a escrever no código o que é de uma estação.
     """
 
     def test_arquivos_rastreados(self):
@@ -223,7 +223,7 @@ class TestVocabularioPrivado(unittest.TestCase):
                 fora.setdefault(h, []).append(rel)
         self.assertEqual(
             fora, {},
-            "vocabulário de uma plataforma privada em arquivo rastreado. O que o "
+            "vocabulário de uma estação privada em arquivo rastreado. O que o "
             "app lê e escreve tem que vir do config (`frontmatter`, `arquivos`, "
             "os caminhos opcionais), nunca escrito no código.")
 
@@ -233,7 +233,7 @@ class TestVocabularioPrivado(unittest.TestCase):
             self.skipTest("não consegui ler o histórico")
         achados = _radicais_em(saida)
         self.assertEqual(achados, set(),
-                         "vocabulário de plataforma privada em mensagem de commit")
+                         "vocabulário de estação privada em mensagem de commit")
 
     def test_historico_inteiro(self):
         """Cobra a história, não só o topo: um `git revert` traria tudo de volta."""
@@ -242,7 +242,7 @@ class TestVocabularioPrivado(unittest.TestCase):
             self.skipTest("não consegui ler o histórico")
         achados = _radicais_em(saida)
         self.assertEqual(achados, set(),
-                         "vocabulário de plataforma privada em algum commit")
+                         "vocabulário de estação privada em algum commit")
 
 
 class TestOQueUmRepositorioPublicoPrecisa(unittest.TestCase):
@@ -266,8 +266,8 @@ class TestOQueUmRepositorioPublicoPrecisa(unittest.TestCase):
         exemplo = RAIZ / "central.exemplo.json"
         self.assertTrue(exemplo.is_file())
         dados = json.loads(exemplo.read_text(encoding="utf-8"))
-        self.assertIn("plataformas", dados)
-        for p in dados["plataformas"]:
+        self.assertIn("estacoes", dados)
+        for p in dados["estacoes"]:
             caminho = p.get("caminho", "")
             self.assertFalse(re.match(r"^[A-Za-z]:[\\/]", caminho),
                              f"caminho absoluto de outra máquina no template: {caminho}")

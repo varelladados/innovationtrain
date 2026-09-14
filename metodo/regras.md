@@ -1,13 +1,13 @@
 # Regras permanentes
 
-> **O que é isto.** As regras que valem para toda plataforma, o tempo todo, para
+> **O que é isto.** As regras que valem para toda estação, o tempo todo, para
 > qualquer pessoa ou automação que mexa nela. Elas não são preferência de
 > organização: cada uma existe porque a falta dela custou alguma coisa.
 >
 > Derivadas da doutrina do sistema em que a Central nasceu, traduzidas para o
 > vocabulário do produto
 > (ver [`taxonomia.md`](taxonomia.md)). Uma sessão de IA que abre numa
-> plataforma tem que seguir estas regras sem que você precise pedir.
+> estação tem que seguir estas regras sem que você precise pedir.
 
 ---
 
@@ -69,7 +69,7 @@ Os critérios de cada passagem estão em [`classificar.md`](classificar.md).
 Nunca monte um identificador à mão. Use:
 
 ```
-python metodo/plataforma.py novo-id --raiz <plataforma> --etapa <SIGLA> --slug "duas ou três palavras"
+python metodo/estacao.py novo-id --raiz <estação> --etapa <SIGLA> --slug "duas ou três palavras"
 ```
 
 E **grave a linha do registro antes de pedir o próximo** — a sequência do dia é
@@ -123,4 +123,4 @@ rodada seguinte, mais no topo.
 - [`taxonomia.md`](taxonomia.md) — os nomes: estágios, siglas, arquivos de sistema
 - [`classificar.md`](classificar.md) — quando um item passa de estágio
 - [`versionamento.md`](versionamento.md) — salvar, publicar e o que fazer quando der ruim
-- [`plataforma.py`](plataforma.py) — o utilitário que gera identificador e confere as invariantes
+- [`estacao.py`](estacao.py) — o utilitário que gera identificador e confere as invariantes
