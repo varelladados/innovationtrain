@@ -93,6 +93,7 @@ def status_label(status):
 
 
 def montar(full=False):
+    config.recusar_se_privada(config.atual(), "a vitrine")
     pf = portfolio_mod.build_portfolio()
     projetos = [p for p in pf["projetos"] if p["listada"]]
     for p in projetos:
@@ -254,7 +255,12 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
 
 def main():
     full = "--full" in sys.argv
-    page, projetos, no_ar = montar(full)
+    config.iniciar(sys.argv[1:])   # sem isto, pela linha de comando não havia estação ativa
+    try:
+        page, projetos, no_ar = montar(full)
+    except config.EstacaoPrivada as e:
+        print(e)
+        return 2
     DIST_DIR.mkdir(exist_ok=True)
     # o nome sai da estação ativa, nunca fixo: este repositório é público
     nome = unicodedata.normalize("NFKD", config.atual().nome).encode("ascii", "ignore").decode()
@@ -265,4 +271,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

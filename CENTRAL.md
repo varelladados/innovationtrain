@@ -25,7 +25,8 @@ checkbox de backlog). Hoje também:
   caminhos reais e os guardrails do método embutidos;
 - **mostra o fluxo** (aba Fluxo) — as passagens entre estágios e os critérios de
   promoção;
-- **cria a primeira estação** (aba Embarque) — cinco perguntas, um prompt.
+- **cria as estações padrão** (aba Embarque) — Plataforma, Admin_empresa e
+  Vida_Pessoal; cinco perguntas, um prompt.
 
 A taxonomia padrão tem **cinco** estágios desde a 0.9.0 (capturas → notas →
 ideias → funcionalidades → projetos). O quarto é a unidade de trabalho: uma
@@ -71,6 +72,25 @@ teste que cobra que ele não voltou (`test_config.py`).
 Quando **nada** resolve — o caso de quem acabou de clonar — `config.iniciar()`
 não levanta: devolve `sem_estacao()`, o servidor sobe e a aba Embarque abre
 sozinha. É o único caminho que faz sentido oferecer a quem chega.
+
+## As estações padrão
+
+Toda Central começa com três estações, e as três são trens: a
+**Plataforma** (os cinco estágios — o trem de inovação), a **Admin_empresa**
+e a **Vida_Pessoal** (captura, nota, ideia). Quais são mora em
+`config.MODELOS`, a cópia executável de `metodo/taxonomia.md`; a chave
+`modelo` do `estacao.json` diz qual cada estação segue, e sem ela vale
+`plataforma`.
+
+Duas regras que o código cobra:
+
+- **`"projetos": null` não é `"pasta": ""`.** O primeiro diz "não há
+  projetos" e tira o Portfólio da barra; o segundo diz que os projetos moram
+  na raiz.
+- **A estação privada não sai daqui.** `config.recusar_se_privada()` barra o
+  snapshot estático e a vitrine; a aba Versões não oferece git; o `.gitignore`
+  da Central deixa de fora toda estação criada em `estacoes/` que não seja
+  exemplo. Quem cobra as três é `tests/test_estacoes_padrao.py`.
 
 ## Nada de estação fica escrito no código
 
@@ -119,14 +139,14 @@ central/                  ← a raiz do repositório É o hub
 │   ├── noar.py           checagem "está no ar?" das URLs públicas (cache 6h)
 │   ├── backfill_portfolio.py semeia portfolio.json a partir dos perfis (CLI, --dry-run padrão)
 │   ├── briefing.py       GET /api/briefing — texto pronto pra colar numa sessão de IA
-│   ├── embarque.py       POST /api/embarque/prompt — os primeiros passos de quem não tem estação
+│   ├── embarque.py       POST /api/embarque/prompt — o texto que cria as estações padrão
 │   ├── versoes.py        GET /api/versoes — leitura do git, allow-list de subcomando, só leitura
 │   ├── trilha.py         a trilha das estações de exemplo — restaura instantâneos, não promove nada
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
 ├── metodo/               regras, taxonomia, templates e estacao.py (o utilitário)
-├── estacoes/
+├── estacoes/            as de exemplo; as suas, que o Embarque cria aqui, ficam fora do git
 │   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
 │   ├── _inicial/         cópias intactas das duas: é delas que "voltar ao início" copia
@@ -241,7 +261,8 @@ estação nenhuma.
 | endpoint | o que faz | por que não escreve |
 |---|---|---|
 | `GET /api/briefing` | texto pra colar numa sessão de IA | a IA é que executa, com o humano olhando |
-| `POST /api/embarque/prompt` | texto que **cria a primeira estação** | é POST porque a entrada é um objeto de respostas, não porque escreve |
+| `POST /api/embarque/prompt` | texto que **cria as estações padrão** | é POST porque a entrada é um objeto de respostas, não porque escreve |
+| `GET /api/embarque/modelos` | nome, pasta e propósito das estações padrão | é leitura de `config.MODELOS` |
 | `GET /api/versoes` | estado do git dos repositórios | allow-list de subcomando, todos de leitura |
 | `GET /api/versoes/prompt` | "salvar um ponto", "mandar pra nuvem", "linha nova" | a Central lê o git e gera o texto; **nunca o executa** |
 

@@ -179,6 +179,8 @@ def pastas_de_projeto():
     projetos é um projeto, menos o `_historico/`.
     """
     cfg = config.atual()
+    if not cfg.tem_projetos:
+        return set()        # `"projetos": null`: nenhuma pasta é projeto
     base = cfg.projetos_dir
     prefixo_re = cfg.projetos_prefixo_re
     achadas = set()

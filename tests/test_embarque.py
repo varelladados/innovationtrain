@@ -2,14 +2,17 @@
 
 Duas coisas que este módulo não pode errar. A primeira: **ele não pode escrever
 em disco.** Ele gera um texto; quem cria estação é a sessão de IA onde o
-texto é colado, com a pessoa olhando. A segunda: **o prompt tem que produzir uma
-estação que abre.** Por isso o teste não confere o texto por leitura — ele
-executa o que o texto manda, e depois carrega o resultado com o config de
-verdade.
+texto é colado, com a pessoa olhando. A segunda: **o prompt tem que produzir
+estações que abrem.** Por isso o teste não confere o texto por leitura — ele
+executa o que o texto manda, e depois carrega o resultado com o config e o
+utilitário de verdade.
+
+Desde a 0.10 o texto cria as estações padrão de uma Central, lado a lado.
 """
 import json
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -20,8 +23,23 @@ import apoio  # noqa: E402,F401  (insere app/ no sys.path)
 import config  # noqa: E402
 import embarque  # noqa: E402
 
-COMPLETO = {"usos": ["notas", "decisoes", "projetos", "portfolio"],
-            "tem_conteudo": "vazia", "destino": "claude-code"}
+RAIZ_REPO = Path(__file__).resolve().parent.parent
+PADRAO = {"tem_conteudo": "vazia", "destino": "claude-code"}
+
+
+def gerar(base, **extra):
+    return embarque.gerar(dict(PADRAO, caminho=str(base) if base is not None else "", **extra))
+
+
+def so(*modelos, **existentes):
+    """Escolha de estações: cria as de `modelos`, registra as de `existentes`."""
+    escolha = {}
+    for m in config.MODELOS:
+        if m in modelos:
+            escolha[m] = {"criar": True}
+        else:
+            escolha[m] = {"criar": False, "caminho": existentes.get(m, "")}
+    return escolha
 
 
 class TestNaoEscreveNada(unittest.TestCase):
@@ -34,14 +52,14 @@ class TestNaoEscreveNada(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def test_a_pasta_alvo_continua_sem_existir(self):
+    def test_a_pasta_base_continua_sem_existir(self):
         alvo = self.tmp / "nao-deve-nascer"
-        embarque.gerar(dict(COMPLETO, caminho=str(alvo), nome="X"))
+        gerar(alvo)
         self.assertFalse(alvo.exists())
 
     def test_nao_mexe_na_pasta_que_ja_existe(self):
         (self.tmp / "meu.txt").write_text("intacto", encoding="utf-8")
-        embarque.gerar(dict(COMPLETO, caminho=str(self.tmp), nome="X"))
+        gerar(self.tmp)
         self.assertEqual(sorted(p.name for p in self.tmp.iterdir()), ["meu.txt"])
         self.assertEqual((self.tmp / "meu.txt").read_text(encoding="utf-8"), "intacto")
 
@@ -50,11 +68,20 @@ class TestValidacao(unittest.TestCase):
     def test_caminho_vazio(self):
         for caminho in ("", "   ", None):
             with self.assertRaises(ValueError):
-                embarque.gerar(dict(COMPLETO, caminho=caminho))
+                embarque.gerar(dict(PADRAO, caminho=caminho))
 
     def test_caminho_curto_demais(self):
         with self.assertRaises(ValueError):
-            embarque.gerar(dict(COMPLETO, caminho="ab"))
+            gerar("ab")
+
+    def test_nenhuma_estacao_escolhida(self):
+        with self.assertRaises(ValueError):
+            gerar(r"C:\x\y", estacoes=so())
+
+    def test_so_registrar_nao_exige_pasta_base(self):
+        r = gerar(None, estacoes=so(plataforma=r"C:\x\minha"))
+        self.assertEqual([(e["modelo"], e["criar"]) for e in r["estacoes"]],
+                         [("plataforma", False)])
 
 
 class TestGuardrails(unittest.TestCase):
@@ -66,47 +93,70 @@ class TestGuardrails(unittest.TestCase):
               "Não invente arquivo"]
 
     def test_todo_prompt_leva_os_guardrails(self):
-        texto = embarque.gerar(dict(COMPLETO, caminho=r"C:\x\y", nome="X"))["texto"]
+        texto = gerar(r"C:\x\y")["texto"]
         for regra in self.REGRAS:
             self.assertIn(regra, texto, f"guardrail ausente: {regra}")
 
     def test_pasta_com_conteudo_muda_o_aviso(self):
-        vazia = embarque.gerar(dict(COMPLETO, caminho=r"C:\x\y", nome="X"))["texto"]
-        cheia = embarque.gerar(dict(COMPLETO, caminho=r"C:\x\y", nome="X",
-                                    tem_conteudo="tem"))["texto"]
+        vazia = gerar(r"C:\x\y")["texto"]
+        cheia = gerar(r"C:\x\y", tem_conteudo="tem")["texto"]
         self.assertIn("espere eu responder", cheia)
         self.assertNotIn("espere eu responder", vazia)
 
-    def test_o_comando_de_conferencia_usa_barra_normal(self):
+    def test_os_comandos_de_conferencia_usam_barra_normal(self):
         """O texto é colado em PowerShell, cmd ou shell POSIX — barra invertida
         vira escape em um deles."""
-        texto = embarque.gerar(dict(COMPLETO, caminho=r"C:\x\y", nome="X"))["texto"]
-        comando = re.search(r"```\n(python .*verificar.*)\n```", texto).group(1)
-        self.assertNotIn("\\", comando)
+        texto = gerar(r"C:\x\y")["texto"]
+        bloco = re.search(r"## Passo 4 —.*?```\n(.*?)```", texto, re.S).group(1)
+        comandos = [l for l in bloco.splitlines() if "verificar" in l]
+        self.assertEqual(len(comandos), len(config.MODELOS))
+        for c in comandos:
+            self.assertNotIn("\\", c)
+
+    def test_a_estacao_que_ja_existe_nao_e_tocada(self):
+        texto = gerar(r"C:\x\y", estacoes=so("admin_empresa", "vida_pessoal",
+                                             plataforma=r"C:\x\minha"))["texto"]
+        self.assertIn("Não mexa nelas", texto)
+        self.assertIn(r"C:\x\minha", texto)
+        self.assertNotIn("### `plataforma/", texto)
 
 
-class TestTaxonomia(unittest.TestCase):
-    def test_sem_projetos_a_estacao_tem_tres_estagios(self):
-        tax = embarque.taxonomia({"usos": ["notas"], "nome": "X"})
-        self.assertEqual([e["sigla"] for e in tax["estagios"]], ["CAP", "NOT", "IDE"])
-        self.assertEqual(tax["projetos"]["pasta"], "")
-        self.assertNotIn("tipos", tax)
+class TestModelos(unittest.TestCase):
+    def test_as_estacoes_padrao_na_ordem(self):
+        r = gerar(r"C:\x\y")
+        self.assertEqual([e["modelo"] for e in r["estacoes"]], list(config.MODELOS))
+        for e in r["estacoes"]:
+            self.assertEqual(Path(e["caminho"]).name, config.MODELOS[e["modelo"]]["pasta"])
 
-    def test_com_projetos_tem_cinco(self):
-        """'projetos' acrescenta dois estágios, não um: funcionalidade só faz
-        sentido em função de um projeto (novo ou existente)."""
-        tax = embarque.taxonomia({"usos": ["notas", "projetos"], "nome": "X"})
+    def test_a_plataforma_tem_cinco_estagios_e_projetos(self):
+        tax = embarque.taxonomia("plataforma")
         self.assertEqual([e["sigla"] for e in tax["estagios"]],
                          ["CAP", "NOT", "IDE", "FUN", "PRJ"])
         self.assertEqual(tax["projetos"]["pasta"], "5-projetos")
+        self.assertIn("tipos", tax)
+        self.assertNotIn("privada", tax)
 
-    def test_decisoes_declara_a_pasta_de_pendencias(self):
-        tax = embarque.taxonomia({"usos": ["notas", "decisoes"], "nome": "X"})
-        self.assertEqual(tax["pendencias"], "_pendencias")
-        self.assertNotIn("pendencias", embarque.taxonomia({"usos": ["notas"], "nome": "X"}))
+    def test_as_de_tres_estagios_nao_tem_projetos(self):
+        for modelo in ("admin_empresa", "vida_pessoal"):
+            tax = embarque.taxonomia(modelo)
+            self.assertEqual([e["sigla"] for e in tax["estagios"]], ["CAP", "NOT", "IDE"])
+            self.assertIsNone(tax["projetos"], "projetos: null é o que diz 'não há'")
+            self.assertNotIn("tipos", tax)
 
-    def test_nome_vazio_ganha_padrao(self):
-        self.assertEqual(embarque.taxonomia({"nome": "  "})["nome"], "Minha estação")
+    def test_so_a_vida_pessoal_e_privada(self):
+        self.assertTrue(embarque.taxonomia("vida_pessoal").get("privada"))
+        self.assertFalse(embarque.taxonomia("admin_empresa").get("privada"))
+
+    def test_toda_estacao_tem_pendencias(self):
+        for modelo in config.MODELOS:
+            self.assertEqual(embarque.taxonomia(modelo)["pendencias"], "_pendencias")
+
+    def test_nome_vazio_ganha_o_do_modelo(self):
+        self.assertEqual(embarque.taxonomia("vida_pessoal", "  ")["nome"], "Vida_Pessoal")
+
+    def test_desmarcada_sem_caminho_nao_entra(self):
+        r = gerar(r"C:\x\y", estacoes=so("plataforma"))
+        self.assertEqual([e["modelo"] for e in r["estacoes"]], ["plataforma"])
 
 
 class TestPromptCria(unittest.TestCase):
@@ -116,73 +166,98 @@ class TestPromptCria(unittest.TestCase):
     função concorda consigo mesma, não que o texto está certo.
     """
 
-    def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="embarque-cria-"))
-        self.raiz = self.tmp / "estacao"
-        self.texto = embarque.gerar(dict(COMPLETO, caminho=str(self.raiz),
-                                         nome="Estação do teste"))["texto"]
-
-    def tearDown(self):
-        shutil.rmtree(self.tmp, ignore_errors=True)
-
-    def _executar(self):
-        bloco = re.search(r"## Passo 2 —.*?```\n(.*?)```", self.texto, re.S).group(1)
-        pastas = [l.strip("├─ ").strip() for l in bloco.splitlines()
-                  if l.strip().endswith("/") and "├" in l]
-        self.raiz.mkdir(parents=True)
-        for p in pastas:
-            (self.raiz / p).mkdir(parents=True, exist_ok=True)
-        parte = self.texto.split("## Passo 3", 1)[1].split("## Passo 4", 1)[0]
-        criados = []
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix="embarque-cria-"))
+        cls.base = cls.tmp / "estacoes"
+        cls.texto = gerar(cls.base)["texto"]
+        bloco = re.search(r"## Passo 2 —.*?```\n(.*?)```", cls.texto, re.S).group(1)
+        cls.base.mkdir(parents=True)
+        for l in bloco.splitlines():
+            if "├" in l and l.strip().endswith("/"):
+                (cls.base / l.strip("├─ ").strip()).mkdir(parents=True, exist_ok=True)
+        parte = cls.texto.split("## Passo 3", 1)[1].split("## Passo 4", 1)[0]
+        cls.criados = []
         for m in re.finditer(r"### `([^`]+)`\n\n```[a-z]*\n(.*?)\n```", parte, re.S):
-            rel, corpo = m.group(1), m.group(2)
-            (self.raiz / rel).write_text(corpo + "\n", encoding="utf-8")
-            criados.append(rel)
-        return pastas, criados
+            destino = cls.base / m.group(1)
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            destino.write_text(m.group(2) + "\n", encoding="utf-8")
+            cls.criados.append(m.group(1))
 
-    def test_a_estrutura_criada_e_uma_estacao_valida(self):
-        pastas, criados = self._executar()
-        self.assertIn("estacao.json", criados)
-        self.assertIn("_indice.md", criados)
-        cfg = config.carregar(self.raiz)
-        self.assertTrue(cfg.ok(), "o marcador não foi criado — a Central não abriria")
-        self.assertEqual(cfg.nome, "Estação do teste")
-        for e in cfg.estagios:
-            self.assertTrue((self.raiz / e["pasta"]).is_dir(), e["pasta"])
-            self.assertTrue((self.raiz / e["pasta"] / cfg.historico).is_dir())
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def raiz(self, modelo):
+        return self.base / config.MODELOS[modelo]["pasta"]
+
+    def claude(self, modelo):
+        return (self.raiz(modelo) / "CLAUDE.md").read_text(encoding="utf-8")
+
+    def test_as_tres_nascem_validas(self):
+        for modelo, m in config.MODELOS.items():
+            with self.subTest(modelo):
+                cfg = config.carregar(self.raiz(modelo))
+                self.assertTrue(cfg.ok(), "o marcador não foi criado — a Central não abriria")
+                self.assertEqual(cfg.nome, m["nome"])
+                self.assertEqual(cfg.modelo, modelo)
+                self.assertEqual(len(cfg.estagios), m["estagios"])
+                self.assertEqual(cfg.tem_projetos, m["projetos"])
+                self.assertEqual(cfg.privada, m["privada"])
+                for e in cfg.estagios:
+                    self.assertTrue((self.raiz(modelo) / e["pasta"] / cfg.historico).is_dir())
+
+    def test_o_utilitario_aprova_as_tres(self):
+        for modelo in config.MODELOS:
+            with self.subTest(modelo):
+                r = subprocess.run([sys.executable, str(RAIZ_REPO / "metodo" / "estacao.py"),
+                                    "verificar", "--raiz", str(self.raiz(modelo))],
+                                   capture_output=True, text=True, encoding="utf-8",
+                                   errors="replace")
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_o_estacao_json_criado_e_json_valido(self):
-        self._executar()
-        dados = json.loads((self.raiz / "estacao.json").read_text(encoding="utf-8"))
-        self.assertIn("estagios", dados)
-        self.assertIn("arquivos", dados)
+        for modelo in config.MODELOS:
+            dados = json.loads((self.raiz(modelo) / "estacao.json").read_text(encoding="utf-8"))
+            self.assertIn("estagios", dados)
+            self.assertEqual(dados["modelo"], modelo)
 
-    def test_o_claude_md_nasce_com_a_regra_de_salvar(self):
+    def test_quem_versiona_nasce_com_a_regra_de_salvar(self):
         """É isto que faz a IA do usuário commitar sozinha desde o dia um."""
-        self._executar()
-        texto = (self.raiz / "CLAUDE.md").read_text(encoding="utf-8")
-        self.assertIn("Salvar é automático; publicar é decisão", texto)
-        self.assertIn("sem pedir autorização", texto)
-        self.assertIn("nunca `git add .`", texto.lower())
-        self.assertIn("Push só com autorização explícita e separada", texto)
+        for modelo in ("plataforma", "admin_empresa"):
+            texto = self.claude(modelo)
+            self.assertIn("Salvar é automático; publicar é decisão", texto)
+            self.assertIn("nunca `git add .`", texto.lower())
+            self.assertIn("Push só com autorização explícita e separada", texto)
 
-    def test_o_gitignore_nasce_junto(self):
-        """Estação nova sem .gitignore é como o segredo entra no histórico."""
-        self._executar()
-        texto = (self.raiz / ".gitignore").read_text(encoding="utf-8")
-        for padrao in ("cache/", "__pycache__/", ".env", "*.log"):
-            self.assertIn(padrao, texto)
+    def test_a_vida_pessoal_nunca_versiona(self):
+        texto = self.claude("vida_pessoal")
+        self.assertIn("Não rode `git init`", texto)
+        self.assertNotIn("Salvar é automático", texto)
+        self.assertFalse((self.raiz("vida_pessoal") / ".gitignore").exists(),
+                         ".gitignore é convite a versionar")
+
+    def test_o_gitignore_nasce_nas_que_versionam(self):
+        for modelo in ("plataforma", "admin_empresa"):
+            texto = (self.raiz(modelo) / ".gitignore").read_text(encoding="utf-8")
+            for padrao in ("cache/", "__pycache__/", ".env", "*.log"):
+                self.assertIn(padrao, texto)
+
+    def test_as_de_tres_estagios_sabem_da_passagem(self):
+        for modelo in ("admin_empresa", "vida_pessoal"):
+            self.assertIn("captura nova na estação Plataforma", self.claude(modelo))
+        self.assertNotIn("Quando uma ideia daqui serve", self.claude("plataforma"))
 
     def test_o_sem_destino_nasce_ja_sincronizado(self):
         """Senão o `verificar` acusa 'desatualizado' numa estação com um
         minuto de vida, e o primeiro contato com o sistema é um alarme falso."""
-        self._executar()
-        texto = (self.raiz / "_sem-destino.md").read_text(encoding="utf-8")
-        for e in config.carregar(self.raiz).estagios:
-            chave = e["sigla"].lower()
-            bloco = texto.split(f"<!-- gerado:{chave}:inicio -->")[1] \
-                         .split(f"<!-- gerado:{chave}:fim -->")[0]
-            self.assertIn("nada nesta etapa", bloco)
+        for modelo in config.MODELOS:
+            texto = (self.raiz(modelo) / "_sem-destino.md").read_text(encoding="utf-8")
+            for e in config.carregar(self.raiz(modelo)).estagios:
+                chave = e["sigla"].lower()
+                bloco = texto.split(f"<!-- gerado:{chave}:inicio -->")[1] \
+                             .split(f"<!-- gerado:{chave}:fim -->")[0]
+                self.assertIn("nada nesta etapa", bloco)
 
 
 class TestRegistrar(unittest.TestCase):
@@ -222,6 +297,14 @@ class TestRegistrar(unittest.TestCase):
     def test_caminho_invalido(self):
         with self.assertRaises(ValueError):
             embarque.registrar("", "X")
+
+    def test_as_do_embarque_de_uma_vez(self):
+        r = gerar(r"C:\x\y", estacoes=so("admin_empresa", "vida_pessoal",
+                                         plataforma=r"C:\x\minha"))
+        embarque.registrar_varias(r["estacoes"])
+        self.assertEqual(sorted(e["nome"] for e in config.estacoes()),
+                         sorted(m["nome"] for m in config.MODELOS.values()))
+        self.assertFalse(any(e["ativa"] for e in config.estacoes()))
 
 
 if __name__ == "__main__":

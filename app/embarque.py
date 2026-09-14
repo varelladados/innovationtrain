@@ -6,6 +6,10 @@ registro", "identificador pelo utilitário", "nunca pule etapa"). Aqui é
 exatamente isso que ainda não existe. Os guardrails são outros — os de quem vai
 criar arquivo numa pasta que talvez já tenha coisa dentro.
 
+Desde a 0.10 o Embarque cria **as estações padrão de uma Central**, uma pasta
+cada, lado a lado. Quais são, quantos estágios cada uma tem e para que servem
+mora em `config.MODELOS`; aqui só se monta o texto.
+
 `gerar()` é **gerador puro: não escreve nada em disco**. O endpoint
 `POST /api/embarque/prompt` é POST porque a entrada é um objeto de respostas
 vindo do cliente, não porque escreve. Quem cria estação é a sessão de IA
@@ -16,27 +20,6 @@ import re
 from pathlib import Path
 
 import config
-
-#: O que cada resposta do passo 3 acrescenta à estação.
-USOS = {
-    "notas": {
-        "rotulo": "Guardar e organizar ideias",
-        "sempre": True,
-    },
-    "decisoes": {
-        "rotulo": "Registrar decisões que dependem de mim",
-        "pastas": ["_pendencias"],
-        "config": {"pendencias": "_pendencias"},
-    },
-    "projetos": {
-        "rotulo": "Tocar projetos",
-        "estagio_projetos": True,
-    },
-    "portfolio": {
-        "rotulo": "Ver num só lugar tudo que já roda",
-        "precisa": "projetos",
-    },
-}
 
 DESTINOS = {
     "claude-code": "Claude Code",
@@ -59,7 +42,7 @@ GUARDRAILS = """## Guardrails deste setup — leia antes de criar qualquer coisa
 
 
 def _barra_normal(caminho):
-    """Caminho com barra normal, venha de onde vier.
+    r"""Caminho com barra normal, venha de onde vier.
 
     `Path.as_posix()` NAO serve aqui: em POSIX ele nao reconhece `\` como
     separador e devolve o caminho do Windows intacto, com as barras invertidas
@@ -75,65 +58,61 @@ def _slug(texto, limite=40):
     return t[:limite].strip("-") or "estacao"
 
 
-def _estagios(usos):
-    """Os estágios da estação nova. Sem 'projetos', são três — e o produto
-    inteiro aguenta isso: o config aceita N estágios e a aba Fluxo mostra N-1
-    passagens.
+def taxonomia(modelo, nome=None):
+    """O `estacao.json` de uma estação do modelo `modelo`.
 
-    'projetos' acrescenta **dois** estágios, não um: funcionalidade e projeto.
-    Uma funcionalidade só existe em função de um projeto (novo ou já existente),
-    então não faz sentido oferecê-la sozinha."""
-    base = [dict(e) for e in config.PADROES["estagios"]]
-    if "projetos" not in usos:
-        base = [e for e in base if e["n"] < 4]
-    return base
-
-
-def taxonomia(respostas):
-    """O `estacao.json` que o prompt vai mandar criar."""
-    usos = set(respostas.get("usos") or []) | {"notas"}
-    estagios = _estagios(usos)
+    Os estágios são os primeiros N da taxonomia padrão: uma estação de três é
+    captura → nota → ideia, e o produto inteiro aguenta isso — o config aceita N
+    estágios e a aba Fluxo mostra N-1 passagens. Sem estágio de projetos, a
+    chave `projetos` vai **nula**, que é o que diz "não há projetos" (uma pasta
+    vazia diria "os projetos moram na raiz").
+    """
+    m = config.MODELOS[modelo]
+    estagios = [dict(e) for e in config.PADROES["estagios"] if e["n"] <= m["estagios"]]
     d = {
-        "nome": (respostas.get("nome") or "").strip() or "Minha estação",
+        "nome": (nome or "").strip() or m["nome"],
+        "modelo": modelo,
         "marcador": config.PADROES["marcador"],
         "estagios": estagios,
         "historico": config.PADROES["historico"],
         "arquivos": dict(config.PADROES["arquivos"]),
-        "projetos": {"pasta": "5-projetos" if "projetos" in usos else "", "prefixo_re": None},
+        "projetos": ({"pasta": estagios[-1]["pasta"], "prefixo_re": None}
+                     if m["projetos"] else None),
         "excluir": [".git", "node_modules", "__pycache__", ".claude"],
         "entrada": estagios[0]["pasta"],
+        "pendencias": "_pendencias",
     }
-    if "projetos" in usos:
+    if m["projetos"]:
         d["tipos"] = list(config.PADROES["tipos"])
-    for nome in usos:
-        extra = (USOS.get(nome) or {}).get("config")
-        if extra:
-            d.update(extra)
+    if m["privada"]:
+        d["privada"] = True
     return d
 
 
-def _pastas(respostas):
-    usos = set(respostas.get("usos") or []) | {"notas"}
-    hist = config.PADROES["historico"]
+def _pastas(tax):
+    hist = tax["historico"]
     pastas = []
-    for e in _estagios(usos):
+    for e in tax["estagios"]:
         pastas.append(f"{e['pasta']}/")
         pastas.append(f"{e['pasta']}/{hist}/")
-    for nome in usos:
-        for p in (USOS.get(nome) or {}).get("pastas", []):
-            pastas.append(f"{p}/")
+    pastas.append(f"{tax['pendencias']}/")
     return pastas
 
 
 # ---------------------------------------------------------------- sementes
 
-def _indice(tax, respostas):
+def _indice(tax):
+    m = config.MODELOS[tax["modelo"]]
     linhas = [f"# {tax['nome']}", "", "> A porta de entrada desta estação. Quem chega aqui — pessoa ou",
-              "> sessão de IA — lê este arquivo primeiro.", "",
-              "## Em 30 segundos", "",
-              "<escreva aqui, em três frases: o que esta estação guarda e o que ela não é>",
-              "", "## Os estágios", "",
-              "| Pasta | O que tem aqui |", "|---|---|"]
+              "> sessão de IA — lê este arquivo primeiro.", ""]
+    if m["privada"]:
+        linhas += ["> **Estação privada.** Não é versionada nem compartilhada: sem git, sem",
+                   "> nuvem, sem exportação. O backup dela é cópia de pasta.", ""]
+    linhas += ["## Em 30 segundos", "",
+               m["proposito"], "",
+               "<escreva aqui, em três frases: o que esta estação guarda e o que ela não é>",
+               "", "## Os estágios", "",
+               "| Pasta | O que tem aqui |", "|---|---|"]
     for e in tax["estagios"]:
         linhas.append(f"| `{e['pasta']}/` | {e['nome'].lower()} — <uma linha> |")
     linhas += ["",
@@ -142,10 +121,9 @@ def _indice(tax, respostas):
                "| Arquivo | O que é |", "|---|---|",
                f"| `{tax['arquivos']['registro']}` | a linha do tempo de tudo. Append-only: nunca se apaga |",
                f"| `{tax['arquivos']['sem_destino']}` | gerado — o que ainda não avançou |",
-               "| `estacao.json` | os nomes: estágios, siglas, tipos |"]
-    if "pendencias" in tax:
-        linhas.append(f"| `{tax['pendencias']}/` | as decisões esperando por você |")
-    linhas += ["", "## Como trabalhar aqui", "",
+               "| `estacao.json` | os nomes: estágios, siglas, tipos |",
+               f"| `{tax['pendencias']}/` | as decisões esperando por você |",
+               "", "## Como trabalhar aqui", "",
                "1. **Capturar é a operação mais barata:** cole e siga em frente.",
                "   Organizar é uma etapa própria, depois.",
                "2. **Nunca monte identificador à mão** — use o utilitário.",
@@ -186,17 +164,65 @@ def _sem_destino(tax):
     return "\n".join(linhas)
 
 
+SALVAR = [
+    "## Como esta sessão salva o trabalho", "",
+    "**Salvar é automático; publicar é decisão.**", "",
+    "- **Commite sem pedir autorização** ao terminar um artefato e ao encerrar",
+    "  a sessão. **Avise** numa linha o que entrou — não pergunte.",
+    "- Adicione os arquivos **nominalmente**. Nunca `git add .`, nunca",
+    "  `git add -A`.",
+    "- Mudança que não foi você quem fez: liste no aviso e **deixe de fora**.",
+    "- **Push só com autorização explícita e separada**, uma por vez.",
+    "- Nunca commite segredo (chave, senha, `.env`, token) — sai do arquivo",
+    "  mas fica no histórico.",
+    "- **Nunca encerre a sessão deixando mudança sua sem commit.**", "",
+    "Isto não é zelo excessivo: a regra oposta (\"só commite depois que eu",
+    "mandar\") já custou trabalho perdido. Commit local não publicado se desfaz",
+    "inteiro com `git reset --soft HEAD~1`, que mantém tudo no lugar — o custo",
+    "de um commit a mais é zero.", "",
+]
+
+NAO_VERSIONA = [
+    "## Esta estação não é versionada", "",
+    "**Privada: nada daqui sai daqui.**", "",
+    "- **Não rode `git init`**, não commite, não crie remoto, não faça push.",
+    "- Não copie nada daqui para outra estação, repositório ou serviço sem eu",
+    "  pedir, item por item.",
+    "- O backup desta pasta é cópia de pasta, e quem faz sou eu.", "",
+]
+
+
+def _passagem(tax):
+    """A regra de quem tem um trem menor: a ideia que serve a outras pessoas."""
+    alvo = next((m["nome"] for m in config.MODELOS.values() if m["projetos"]), "de projetos")
+    return [
+        f"## Quando uma ideia daqui serve a outras pessoas", "",
+        f"Uma ideia desta estação pode ser solução para outras pessoas. Quando for, ela",
+        f"alimenta uma **captura nova na estação {alvo}** — o trem de inovação. É",
+        "decisão e escrita, não cópia:", "",
+        f"- a captura na {alvo} é **reescrita** para quem é de fora: nada daqui vai",
+        "  literal;",
+        "- ela nasce com identificador e linha próprios no registro de lá;",
+        "- a linhagem cita esta estação e o identificador da ideia — e, se o",
+        "  identificador disser demais sobre alguém, cita só a estação;",
+        "- a ideia daqui **fica onde está**: ela não mudou de estágio.", "",
+        "O critério está em `metodo/classificar.md`, na passagem entre estações.", "",
+    ]
+
+
 def _claude_md(tax):
+    m = config.MODELOS[tax["modelo"]]
     cadeia = " → ".join(e["sigla"] for e in tax["estagios"])
     nomes = " → ".join((e.get("plural") or e["nome"]).lower() for e in tax["estagios"])
-    return "\n".join([
+    linhas = [
         f"# CLAUDE.md — {tax['nome']}", "",
         "> Este arquivo é lido automaticamente por qualquer sessão do Claude Code",
         "> que abrir nesta pasta. O que estiver aqui vale como contexto; o que",
         "> não estiver, a sessão não sabe.", "",
         "## O que é esta pasta", "",
-        f"Uma estação da Central: {nomes}. Toda ideia entra crua no primeiro",
-        "estágio e vai amadurecendo. A porta de entrada é o `_indice.md`.", "",
+        f"Uma estação da Central. {m['proposito']}", "",
+        f"O trem daqui: {nomes}. Toda entrada chega crua no primeiro estágio e vai",
+        "amadurecendo. A porta de entrada é o `_indice.md`.", "",
         "## As regras que valem aqui", "",
         "- **O registro é append-only.** Nunca edite nem apague linha existente;",
         "  continuação usa o mesmo identificador com sufixo `-N`.",
@@ -207,22 +233,11 @@ def _claude_md(tax):
         "- **Identificador só pelo utilitário**, nunca montado à mão.",
         "- **Nenhuma decisão se fecha por inferência** — só a marcação explícita",
         "  da pessoa fecha uma pendência.", "",
-        "## Como esta sessão salva o trabalho", "",
-        "**Salvar é automático; publicar é decisão.**", "",
-        "- **Commite sem pedir autorização** ao terminar um artefato e ao encerrar",
-        "  a sessão. **Avise** numa linha o que entrou — não pergunte.",
-        "- Adicione os arquivos **nominalmente**. Nunca `git add .`, nunca",
-        "  `git add -A`.",
-        "- Mudança que não foi você quem fez: liste no aviso e **deixe de fora**.",
-        "- **Push só com autorização explícita e separada**, uma por vez.",
-        "- Nunca commite segredo (chave, senha, `.env`, token) — sai do arquivo",
-        "  mas fica no histórico.",
-        "- **Nunca encerre a sessão deixando mudança sua sem commit.**", "",
-        "Isto não é zelo excessivo: a regra oposta (\"só commite depois que eu",
-        "mandar\") já custou trabalho perdido. Commit local não publicado se desfaz",
-        "inteiro com `git reset --soft HEAD~1`, que mantém tudo no lugar — o custo",
-        "de um commit a mais é zero.", "",
-    ])
+    ]
+    if not m["projetos"]:
+        linhas += _passagem(tax)
+    linhas += NAO_VERSIONA if m["privada"] else SALVAR
+    return "\n".join(linhas)
 
 
 GITIGNORE = "\n".join([
@@ -231,59 +246,97 @@ GITIGNORE = "\n".join([
 ])
 
 
-def sementes(tax, respostas):
+def sementes(tax):
     """(caminho relativo, conteúdo) de cada arquivo que o prompt manda criar."""
     arq = tax["arquivos"]
-    return [
+    saida = [
         ("estacao.json", json.dumps(tax, ensure_ascii=False, indent=2) + "\n"),
-        (arq["indice"], _indice(tax, respostas)),
+        (arq["indice"], _indice(tax)),
         (arq["registro"], _registro(tax)),
         (arq["sem_destino"], _sem_destino(tax)),
         ("CLAUDE.md", _claude_md(tax)),
-        (".gitignore", GITIGNORE),
     ]
+    if not tax.get("privada"):
+        # .gitignore é convite a versionar: a estação privada não recebe
+        saida.append((".gitignore", GITIGNORE))
+    return saida
 
 
 # ---------------------------------------------------------------- o prompt
 
+def estacoes(respostas, base):
+    """As estações que o texto cria ou registra, na ordem de `config.MODELOS`.
+
+    Cada modelo vem marcado para criar. Desmarcado **com** caminho é uma estação
+    que a pessoa já tem: entra só no registro da Central, e o texto proíbe tocar
+    nela. Desmarcado sem caminho não entra.
+    """
+    escolhas = respostas.get("estacoes") or {}
+    saida = []
+    for modelo, m in config.MODELOS.items():
+        e = escolhas.get(modelo) or {}
+        if e.get("criar", True):
+            saida.append({"modelo": modelo, "nome": m["nome"], "criar": True,
+                          "caminho": str(base / m["pasta"]) if base else ""})
+            continue
+        existente = (e.get("caminho") or "").strip()
+        if existente:
+            if len(existente) < 3:
+                raise ValueError(f"o caminho da {m['nome']} parece curto demais")
+            saida.append({"modelo": modelo, "nome": m["nome"], "criar": False,
+                          "caminho": str(Path(existente))})
+    return saida
+
+
 def gerar(respostas):
-    """Devolve {'texto', 'caminho', 'nome', 'taxonomia'}. Não escreve nada."""
+    """Devolve {'texto', 'caminho', 'estacoes'}. Não escreve nada."""
     respostas = respostas or {}
     caminho = (respostas.get("caminho") or "").strip()
-    if not caminho:
-        raise ValueError("informe onde a estação vai ficar")
-    if len(caminho) < 3:
+    base = Path(caminho) if caminho else None
+    lista = estacoes(respostas, base)
+    criar = [e for e in lista if e["criar"]]
+    ja_tem = [e for e in lista if not e["criar"]]
+    if not lista:
+        raise ValueError("escolha pelo menos uma estação para criar ou registrar")
+    if criar and not caminho:
+        raise ValueError("informe onde as estações vão ficar")
+    if criar and len(caminho) < 3:
         raise ValueError("o caminho parece curto demais para ser uma pasta de verdade")
 
-    tax = taxonomia(respostas)
     destino = DESTINOS.get(respostas.get("destino"), DESTINOS["outro"])
     tem_conteudo = respostas.get("tem_conteudo") == "tem"
-    usos = set(respostas.get("usos") or []) | {"notas"}
-    hub = config.hub_dir()
-    util = hub / "metodo" / "estacao.py"
-    p = Path(caminho)
+    util = config.hub_dir() / "metodo" / "estacao.py"
+    taxs = {e["modelo"]: taxonomia(e["modelo"], e["nome"]) for e in criar}
+    todos = " · ".join(m["nome"] for m in config.MODELOS.values())
 
-    L = [
-        f"# Criar minha estação da Central em `{p}`",
-        "",
-        f"Contexto: eu uso a **Central**, um app local que organiza ideias em "
-        f"estágios — do que acabou de chegar até o que virou projeto. Ela opera "
-        f"*estações*, e eu ainda não tenho nenhuma. Você vai criar a primeira.",
-        "",
-        f"Não precisa entender o método inteiro para fazer isto: tudo que vai "
-        f"dentro de cada arquivo está escrito abaixo, literal. O que eu preciso é "
-        f"que a estrutura fique exatamente assim, para o app conseguir abrir.",
-        "",
-        GUARDRAILS,
-        "",
-        "## Passo 1 — confira a pasta antes de criar",
-        "",
-        f"```",
-        f"{p}",
-        f"```",
-        "",
-        "Liste o que existe aí dentro (inclusive arquivos ocultos) e me diga.",
-    ]
+    L = [f"# Criar as estações da minha Central em `{base}`" if criar
+         else "# Registrar as estações que eu já tenho na minha Central", "",
+         "Contexto: eu uso a **Central**, um app local que organiza ideias em "
+         "estágios — do que acabou de chegar até o que virou projeto. Ela opera "
+         f"*estações*, e toda Central começa com estas: {todos}.", ""]
+    if criar:
+        L += ["Você vai criar " + ("as três" if len(criar) == 3 else "estas") + ":", ""]
+        L += [f"- **{e['nome']}**, em `{e['caminho']}` — "
+              f"{config.MODELOS[e['modelo']]['proposito']}" for e in criar]
+        L += [""]
+    if ja_tem:
+        L += ["Estas eu **já tenho**. **Não mexa nelas** — nada de listar, criar ou "
+              "corrigir coisa lá dentro; elas só vão ser registradas na Central:", ""]
+        L += [f"- **{e['nome']}**, em `{e['caminho']}`" for e in ja_tem]
+        L += [""]
+    L += ["Não precisa entender o método inteiro para fazer isto: tudo que vai "
+          "dentro de cada arquivo está escrito abaixo, literal. O que eu preciso é "
+          "que a estrutura fique exatamente assim, para o app conseguir abrir.", "",
+          GUARDRAILS, ""]
+
+    if not criar:
+        L += ["Não há nada para criar. Me confirme que as pastas acima existem e "
+              "pare por aí.", ""]
+        return _fim(L, destino, base, lista)
+
+    L += ["## Passo 1 — confira a pasta antes de criar", "",
+          "```", f"{base}", "```", "",
+          "Liste o que existe aí dentro (inclusive arquivos ocultos) e me diga."]
     if tem_conteudo:
         L += ["",
               "**Eu já avisei que essa pasta tem trabalho começado.** Então: me "
@@ -296,66 +349,72 @@ def gerar(respostas):
               "qualquer coisa dentro, **pare e me mostre** — eu me enganei, e aí "
               "a conversa é outra."]
 
-    L += ["", "## Passo 2 — crie esta árvore", "", "```", f"{p.name}/"]
-    for rel, _ in sementes(tax, respostas):
-        L.append(f"├── {rel}")
-    for pasta in _pastas(respostas):
-        L.append(f"├── {pasta}")
+    L += ["", "## Passo 2 — crie esta árvore", "", "```", f"{base.name}/"]
+    for e in criar:
+        pasta = config.MODELOS[e["modelo"]]["pasta"]
+        for rel, _ in sementes(taxs[e["modelo"]]):
+            L.append(f"├── {pasta}/{rel}")
+        for p in _pastas(taxs[e["modelo"]]):
+            L.append(f"├── {pasta}/{p}")
     L += ["```", "",
           "As pastas ficam vazias por enquanto — isso é esperado. Se a sua "
           "ferramenta não guardar pasta vazia, tudo bem: o app cria o que faltar "
           "quando precisar.", "",
           "## Passo 3 — o conteúdo de cada arquivo", ""]
 
-    for rel, conteudo in sementes(tax, respostas):
-        lang = "json" if rel.endswith(".json") else ("" if rel == ".gitignore" else "markdown")
-        L += [f"### `{rel}`", "", f"```{lang}", conteudo.rstrip("\n"), "```", ""]
+    for e in criar:
+        pasta = config.MODELOS[e["modelo"]]["pasta"]
+        for rel, conteudo in sementes(taxs[e["modelo"]]):
+            lang = "json" if rel.endswith(".json") else ("" if rel == ".gitignore" else "markdown")
+            L += [f"### `{pasta}/{rel}`", "", f"```{lang}", conteudo.rstrip("\n"), "```", ""]
 
     L += ["## Passo 4 — confira o que você fez", "",
-          "Rode isto e me mostre a saída inteira:", "",
-          "```",
-          f"python {_barra_normal(util)} verificar --raiz {_barra_normal(p)}",
-          "```", "",
-          "O esperado é `tudo certo.` — ou, no máximo, avisos sobre pasta de "
-          "estágio que não existe, se a sua ferramenta não criou pasta vazia.",
-          "**Se aparecer PROBLEMA, não tente consertar sozinho: me mostre.**", "",
-          "## Passo 5 — o que eu faço depois", "",
-          "Quando terminar, me diga estas três coisas, nesta ordem:", "",
-          f"1. que a estação está em `{p}` e já aparece no seletor da Central;",
-          "2. que o próximo passo é **abrir o app e criar a primeira nota** pela "
-          "aba 📝 Nota — é a operação mais barata do sistema, e é assim que o "
-          "registro ganha a primeira linha;",
-          "3. que **você não commitou nada**, de propósito, e que depois de eu "
-          "olhar a estrutura basta pedir para salvar o primeiro ponto — a partir "
-          f"daí o `CLAUDE.md` que você acabou de criar faz as sessões seguintes "
-          "salvarem sozinhas.", ""]
+          "Rode isto e me mostre a saída inteira:", "", "```"]
+    L += [f"python {_barra_normal(util)} verificar --raiz {_barra_normal(e['caminho'])}"
+          for e in criar]
+    L += ["```", "",
+          "O esperado é `tudo certo.` para cada uma — ou, no máximo, avisos sobre "
+          "pasta de estágio que não existe, se a sua ferramenta não criou pasta vazia.",
+          "**Se aparecer PROBLEMA, não tente consertar sozinho: me mostre.**", ""]
+    return _fim(L, destino, base, lista, taxs)
 
-    if "decisoes" in usos:
-        L += ["> Sobre as decisões: a pasta `_pendencias/` fica vazia agora. "
-              "Quando uma dúvida sua depender de uma escolha, ela vira um arquivo "
-              "lá — uma pergunta com opções — e aparece na aba Workflow do app.", ""]
-    if "portfolio" in usos and "projetos" in usos:
-        L += ["> Sobre o portfólio: cada projeto pode ter um `portfolio.json` "
-              "dizendo o que ele publica (link no ar, protótipo em destaque). O "
-              "app monta o Portfólio a partir disso. Não crie nenhum agora — "
-              "ainda não há projeto.", ""]
+
+def _fim(L, destino, base, lista, taxs=None):
+    taxs = taxs or {}
+    privadas = [t["nome"] for t in taxs.values() if t.get("privada")]
+    versionam = [t["nome"] for t in taxs.values() if not t.get("privada")]
+    if taxs:
+        L += ["## Passo 5 — o que eu faço depois", "",
+              "Quando terminar, me diga estas três coisas, nesta ordem:", "",
+              f"1. que as estações estão em `{base}` e já aparecem no seletor da Central;",
+              "2. que o próximo passo é **abrir o app e criar a primeira nota** pela "
+              "aba 📝 Nota — é a operação mais barata do sistema, e é assim que o "
+              "registro ganha a primeira linha;",
+              "3. que **você não commitou nada**, de propósito."]
+        if versionam:
+            L += ["   Para " + " e ".join(versionam) + ", basta eu pedir o primeiro ponto "
+                  "salvo: a partir daí o `CLAUDE.md` de cada uma faz as sessões salvarem "
+                  "sozinhas."]
+        if privadas:
+            L += ["   " + " e ".join(privadas) + " **nunca** é versionada — nem agora, "
+                  "nem depois."]
+        L += ["", "> Sobre as decisões: cada estação tem uma pasta `_pendencias/`, vazia "
+              "agora. Quando uma dúvida sua depender de uma escolha, ela vira um "
+              "arquivo lá — uma pergunta com opções — e aparece na aba Workflow do app.", ""]
 
     L += ["---", "",
           f"*Este texto foi gerado pela aba Embarque da Central para ser colado "
           f"em {destino}. Ele não criou nada sozinho: quem cria é você, com eu "
           f"olhando.*", ""]
-
     return {
         "texto": "\n".join(L),
-        "caminho": str(p),
-        "nome": tax["nome"],
-        "taxonomia": tax,
-        "slug": _slug(tax["nome"]),
+        "caminho": str(base) if base else "",
+        "estacoes": lista,
     }
 
 
 def registrar(caminho, nome):
-    """Acrescenta estação ao `central.json` do hub e a torna ativa.
+    """Acrescenta estação ao `central.json` do hub. **Não** a torna ativa.
 
     Escreve **só no config do hub** — nunca dentro de estação nenhuma. É a
     mesma disciplina do `/api/estacao/ativar`. A pasta pode não existir ainda
@@ -375,3 +434,10 @@ def registrar(caminho, nome):
     regs.append(novo)
     config.escrever_central(dados)
     return novo
+
+
+def registrar_varias(lista):
+    """As estações do Embarque de uma vez, com a mesma disciplina de `registrar`."""
+    if not lista:
+        raise ValueError("nenhuma estação para registrar")
+    return [registrar(e.get("caminho"), e.get("nome")) for e in lista]

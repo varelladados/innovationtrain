@@ -162,7 +162,8 @@ def repositorios():
     if config.definida():
         cfg = config.atual()
         saida.insert(0, {"chave": "estacao",
-                         "rotulo": f"Estação: {cfg.nome}", "pasta": cfg.raiz})
+                         "rotulo": f"Estação: {cfg.nome}", "pasta": cfg.raiz,
+                         "privada": cfg.privada})
     return saida
 
 
@@ -334,6 +335,12 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"estacoes": estacoes_registradas()})
             return
 
+        if path == "/api/embarque/modelos":
+            # só leitura: nome, pasta e propósito das estações padrão, para o
+            # Embarque não ter nada disso escrito no HTML
+            self._send_json({"modelos": [dict(m, id=k) for k, m in config.MODELOS.items()]})
+            return
+
         if path == "/api/versoes":
             quais = qs.get("repo", [None])[0]
             repos = [r for r in repositorios() if not quais or r["chave"] == quais]
@@ -341,6 +348,7 @@ class Handler(BaseHTTPRequestHandler):
             for r in repos:
                 e = versoes_mod.estado(r["pasta"])
                 e["chave"], e["rotulo"] = r["chave"], r["rotulo"]
+                e["privada"] = bool(r.get("privada"))
                 e["semaforo"] = versoes_mod.semaforo(e)
                 saida.append(e)
             self._send_json({
@@ -355,6 +363,10 @@ class Handler(BaseHTTPRequestHandler):
             alvo = next((r for r in repositorios() if r["chave"] == chave), None)
             if alvo is None:
                 self._send_json({"error": "repositório desconhecido"}, status=400)
+                return
+            if alvo.get("privada"):
+                self._send_json({"error": "estação privada: ela não é versionada, de propósito"},
+                                status=400)
                 return
             try:
                 e = versoes_mod.estado(alvo["pasta"])
@@ -512,7 +524,10 @@ class Handler(BaseHTTPRequestHandler):
         apareça no seletor assim que a estrutura existir. Escreve só no config
         do hub — nunca dentro de estação nenhuma."""
         try:
-            reg = embarque_mod.registrar(payload.get("caminho"), payload.get("nome"))
+            if isinstance(payload.get("estacoes"), list):
+                reg = embarque_mod.registrar_varias(payload["estacoes"])
+            else:
+                reg = embarque_mod.registrar(payload.get("caminho"), payload.get("nome"))
         except ValueError as e:
             self._send_json({"error": str(e)}, status=400)
             return

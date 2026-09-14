@@ -729,6 +729,8 @@ async function loadIndex(){
   renderBoasVindas(data);
   TOUR_PATH = (data.estacao && data.estacao.trilha) || null;
   document.getElementById("tour-nav-btn").hidden = !TOUR_PATH;
+  // sem estágio de projetos não há o que listar: o Portfólio sai da barra
+  document.getElementById("portfolio-nav-btn").hidden = !!(PLAT && PLAT.tem_projetos === false);
   renderTypeChips();
   renderTree();
   // A trilha só aparece onde ela existe: a estação tem que declarar
@@ -2143,9 +2145,12 @@ function vsRepo(r){
     <p class="caminho">${escapeHtml(r.pasta)}</p>`;
 
   if (!r.e_repo){
-    el.innerHTML += vsResposta("cinza", "Esta pasta está sendo versionada?",
-      "Não", escapeHtml(r.erro || "") +
-      " — o que está aqui não tem ponto salvo nenhum. Uma sessão de IA cria o repositório num comando, quando você quiser.");
+    el.innerHTML += r.privada
+      ? vsResposta("cinza", "Esta pasta está sendo versionada?", "Não, de propósito",
+          "Estação privada: fica fora de git, de nuvem e de exportação. O backup dela é cópia de pasta.")
+      : vsResposta("cinza", "Esta pasta está sendo versionada?",
+          "Não", escapeHtml(r.erro || "") +
+          " — o que está aqui não tem ponto salvo nenhum. Uma sessão de IA cria o repositório num comando, quando você quiser.");
     return el;
   }
 
@@ -2234,27 +2239,33 @@ async function vsPrompt(tipo, repo, rotulo){
 // Cinco paradas. As respostas ficam no localStorage com o mesmo try/catch
 // defensivo do Tour: navegador em modo privado ou dados de site bloqueados não
 // podem derrubar a única tela que serve a quem ainda não tem estação.
-const EB_KEY = "estacao.embarque.v1";
+const EB_KEY = "central.embarque.v2";
 let EB_JA_ABRIU = false;
 let EB_PASSO = 0;
-let EB = {caminho: "", nome: "", usos: ["notas"], tem_conteudo: "vazia", destino: "claude-code"};
+let EB = {caminho: "", estacoes: {}, tem_conteudo: "vazia", destino: "claude-code"};
+// Nome, pasta e propósito de cada estação padrão vêm do servidor
+// (config.MODELOS) — nada disso é escrito aqui.
+let EB_MODELOS = [];
 
 function ebCarregar(){
   try {
     const cru = localStorage.getItem(EB_KEY);
     if (cru) EB = Object.assign(EB, JSON.parse(cru));
   } catch(e){}
+  if (!EB.estacoes || typeof EB.estacoes !== "object") EB.estacoes = {};
 }
 function ebSalvar(){
   try { localStorage.setItem(EB_KEY, JSON.stringify(EB)); } catch(e){}
 }
-
-const EB_USOS = [
-  {id: "notas", rotulo: "Guardar e organizar ideias", sub: "o básico: capturar sem fricção e arrumar depois. Não dá pra desmarcar — é o motor.", fixo: true},
-  {id: "decisoes", rotulo: "Registrar decisões que dependem de mim", sub: "acrescenta uma pasta de pendências: cada dúvida vira uma pergunta com opções, que espera por você."},
-  {id: "projetos", rotulo: "Tocar projetos", sub: "acrescenta dois estágios: funcionalidade (o que vai existir quando estiver pronto, e onde) e projeto. Sem isso a estação tem três, e funciona igual."},
-  {id: "portfolio", rotulo: "Ver num só lugar tudo que já roda", sub: "cada projeto declara o que publica; o app monta o Portfólio a partir disso. Precisa de \u201cprojetos\u201d."},
-];
+// A escolha de cada estação padrão: criar (o normal) ou só registrar uma que já existe.
+const ebEscolha = (id) => (EB.estacoes[id] = EB.estacoes[id] || {criar: true, caminho: ""});
+const ebCriando = () => EB_MODELOS.filter(m => ebEscolha(m.id).criar);
+function ebPrevia(){
+  const base = (EB.caminho || "").trim().replace(/[\\/]+$/, "");
+  if (!base || !ebCriando().length) return "";
+  const sep = base.indexOf("\\") >= 0 ? "\\" : "/";
+  return "Fica assim: " + ebCriando().map(m => `<code>${escapeHtml(base + sep + m.pasta)}</code>`).join(", ") + ".";
+}
 
 const EB_DESTINOS = [
   {id: "claude-code", rotulo: "Claude Code"},
@@ -2263,52 +2274,54 @@ const EB_DESTINOS = [
 ];
 
 function ebParadas(){
+  const nomes = EB_MODELOS.map(m => `a <strong>${escapeHtml(m.nome)}</strong> (${escapeHtml(m.resumo)})`);
+  const lista = nomes.length > 1 ? nomes.slice(0, -1).join(", ") + " e " + nomes[nomes.length - 1] : nomes.join("");
   return [
     {
       titulo: "1 — O que é isto",
       corpo: `<p>A <strong>Central</strong> é este app. Ela não pensa por você e não tem IA dentro: ela organiza o que você guarda, e prepara o texto que você cola numa sessão de IA quando quiser que algo seja feito.</p>
-        <p>Uma <strong>estação</strong> é um espaço de trabalho seu — uma pasta no seu computador, com as suas ideias. A Central pode operar várias; você ainda não tem nenhuma.</p>
-        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria a primeira estação. A Central não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
+        <p>Uma <strong>estação</strong> é um espaço de trabalho seu — uma pasta no seu computador, com um trem de ideias. ${lista ? `Toda Central começa com estas: ${lista}.` : ""}</p>
+        <p>O que você leva daqui: um <strong>texto pronto para colar</strong> numa sessão de IA, que cria as estações. A Central não vai criar nada sozinha — ela escreve o pedido, você olha, e a sessão executa.</p>`,
       valido: () => true,
     },
     {
-      titulo: "2 — Onde ela vai ficar",
-      corpo: `<label class="campo" for="eb-caminho">Caminho completo da pasta (ela pode nem existir ainda)</label>
-        <input type="text" id="eb-caminho" value="${escapeHtml(EB.caminho)}" placeholder="C:\\Users\\voce\\MinhasIdeias" spellcheck="false">
-        <label class="campo" for="eb-nome" style="margin-top:var(--sp-3)">Como você chama isso</label>
-        <input type="text" id="eb-nome" value="${escapeHtml(EB.nome)}" placeholder="Minhas ideias">
-        <p style="margin-top:var(--sp-3)">Escolha uma pasta que seja <strong>sua</strong> e que você vá lembrar. Ela não precisa estar vazia — a próxima parada trata disso.</p>`,
+      titulo: "2 — Onde elas vão ficar",
+      corpo: `<label class="campo" for="eb-caminho">Caminho completo da pasta que vai guardar as estações (ela pode nem existir ainda)</label>
+        <input type="text" id="eb-caminho" value="${escapeHtml(EB.caminho)}" placeholder="C:\\Users\\voce\\Central\\estacoes" spellcheck="false">
+        <p style="margin-top:var(--sp-3)" id="eb-previa">${ebPrevia()}</p>
+        <p style="margin-top:var(--sp-3)">Cada estação vira uma pasta lá dentro. Escolha uma pasta que seja <strong>sua</strong> e que você vá lembrar. Ela não precisa estar vazia — a quarta parada trata disso.</p>`,
       montar: (el) => {
-        el.querySelector("#eb-caminho").oninput = (e) => { EB.caminho = e.target.value; ebSalvar(); };
-        el.querySelector("#eb-nome").oninput = (e) => { EB.nome = e.target.value; ebSalvar(); };
+        el.querySelector("#eb-caminho").oninput = (e) => {
+          EB.caminho = e.target.value; ebSalvar();
+          el.querySelector("#eb-previa").innerHTML = ebPrevia();
+        };
       },
-      valido: () => (EB.caminho || "").trim().length >= 3,
+      valido: () => !ebCriando().length || (EB.caminho || "").trim().length >= 3,
       erro: "Preencha o caminho da pasta para seguir.",
     },
     {
-      titulo: "3 — O que você vai usar",
-      corpo: `<p>Cada escolha acrescenta pastas ao pedido. Você pode mudar de ideia depois — nada aqui é definitivo.</p>` +
-        EB_USOS.map(u => {
-          const marcado = EB.usos.indexOf(u.id) >= 0;
-          return `<label class="eb-opcao${marcado ? " sim" : ""}" data-uso="${u.id}">
-            <input type="checkbox" ${marcado ? "checked" : ""} ${u.fixo ? "disabled" : ""}>
-            <span><strong>${escapeHtml(u.rotulo)}</strong><small>${u.sub}</small></span></label>`;
-        }).join(""),
+      titulo: "3 — Quais estações criar agora",
+      corpo: `<p>Vêm todas marcadas. Desmarque a que você já tem — e diga onde ela está, para a Central registrar sem mexer nela.</p>` +
+        (EB_MODELOS.map(m => {
+          const esc = ebEscolha(m.id);
+          return `<label class="eb-opcao${esc.criar ? " sim" : ""}" data-modelo="${escapeHtml(m.id)}">
+            <input type="checkbox" ${esc.criar ? "checked" : ""}>
+            <span><strong>${escapeHtml(m.nome)}</strong><small>${escapeHtml(m.proposito)}${m.privada ? " Nunca é versionada nem sai do seu computador." : ""}</small></span></label>` +
+            (esc.criar ? "" : `<div class="eb-existente" style="margin:0 0 var(--sp-3) var(--sp-3)">
+              <label class="campo" for="eb-ex-${escapeHtml(m.id)}">Já tenho a ${escapeHtml(m.nome)} em (vazio: não usar agora)</label>
+              <input type="text" id="eb-ex-${escapeHtml(m.id)}" data-modelo="${escapeHtml(m.id)}" value="${escapeHtml(esc.caminho || "")}" spellcheck="false"></div>`);
+        }).join("") || `<p class="eb-erro">Não consegui ler as estações padrão do servidor.</p>`),
       montar: (el) => {
         el.querySelectorAll(".eb-opcao").forEach(lab => {
-          const id = lab.dataset.uso;
           const cb = lab.querySelector("input");
-          cb.onchange = () => {
-            if (cb.checked){ if (EB.usos.indexOf(id) < 0) EB.usos.push(id); }
-            else EB.usos = EB.usos.filter(x => x !== id);
-            // portfólio sem projetos não faz sentido: um depende do outro
-            if (id === "projetos" && !cb.checked) EB.usos = EB.usos.filter(x => x !== "portfolio");
-            if (id === "portfolio" && cb.checked && EB.usos.indexOf("projetos") < 0) EB.usos.push("projetos");
-            ebSalvar(); ebDesenhar();
-          };
+          cb.onchange = () => { ebEscolha(lab.dataset.modelo).criar = cb.checked; ebSalvar(); ebDesenhar(); };
+        });
+        el.querySelectorAll(".eb-existente input").forEach(inp => {
+          inp.oninput = () => { ebEscolha(inp.dataset.modelo).caminho = inp.value; ebSalvar(); };
         });
       },
-      valido: () => true,
+      valido: () => EB_MODELOS.some(m => { const e = ebEscolha(m.id); return e.criar || (e.caminho || "").trim().length >= 3; }),
+      erro: "Escolha pelo menos uma estação para criar ou registrar.",
     },
     {
       titulo: "4 — Já tem coisa nessa pasta?",
@@ -2351,6 +2364,9 @@ async function openEmbarqueView(){
   document.getElementById("breadcrumb").textContent = "Central / Embarque";
   document.getElementById("meta-bar").innerHTML =
     `<span class="badge badge-type">embarque</span><span id="meta-path">primeiros passos</span>`;
+  if (!EB_MODELOS.length){
+    try { EB_MODELOS = (await (await fetch("/api/embarque/modelos")).json()).modelos || []; } catch(e){}
+  }
   ebDesenhar();
 }
 
@@ -2359,7 +2375,7 @@ function ebDesenhar(){
   const p = paradas[EB_PASSO];
   const content = document.getElementById("content");
   content.innerHTML = `<h1>Embarque</h1>
-    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria a sua primeira estação.</p>`;
+    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria as suas estações.</p>`;
 
   const dots = document.createElement("div");
   dots.className = "eb-passos";
@@ -2414,7 +2430,7 @@ async function ebGerar(){
   } catch(err){ toast("Falha ao gerar: " + err); return; }
 
   mostrarPrompt(data.texto, {
-    titulo: "Crie a sua primeira estação",
+    titulo: "Crie as suas estações",
     sub: `Cole numa sessão de IA <strong>com a pasta aberta</strong>. Este texto não criou nada — quem cria é a sessão, com você olhando.`,
   });
 
@@ -2424,7 +2440,7 @@ async function ebGerar(){
   try {
     const r = await fetch("/api/embarque/registrar", {
       method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({caminho: data.caminho, nome: data.nome})});
+      body: JSON.stringify({estacoes: (data.estacoes || []).map(e => ({caminho: e.caminho, nome: e.nome}))})});
     const reg = await r.json();
     if (reg.ok) await carregarEstacoes();
   } catch(e){}

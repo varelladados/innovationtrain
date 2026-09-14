@@ -40,6 +40,7 @@ MERMAID_CDN = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min
 
 
 def build_snapshot():
+    config.recusar_se_privada(config.atual(), "o snapshot estático")
     entries, cache = indexer.build_index()
     raw = {}
     for e in entries:
@@ -194,7 +195,12 @@ def build_html(full=False):
 
 def main():
     full = "--full" in sys.argv
-    page, snap = build_html(full=full)
+    config.iniciar(sys.argv[1:])   # sem isto, pela linha de comando não havia estação ativa
+    try:
+        page, snap = build_html(full=full)
+    except config.EstacaoPrivada as e:
+        print(e)
+        return 2
     DIST_DIR.mkdir(exist_ok=True)
     out = OUT_PATH if not full else DIST_DIR / "central-static-full.html"
     out.write_text(page, encoding="utf-8")
@@ -202,4 +208,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

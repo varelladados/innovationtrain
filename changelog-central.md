@@ -35,6 +35,24 @@ de quem usa —, e o que ela opera deixa de se chamar plataforma: é uma **esta�
 - **"Plataforma" nos textos dos exemplos** só mudou onde era a unidade. Onde é
   palavra comum — a taxa da plataforma do marketplace, a plataforma do curso —
   ficou como estava.
+- **As três estações padrão.** Toda Central começa com a **Plataforma** (os
+  cinco estágios, o trem de inovação), a **Admin_empresa** e a
+  **Vida_Pessoal** (captura, nota, ideia). O Embarque cria as três lado a
+  lado — cada uma pode ser desmarcada, e a que já existe é só registrada. Os
+  modelos moram em `config.MODELOS`, e a interface os lê de
+  `GET /api/embarque/modelos`.
+- **A Vida_Pessoal é privada**: nasce sem `.gitignore` e com um `CLAUDE.md`
+  que proíbe git; o snapshot estático e a vitrine recusam exportá-la; a aba
+  Versões diz "não versionada, de propósito". O `.gitignore` da Central deixa
+  de fora as estações criadas em `estacoes/` e mantém os exemplos.
+- **Estação sem projetos ganhou forma própria**: `"projetos": null`. Antes o
+  Embarque gravava `"pasta": ""` numa estação de três estágios — que quer
+  dizer "os projetos moram na raiz" —, e o Portfólio listaria `1-capturas/`
+  como projeto. O botão Portfólio agora some onde não há projeto.
+- **Uma ideia que serve a outras pessoas** alimenta uma captura na Plataforma:
+  reescrita, com linhagem, sem botão. O critério está em `metodo/classificar.md`.
+- **As exportações pela linha de comando** não iniciavam a config e morriam
+  antes de começar; agora iniciam.
 
 ## 0.9.2 — 2026-09-11
 

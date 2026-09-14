@@ -12,6 +12,14 @@ dist/
 /central.json
 /estacao.json
 
+# As estacoes de quem usa, que o Embarque cria dentro da Central: conteudo
+# seu, nao do produto (e a Vida_Pessoal nunca e' versionada). Os exemplos ficam.
+/estacoes/*
+!/estacoes/exemplo/
+!/estacoes/exemplo-precos/
+!/estacoes/_inicial/
+!/estacoes/_passos/
+
 # Suas decisoes sobre o proprio produto — pessoais, ficam de fora.
 pendencias/
 

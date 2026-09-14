@@ -139,6 +139,24 @@ você toda vez que você abre o Portfólio.
 
 ---
 
+## Passagem entre estações — ideia → captura na Plataforma
+
+Vale para as estações de três estágios, a Vida_Pessoal e a Admin_empresa. A
+ideia **não sai** de onde está: o que nasce é uma captura na Plataforma.
+
+Critério único: **alguém que não é você teria esse problema, e a sua ideia
+resolveria para essa pessoa?**
+
+- [ ] O problema existe **fora** da sua vida ou da sua empresa — dá para
+      descrevê-lo sem citar ninguém?
+- [ ] A ideia resolve o problema para essa outra pessoa, e não só para você?
+- [ ] A captura nova foi **reescrita** sem nenhum dado pessoal ou da empresa?
+
+Os três, sempre. Dali em diante a captura segue o caminho normal da Plataforma,
+e a linhagem cita a estação de origem — ver [`taxonomia.md`](taxonomia.md).
+
+---
+
 ## Quando você não consegue decidir
 
 Não decida. Uma dúvida genuína vira **pendência** — uma pergunta objetiva, com

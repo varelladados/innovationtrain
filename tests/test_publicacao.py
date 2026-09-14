@@ -60,7 +60,8 @@ PAPEIS = [re.compile(p) for p in (
 )]
 
 #: Configuração e decisões de quem usa — nunca versionadas.
-NUNCA_VERSIONADO = ("central.json", "estacao.json", "pendencias/")
+NUNCA_VERSIONADO = ("central.json", "estacao.json", "pendencias/",
+                    "estacoes/plataforma/", "estacoes/admin_empresa/", "estacoes/vida_pessoal/")
 
 TEXTO = {".py", ".md", ".html", ".htm", ".txt", ".json", ".bat", ".css", ".js"}
 
@@ -97,7 +98,7 @@ class TestNadaPrivadoRastreado(unittest.TestCase):
     def test_o_gitignore_cobre_o_que_precisa(self):
         """Não basta não estar versionado hoje: tem que ser difícil entrar."""
         texto = (RAIZ / ".gitignore").read_text(encoding="utf-8")
-        for padrao in ("/central.json", "/estacao.json", "pendencias/", "plano-", "propostas-",
+        for padrao in ("/central.json", "/estacao.json", "/estacoes/*", "pendencias/", "plano-", "propostas-",
                        "analise-", "portfolio.json"):
             self.assertIn(padrao, texto, f".gitignore não cobre `{padrao}`")
 

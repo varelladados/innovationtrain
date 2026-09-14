@@ -54,8 +54,9 @@ estágio se preserva como estava, e a parte ativa da pasta continua respondendo
 ## Se você está começando
 
 Abra o app e vá na aba **🚂 Embarque**. São cinco perguntas, e você sai com um
-texto pronto para colar numa sessão de IA — é ele que cria a sua primeira
-estação. A Central não cria nada sozinha: ela escreve o pedido, você olha, a
+texto pronto para colar numa sessão de IA — é ele que cria as três estações
+com que toda Central começa: **Plataforma**, **Admin_empresa** e
+**Vida_Pessoal**. A Central não cria nada sozinha: ela escreve o pedido, você olha, a
 sessão executa.
 
 Sem estação nenhuma configurada, o servidor sobe assim mesmo e o Embarque

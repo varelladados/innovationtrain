@@ -13,6 +13,61 @@
 
 ---
 
+## As estações de uma Central
+
+Uma **Central** opera várias estações, e toda Central começa com três. As três
+são trens — o que muda é o tamanho do trem e para que ele serve.
+
+| Estação | Pasta | Estágios | Privada | Para quê |
+|---|---|---|---|---|
+| **Plataforma** | `plataforma/` | os cinco | não | O trem de inovação: ideias que podem virar funcionalidade, projeto e solução para outras pessoas. |
+| **Admin_empresa** | `admin_empresa/` | captura, nota, ideia | não | A burocracia da empresa: RH, impostos, jurídico, contábil e tributário, financeiro. |
+| **Vida_Pessoal** | `vida_pessoal/` | captura, nota, ideia | **sim** | A vida fora do trabalho: deveres civis, família, tarefas, rotinas, lazer, amigos, a festa aqui em casa. |
+
+A Admin_empresa é, por enquanto, o mesmo trem da Vida_Pessoal com outro
+propósito. Uma estação de três estágios usa os três primeiros da seção abaixo —
+os mesmos nomes, pastas e siglas.
+
+Cada estação diz qual modelo segue na chave `modelo` do `estacao.json`. Sem a
+chave vale `plataforma`, que é o que toda estação era antes de existirem as
+outras duas. A estação sem estágio de projetos declara `"projetos": null` — e é
+isso que tira dela o Portfólio. Não confundir com `"pasta": ""`, que diz outra
+coisa: os projetos moram na raiz.
+
+O Embarque cria as três lado a lado, numa pasta que você escolhe. A sugestão é
+`estacoes/` dentro da própria Central, que o `.gitignore` deixa de fora: o que
+está ali é conteúdo seu, não do produto. Quem já tem uma delas informa o
+caminho, e ela é só registrada.
+
+### A Vida_Pessoal é privada
+
+**Nunca versionada, nunca compartilhada.** Sem `git init`, sem commit, sem
+remoto. O snapshot estático e a vitrine recusam exportá-la, e a aba Versões diz
+"não versionada, de propósito" em vez de oferecer criar repositório. O backup
+dela é cópia de pasta.
+
+É individual: cada pessoa tem a sua. A Central não precisa saber quem é quem
+para isso valer — basta que nada dali saia.
+
+### Passagem entre estações
+
+Uma ideia da Vida_Pessoal ou da Admin_empresa pode ser solução para outras
+pessoas. Quando é, ela alimenta uma **captura nova na Plataforma**. Não é um
+estágio a mais nem um botão: é o que acontece em toda passagem — decisão e
+escrita.
+
+- a captura na Plataforma é **reescrita** para quem é de fora: nada da estação
+  de origem vai literal;
+- ela nasce com identificador e linha próprios no registro da Plataforma;
+- a linhagem cita a estação e o identificador de origem — e, se o identificador
+  disser demais sobre alguém, cita só a estação;
+- a ideia de origem **fica onde está**: ela não mudou de estágio.
+
+O critério de quando uma ideia serve a outras pessoas está em
+[`classificar.md`](classificar.md).
+
+---
+
 ## Os cinco estágios
 
 Uma ideia não nasce pronta. Ela chega, é organizada, ganha forma, diz o que vai
@@ -58,7 +113,7 @@ Os critérios de cada passagem estão em [`classificar.md`](classificar.md).
 ├── _indice.md          porta de entrada única — o que é esta estação
 ├── _registro.md        o registro, append-only: uma linha por item
 ├── _sem-destino.md     gerado: o que está no registro e ainda não avançou
-├── estacao.json     nome + taxonomia desta estação
+├── estacao.json        nome + taxonomia desta estação
 ├── 1-capturas/
 │   └── _historico/     capturas que já viraram nota
 ├── 2-notas/

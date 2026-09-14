@@ -251,6 +251,10 @@ def semaforo(e):
     """Verde, âmbar ou vermelho para a pergunta que importa: tem trabalho meu
     que ainda não está salvo em lugar nenhum?"""
     if not e.get("e_repo"):
+        if e.get("privada"):
+            return {"cor": "cinza", "titulo": "Não versionada, de propósito",
+                    "texto": "Estação privada: fica fora de git, de nuvem e de "
+                             "exportação. O backup dela é cópia de pasta."}
         return {"cor": "cinza", "titulo": "Esta pasta não é versionada",
                 "texto": "Nada aqui tem ponto salvo. Uma sessão de IA cria o "
                          "repositório em um comando, quando você quiser."}

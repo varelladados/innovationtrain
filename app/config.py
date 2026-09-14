@@ -84,6 +84,13 @@ PADROES = {
         "origem": [],                 # campos de linhagem no CLAUDE.md do projeto
     },
     "projetos": {"pasta": "5-projetos", "prefixo_re": None},
+    #: Qual dos `MODELOS` esta estação segue. Sem estágio de projetos, a estação
+    #: declara `"projetos": null` — que é diferente de `"pasta": ""` (os projetos
+    #: morando na raiz).
+    "modelo": "plataforma",
+    #: Estação privada não sai daqui: exportação recusa e a aba Versões não oferece
+    #: git. Ausente, vale o que o modelo diz.
+    "privada": None,
     #: Siglas de uma taxonomia anterior, mapeadas para o número do estágio a que
     #: correspondem hoje (ex.: `{"SBC": 2, "SBI": 3, "SBZ": 5}`). Existe para uma
     #: estação que **já tinha acervo** quando adotou a Central: os
@@ -120,6 +127,41 @@ PADROES = {
     #: inteira num estado adiante. Só as de exemplo declaram.
     "tutorial": None,
 }
+
+#: As estações com que toda Central começa — cópia executável da seção "As
+#: estações de uma Central" de `metodo/taxonomia.md`, na ordem em que o Embarque
+#: as oferece. As três são trens: o que muda é o tamanho e para que servem.
+MODELOS = {
+    "plataforma": {
+        "nome": "Plataforma",
+        "pasta": "plataforma",
+        "estagios": 5,
+        "projetos": True,
+        "privada": False,
+        "resumo": "o trem de inovação",
+        "proposito": "O trem de inovação: ideias que podem virar funcionalidade, projeto e solução para outras pessoas.",
+    },
+    "admin_empresa": {
+        "nome": "Admin_empresa",
+        "pasta": "admin_empresa",
+        "estagios": 3,
+        "projetos": False,
+        "privada": False,
+        "resumo": "a burocracia da empresa",
+        "proposito": "A burocracia da empresa: RH, impostos, jurídico, contábil e tributário, financeiro.",
+    },
+    "vida_pessoal": {
+        "nome": "Vida_Pessoal",
+        "pasta": "vida_pessoal",
+        "estagios": 3,
+        "projetos": False,
+        "privada": True,
+        "resumo": "a vida fora do trabalho",
+        "proposito": "A vida fora do trabalho: deveres civis, família, tarefas, rotinas, lazer, amigos, a festa aqui em casa.",
+    },
+}
+#: O modelo de quem não declara `modelo` — o que toda estação era antes dos outros dois.
+MODELO_PADRAO = "plataforma"
 
 
 class Config:
@@ -197,6 +239,23 @@ class Config:
     def projetos_dir(self):
         pasta = (self._d.get("projetos") or {}).get("pasta")
         return self.raiz / pasta if pasta else self.raiz
+
+    @property
+    def tem_projetos(self):
+        """`"projetos": null` quer dizer "esta estação não tem projetos"."""
+        return self._d.get("projetos") is not None
+
+    @property
+    def modelo(self):
+        return self._d.get("modelo") or MODELO_PADRAO
+
+    @property
+    def privada(self):
+        """A chave explícita vence; sem ela, vale o que o modelo diz."""
+        valor = self._d.get("privada")
+        if valor is None:
+            valor = (MODELOS.get(self.modelo) or {}).get("privada", False)
+        return bool(valor)
 
     @property
     def projetos_prefixo_re(self):
@@ -307,6 +366,9 @@ class Config:
             "historico": self.historico,
             "siglas_legadas": self.siglas_legadas,
             "ok": self.ok(),
+            "modelo": self.modelo,
+            "privada": self.privada,
+            "tem_projetos": self.tem_projetos,
             # A interface só oferece "reiniciar" onde ele existe. Uma estação
             # de verdade não declara `estado_inicial`, e o botão nem aparece —
             # a mesma chave que faz o utilitário recusar.
@@ -434,6 +496,18 @@ def ativar(caminho) -> dict:
         raise KeyError(f"estação não registrada no {CENTRAL_JSON}: {caminho}")
     escrever_central(dados)
     return achou
+
+
+class EstacaoPrivada(RuntimeError):
+    """Pediram para tirar daqui algo de uma estação privada."""
+
+
+def recusar_se_privada(cfg, acao):
+    """Levanta `EstacaoPrivada` se `cfg` é privada. `acao` é o que ia sair daqui."""
+    if cfg.privada:
+        raise EstacaoPrivada(
+            f"{cfg.nome} é uma estação privada: {acao} não a inclui. Ela não é "
+            "versionada nem compartilhada, de propósito.")
 
 
 # ---------------------------------------------------------------- resolução
