@@ -10,11 +10,12 @@ VITRINE: só o que faz sentido alguém de fora ver. Regras de publicação:
   portfolio.json (`"repo_publico": true`). Repositório privado vira texto
   "repositório privado", sem link.
 - Nada de protótipo/launcher local (isso é a aba Portfólio interna).
-- Sem dados pessoais além do nome e das personas (Seu Beira, mR.bRiNk — decisão do
-  usuário em 2026-09-03: nenhum e-mail/link de contato por enquanto).
+- Sem dados pessoais além da assinatura que a própria plataforma declara
+  (`assinatura`, no config — decisão do usuário em 2026-09-03: nenhum e-mail ou
+  link de contato por enquanto). Sem a chave, a vitrine sai sem assinatura.
 
-Saída: dist/portfolio-seu-beira.html (formato Artifact: sem <html>/<head>/<body>);
---full gera a variante autocontida.
+Saída: dist/portfolio-<plataforma>.html (formato Artifact: sem
+<html>/<head>/<body>); --full gera a variante autocontida.
 
     python app/export_portfolio.py [--full]
 """
@@ -23,6 +24,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 import portfolio as portfolio_mod
@@ -47,6 +49,28 @@ def _ler(p, limit=200_000):
         return p.read_text(encoding="utf-8", errors="replace")[:limit]
     except OSError:
         return ""
+
+
+def _slug(texto, limite=40):
+    """Nome de plataforma reduzido a nome de arquivo: sem acento, sem espaço."""
+    t = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode()
+    t = re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
+    if len(t) > limite:
+        t = t[:limite].rsplit("-", 1)[0]   # corta palavra inteira, não pela metade
+    return t.strip("-") or "plataforma"
+
+
+def nome_saida(full=False):
+    """O arquivo que a vitrine escreve, derivado do nome da plataforma ativa.
+
+    Era literal aqui dentro — e o literal era o nome do sistema pessoal de quem
+    escreveu o produto, num repositório público. Escapava do guarda-corpo por
+    estar escrito com hífen no meio: `tests/test_publicacao.py` só hasheava
+    palavra inteira, e `a-b` chegava lá como `a` e `b`. A brecha foi fechada
+    lá; aqui o nome passa a vir do config pelo mesmo motivo que todo o resto —
+    a vitrine de uma plataforma não pode sair com o nome de outra.
+    """
+    return f"portfolio-{_slug(config.atual().nome)}{'-full' if full else ''}.html"
 
 
 def frase_manifesto():
@@ -210,11 +234,13 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
     tipos_txt = " · ".join(f"{n} {TIPO_LABEL.get(t, t)}" for t, n in sorted(n_tipos.items(), key=lambda x: -x[1]))
 
     cadeia_txt = " → ".join(e["nome"] for e in config.atual().estagios)
+    assinatura = config.atual().get("assinatura") or ""
+    quem = f'<div class="quem">{esc(assinatura)}</div>' if assinatura else ""
     body = f"""
 <div class="wrap">
   <aside class="rail">
     <div>
-      <div class="quem">Bruno Varella · Seu Beira · mR.bRiNk</div>
+      {quem}
       <h1>Da ideia <em>à prateleira.</em></h1>
     </div>
     <p class="tese"><strong>Hub de inovação IA-first, MVP-first.</strong> {esc(tese)}</p>
@@ -256,7 +282,7 @@ def main():
     full = "--full" in sys.argv
     page, projetos, no_ar = montar(full)
     DIST_DIR.mkdir(exist_ok=True)
-    out = DIST_DIR / ("portfolio-seu-beira-full.html" if full else "portfolio-seu-beira.html")
+    out = DIST_DIR / nome_saida(full)
     out.write_text(page, encoding="utf-8")
     print(f"{out} — {len(page.encode('utf-8'))/1e3:.0f} KB · {len(projetos)} projetos · {len(no_ar)} no ar")
 

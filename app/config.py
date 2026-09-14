@@ -104,6 +104,10 @@ PADROES = {
     "fluxo": None,
     "manifesto": None,          # documento com a frase-tese, usado pela vitrine
     "manifesto_marca": None,    # o rótulo que precede a frase dentro dele
+    #: Quem assina a vitrine — o nome e as personas que aparecem no topo dela.
+    #: É de quem usa, não do produto: sem a chave a linha some, em vez de sair
+    #: com um nome escrito no código.
+    "assinatura": None,
     #: Pasta com uma cópia intacta desta plataforma, para `plataforma.py
     #: reiniciar` devolvê-la ao estado de origem. **Só as plataformas de exemplo
     #: declaram isto**, e a ausência dela é o que torna reiniciar impossível numa
