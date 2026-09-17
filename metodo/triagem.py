@@ -229,7 +229,14 @@ def detectar(texto):
                     add("telefone", m.group(), n)
                     ocupado.append(m.span())
         for m in SEGREDO_CHAVE_RE.finditer(linha):
-            add("segredo", m.group(1), n, "segredo (palavra-chave)")
+            valor = m.group(1).strip("`'\".,;:*_")
+            resto = linha[m.end():].strip()
+            # "senha: registrar como falso positivo" é prosa, não senha: valor só de
+            # letras seguido de mais palavras não conta. Pego pela primeira vez
+            # rodando a triagem sobre os próprios documentos dela.
+            if len(valor) < 4 or (valor.isalpha() and re.match(r"\w", resto)):
+                continue
+            add("segredo", valor, n, "segredo (palavra-chave)")
         for m in SEGREDO_CONHECIDO_RE.finditer(linha):
             add("segredo", m.group(), n, "segredo (formato de chave conhecido)")
         if not ocupado and _parece_segredo_pela_forma(linha):

@@ -58,6 +58,14 @@ class Segredo(unittest.TestCase):
         self.assertIn("segredo", cats("senha: gato4213verde"))
         self.assertIn("segredo", cats("chave sk-ABCDEFGHIJKLMNOPQRSTUVWX12"))
 
+    def test_palavra_chave_em_prosa_nao_e_senha(self):
+        self.assertIn("segredo", cats("senha: minhasenhaforte"))
+        for t in ("C — Não é senha: registrar como falso positivo",
+                  "- **Segredo:** avisar para trocar",
+                  "o token: veja a documentação"):
+            with self.subTest(t=t):
+                self.assertNotIn("segredo", cats(t))
+
     def test_linha_solta_com_cara_de_senha(self):
         self.assertIn("segredo", cats("ideias do dia\n\ngato4213verde\n\nmais ideias"))
 
