@@ -185,5 +185,122 @@ class Levantamento(unittest.TestCase):
                                            str(Path(d) / "r.md")]), 0)
 
 
+def _estacao(raiz, triagem=None):
+    raiz.mkdir(parents=True, exist_ok=True)
+    cfg = {"nome": raiz.name,
+           "estagios": [{"n": 1, "pasta": "1-capturas", "nome": "Captura", "plural": "Capturas", "sigla": "CAP"}],
+           "arquivos": {"indice": "_indice.md", "registro": "_registro.md", "sem_destino": "_sem-destino.md"},
+           "entrada": "1-capturas"}
+    if triagem is not None:
+        cfg["triagem"] = triagem
+    (raiz / "estacao.json").write_text(json.dumps(cfg), encoding="utf-8")
+    (raiz / "_indice.md").write_text("# teste\n", encoding="utf-8")
+    (raiz / "_registro.md").write_text("# Registro\n\n## Pendente\n\nnada\n", encoding="utf-8")
+
+
+def _decisoes(lote):
+    d = {
+        "lote": "2099-01-01-teste", "versao": 1, "nota_versao": "primeira leitura",
+        "chegou_em": "2099-01-01", "origem": "pasta de teste",
+        "em_uma_frase": "um ditado misto",
+        "trechos": [
+            {"id": "A", "descricao": "reunião do projeto", "esfera": "duvida", "terceiro": ["nome"],
+             "motivo": "não se sabe se é trabalho", "depende_de": ["P1", "P2"], "removido": ["nome"]},
+            {"id": "B", "descricao": "compromisso de família", "esfera": "pessoal", "motivo": "família",
+             "depende_de": [], "saidas": [{"destino": "pessoal", "texto": "trechos/b.md", "slug": "familia"}]},
+        ],
+        "secoes": [{"titulo": "Só no completo", "texto": "ligar para (99) 99999-8888", "privado": True}],
+        "alertas": [],
+        "perguntas": [
+            {"id": "P1", "titulo": "A reunião é trabalho?", "opcoes": [
+                {"id": "A", "texto": "sim", "efeitos": [{"trecho": "A", "esfera": "profissional",
+                                                         "saidas": [{"destino": "profissional",
+                                                                     "texto": "trechos/a-{P2}.md",
+                                                                     "slug": "reuniao projeto"}]}]},
+                {"id": "B", "texto": "não, encerrar", "efeitos": [{"trecho": "A", "saidas": [{"destino": "encerrar"}]}]}]},
+            {"id": "P2", "titulo": "Quão estrito?", "opcoes": [
+                {"id": "A", "texto": "tira nome"}, {"id": "B", "texto": "deixa nome"}]},
+        ],
+        "seguiu": [],
+    }
+    (lote / "trechos").mkdir(parents=True)
+    (lote / "trechos" / "a-a.md").write_text("Reunião de próximos passos do Fotolivro.", encoding="utf-8")
+    (lote / "trechos" / "a-b.md").write_text("Reunião com Fulana, (99) 99999-8888.", encoding="utf-8")
+    (lote / "trechos" / "b.md").write_text("Aniversário da sobrinha.", encoding="utf-8")
+    (lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+
+
+class DecidirEAplicar(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        base = Path(self.tmp.name)
+        self.prof = base / "plataforma"
+        _estacao(self.prof, {"pessoal": "../privada"})
+        _estacao(base / "privada")
+        self.priv = base / "privada"
+        self.lote = self.priv / "_triagem" / "2099-01-01-teste"
+        _decisoes(self.lote)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_decidir_gera_os_dois_e_o_mascarado_nao_tem_o_privado(self):
+        masc = Path(self.tmp.name) / "masc.md"
+        self.assertEqual(triagem.cmd_decidir(self.lote, masc), 0)
+        completo = (self.lote / "relatorio-v1.md").read_text(encoding="utf-8")
+        self.assertIn("99999-8888", completo)
+        texto = masc.read_text(encoding="utf-8")
+        self.assertNotIn("Só no completo", texto)
+        self.assertIn("### P1 — A reunião é trabalho?", texto)
+
+    def test_decidir_recusa_mascarado_que_vaza(self):
+        d = json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
+        d["alertas"] = ["senha: gato4213verde"]
+        (self.lote / "decisoes.json").write_text(json.dumps(d), encoding="utf-8")
+        masc = Path(self.tmp.name) / "masc.md"
+        with self.assertRaises(triagem.TriagemErro):
+            triagem.cmd_decidir(self.lote, masc)
+        self.assertFalse(masc.exists())
+
+    def test_simular_nao_grava_nada(self):
+        antes = (self.prof / "_registro.md").read_text(encoding="utf-8")
+        triagem.cmd_aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=False)
+        self.assertEqual((self.prof / "_registro.md").read_text(encoding="utf-8"), antes)
+        self.assertFalse((self.prof / "1-capturas").exists())
+        self.assertIsNone(json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
+                          ["perguntas"][0].get("resposta"))
+
+    def test_aplicar_leva_cada_trecho_ao_destino_uma_vez(self):
+        rc = triagem.cmd_aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
+        self.assertEqual(rc, 0)
+        caps = list((self.prof / "1-capturas").glob("*.md"))
+        self.assertEqual(len(caps), 1)
+        conteudo = caps[0].read_text(encoding="utf-8")
+        self.assertIn("triagem:\n  lote: 2099-01-01-teste\n  trecho: A\n  removido: [nome]", conteudo)
+        self.assertIn(caps[0].stem, (self.prof / "_registro.md").read_text(encoding="utf-8"))
+        self.assertEqual(len(list((self.priv / "1-capturas").glob("*.md"))), 1)
+        d = json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
+        self.assertEqual(d["versao"], 2)
+        self.assertTrue((self.lote / "relatorio-v2.md").exists())
+        # de novo: nada duplica
+        triagem.cmd_aplicar(self.lote, self.prof, {}, confirmar=True)
+        self.assertEqual(len(list((self.prof / "1-capturas").glob("*.md"))), 1)
+        self.assertEqual(len(list((self.priv / "1-capturas").glob("*.md"))), 1)
+
+    def test_recusa_texto_profissional_com_dado_de_terceiro(self):
+        rc = triagem.cmd_aplicar(self.lote, self.prof, {"P1": "A", "P2": "B"}, confirmar=True)
+        self.assertEqual(rc, 1)
+        self.assertFalse(any((self.prof / "1-capturas").glob("*.md")) if (self.prof / "1-capturas").exists() else False)
+
+    def test_encerrar(self):
+        triagem.cmd_aplicar(self.lote, self.prof, {"P1": "B", "P2": "A"}, confirmar=True)
+        d = json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
+        self.assertIn({"trecho": "A", "destino": "encerrar", "virou": "encerrado", "onde": "—"}, d["seguiu"])
+
+    def test_opcao_inexistente(self):
+        with self.assertRaises(triagem.TriagemErro):
+            triagem.planejar(triagem.ler_decisoes(self.lote), {"P1": "Z"})
+
+
 if __name__ == "__main__":
     unittest.main()

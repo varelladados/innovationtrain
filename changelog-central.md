@@ -1,5 +1,25 @@
 # Changelog — Central
 
+## 0.12.0 — 2026-09-17
+
+**Triagem: o relatório e os destinos saem de um arquivo.** Na 0.11 a leitura de
+um lote terminava num relatório escrito à mão, duas vezes (mascarado e
+completo), e cada resposta exigia refazer os dois e criar as capturas uma a uma.
+Medido no primeiro lote real: escrever e corrigir os relatórios foi o maior
+gasto da triagem, e duas contagens saíram erradas.
+
+- **`triagem.py decidir <lote>`** — os dois relatórios a partir de
+  `<lote>/decisoes.json`. Recusa gravar o mascarado se o texto, conferido antes
+  da máscara, ainda tiver dado de terceiro ou segredo.
+- **`triagem.py aplicar <lote> --raiz <estação> --responder P1=A`** — registra as
+  respostas, aplica os efeitos de cada opção e leva cada trecho pronto ao
+  destino (captura pelo utilitário, linha no registro, `triagem:` no
+  frontmatter). Simula por padrão; `--confirmar` grava. Recusa texto com sinal
+  de terceiro indo para estação não privada. Idempotente. Sobe a versão e refaz
+  os relatórios.
+- Formato do `decisoes.json` documentado em `metodo/triagem.md`.
+- 7 testes novos (`DecidirEAplicar`), com duas estações temporárias.
+
 ## 0.11.0 — 2026-09-17
 
 **Triagem: o passo antes da captura.** A Central sabia levar uma ideia da

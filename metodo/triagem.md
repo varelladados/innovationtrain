@@ -118,6 +118,53 @@ O `--estrito` serve para varrer o que **já** entrou: rodado sobre o
 `1-capturas/` de uma estação versionada, ele diz se alguma coisa passou sem
 triagem.
 
+### Decidir e aplicar — o relatório e os destinos saem de um arquivo
+
+A leitura grava o que decidiu em `<lote>/decisoes.json`. Dali em diante, nada
+se escreve à mão:
+
+```
+python metodo/triagem.py decidir <lote> --mascarado <onde o versionado mora>
+python metodo/triagem.py aplicar <lote> --raiz <estação> --responder P1=A --responder P3=A
+python metodo/triagem.py aplicar <lote> --raiz <estação> --responder P1=A --responder P3=A --confirmar
+```
+
+- **`decidir`** escreve o relatório completo (`<lote>/relatorio-v<N>.md`) e, se
+  pedido, o mascarado. **Recusa** gravar o mascarado se o texto — conferido
+  antes da máscara — ainda tiver dado de terceiro ou segredo.
+- **`aplicar`** registra as respostas, aplica os **efeitos** de cada opção nos
+  trechos e leva ao destino o que ficou pronto: captura com identificador pelo
+  utilitário, linha no registro sob `## Entradas <data> — triagem`, e no
+  frontmatter `triagem: {lote, trecho, removido}`. Sem `--confirmar`, só
+  simula. **Recusa** texto que vai para estação não privada e ainda tem sinal
+  de terceiro. Rodar de novo não duplica. Ao terminar, sobe a versão e refaz os
+  relatórios.
+
+O formato, no essencial:
+
+```json
+{
+  "lote": "2099-01-01-assunto", "versao": 1, "nota_versao": "primeira leitura",
+  "chegou_em": "…", "origem": "…", "em_uma_frase": "…",
+  "saida_mascarado": "<caminho do relatório versionado, relativo à estação>",
+  "chegou":   [{"grupo": "…", "itens": 2, "midia": "…", "extracao": "…", "achado": "…"}],
+  "trechos":  [{"id": "A", "descricao": "…", "esfera": "duvida", "terceiro": ["nome"],
+                "segredo": false, "motivo": "…", "depende_de": ["P1"], "removido": ["nome"],
+                "saidas": []}],
+  "secoes":   [{"titulo": "…", "texto": "…", "privado": false}],
+  "alertas":  ["…"],
+  "perguntas": [{"id": "P1", "titulo": "…", "resposta": null, "opcoes": [
+      {"id": "A", "texto": "…", "efeitos": [{"trecho": "A", "saidas": [
+          {"destino": "profissional", "texto": "rascunhos/a-{P2}.md", "slug": "duas palavras"}]}]}]}],
+  "seguiu": []
+}
+```
+
+`destino` é `profissional`, `pessoal`, `administrativo` ou `encerrar`. `{P2}`
+no caminho do texto vira a letra respondida na P2 — é como uma pergunta escolhe
+a variante preparada para a resposta da outra. Um trecho só segue quando todas
+as perguntas de `depende_de` estão respondidas.
+
 ## O ciclo de um lote
 
 1. **Chegou** — o bruto vai para `_triagem/<AAAA-MM-DD>-<assunto>/`, cópia; a

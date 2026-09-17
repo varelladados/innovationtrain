@@ -627,6 +627,323 @@ def markdown(resultado, lote="", mostrar=False):
     return "\n".join(L)
 
 
+# --------------------------------------------------------------------------
+# decidir — os dois relatórios saem do decisoes.json
+# --------------------------------------------------------------------------
+#
+# O `decisoes.json` mora no lote (privado) e é a saída da leitura: o que chegou,
+# cada trecho com esfera, terceiro, segredo e motivo, os alertas, as perguntas —
+# cada opção com os **efeitos** que a resposta tem sobre os trechos — e o que já
+# seguiu. O relatório deixa de ser escrito à mão: sai dele, duas vezes.
+#
+# Efeito de uma opção: {"trecho": "B", "saidas": [{"destino": "profissional",
+# "texto": "rascunhos/mercado-{P3}.md"}]}. `{P3}` vira a letra respondida na P3,
+# em minúscula — é assim que uma pergunta escolhe a variante da outra.
+
+ESFERAS = ("profissional", "pessoal", "administrativo", "duvida", "encerrado")
+DESTINOS = ("profissional", "pessoal", "administrativo", "encerrar")
+
+
+class TriagemErro(Exception):
+    pass
+
+
+def ler_decisoes(lote):
+    arq = Path(lote) / "decisoes.json"
+    if not arq.exists():
+        raise TriagemErro(f"{arq} não existe — a leitura do lote grava as decisões nele")
+    d = json.loads(arq.read_text(encoding="utf-8"))
+    for chave in ("lote", "trechos", "perguntas"):
+        if chave not in d:
+            raise TriagemErro(f"decisoes.json sem a chave '{chave}'")
+    d.setdefault("versao", 1)
+    d.setdefault("seguiu", [])
+    return d
+
+
+def _tabela(cab, linhas):
+    L = ["| " + " | ".join(cab) + " |", "|" + "---|" * len(cab)]
+    L += ["| " + " | ".join(str(c) for c in l) + " |" for l in linhas]
+    return L
+
+
+def render_relatorio(d, mascarado, aplicar_mascara=True):
+    """Markdown do relatório. Mascarado: sem seções privadas e com `mascarar_texto`
+    passado em tudo — a rede de segurança, não o método (o texto já deveria vir limpo:
+    `cmd_decidir` recusa antes de mascarar se não vier)."""
+    L = [f"# Relatório de triagem — {d.get('titulo') or d['lote']} · v{d['versao']}", ""]
+    if d.get("cabecalho"):
+        L += [d["cabecalho"], ""]
+    L += [f"**Lote:** `{d.get('espera_rel', '_triagem')}/{d['lote']}/` (privado)",
+          f"**Chegou em:** {d.get('chegou_em', '?')} · **Origem:** {d.get('origem', '?')}",
+          f"**Versão:** v{d['versao']} — {d.get('nota_versao', '')}",
+          "**Este arquivo é:** " + ("mascarado — sem nome, telefone, identificador de pessoa nem segredo; "
+                                    "a cópia completa fica no lote." if mascarado
+                                    else "a cópia **completa**; não sai da área privada."), ""]
+    if d.get("em_uma_frase"):
+        L += ["## Em uma frase", "", d["em_uma_frase"], ""]
+    if d.get("chegou"):
+        L += ["## O que chegou", ""]
+        L += _tabela(["Grupo", "Itens", "Mídia", "Extração feita", "Achado"],
+                     [[c.get("grupo", ""), c.get("itens", ""), c.get("midia", ""),
+                       c.get("extracao", ""), c.get("achado", "")] for c in d["chegou"]])
+        L.append("")
+    L += ["## Decisões por trecho", ""]
+    L += _tabela(["Trecho", "Esfera", "Terceiro", "Segredo", "Destino", "Por quê"],
+                 [[f"{t['id']}. {t.get('descricao', '')}", t.get("esfera", "duvida"),
+                   ", ".join(t.get("terceiro") or []) or "—", "sim" if t.get("segredo") else "não",
+                   _destino_legivel(t, d), t.get("motivo", "")] for t in d["trechos"]])
+    L.append("")
+    for s in d.get("secoes") or []:
+        if mascarado and s.get("privado"):
+            continue
+        L += [f"## {s['titulo']}", "", s["texto"].rstrip(), ""]
+    if d.get("alertas"):
+        L += ["## Alertas", ""] + [f"- {a}" for a in d["alertas"]] + [""]
+    abertas = [p for p in d["perguntas"] if not p.get("resposta")]
+    respondidas = [p for p in d["perguntas"] if p.get("resposta")]
+    if abertas:
+        L += ["## Perguntas", ""]
+        for p in abertas:
+            L += [f"### {p['id']} — {p['titulo']}", ""]
+            L += [f"- [ ] **{o['id']}** — {o['texto']}" for o in p["opcoes"]]
+            L += ["- [ ] Outra resposta: _______________", "- [ ] Deixar para depois", ""]
+    if respondidas:
+        L += ["## Respondidas", ""]
+        for p in respondidas:
+            o = next((o for o in p["opcoes"] if o["id"] == p["resposta"]), None)
+            L.append(f"- **{p['id']}** — {p['titulo']}: **{p['resposta']}**"
+                     + (f" — {o['texto']}" if o else ""))
+        L.append("")
+    L += ["## O que já seguiu", ""]
+    L += _tabela(["Trecho", "Virou", "Onde"],
+                 [[s["trecho"], s["virou"], s["onde"]] for s in d["seguiu"]] or [["—", "nada ainda", "—"]])
+    L.append("")
+    texto = "\n".join(L)
+    return mascarar_texto(texto) if (mascarado and aplicar_mascara) else texto
+
+
+def _destino_legivel(t, d):
+    feitos = [s for s in d["seguiu"] if s["trecho"] == t["id"]]
+    if feitos:
+        return "; ".join(f"{s['onde']}" for s in feitos)
+    if t.get("esfera") == "encerrado":
+        return "encerrado"
+    return "espera" + (f" ({', '.join(t['depende_de'])})" if t.get("depende_de") else "")
+
+
+def sinais_que_vazam(texto):
+    return [s for s in detectar(texto) if s["categoria"] in CATEGORIAS_TERCEIRO | CATEGORIAS_SEGREDO]
+
+
+def cmd_decidir(lote, saida_mascarado=None, saida_completo=None):
+    d = ler_decisoes(lote)
+    lote = Path(lote)
+    completo = Path(saida_completo) if saida_completo else lote / f"relatorio-v{d['versao']}.md"
+    completo.write_text(render_relatorio(d, mascarado=False), encoding="utf-8")
+    print(f"completo: {completo}")
+    if saida_mascarado:
+        # confere o texto como ele foi escrito, antes da máscara: mascarar e
+        # depois conferir esconderia justamente o que devia ser recusado
+        vazam = sinais_que_vazam(render_relatorio(d, mascarado=True, aplicar_mascara=False))
+        texto = render_relatorio(d, mascarado=True)
+        if vazam:
+            for s in vazam:
+                print(f"  RECUSADO: {s['rotulo']} na linha {s['linha']} do relatório mascarado",
+                      file=sys.stderr)
+            raise TriagemErro("o relatório mascarado ainda tem dado de terceiro ou segredo — "
+                              "limpe o decisoes.json; nada foi gravado")
+        Path(saida_mascarado).write_text(texto, encoding="utf-8")
+        print(f"mascarado: {saida_mascarado}")
+    return 0
+
+
+# --------------------------------------------------------------------------
+# aplicar — as respostas levam cada trecho ao destino
+# --------------------------------------------------------------------------
+
+def _json_estacao(raiz):
+    raiz = Path(raiz)
+    for nome in ("estacao.json", "plataforma.json"):
+        if (raiz / nome).exists():
+            return json.loads((raiz / nome).read_text(encoding="utf-8"))
+    raise TriagemErro(f"{raiz} não é uma estação (sem estacao.json nem plataforma.json)")
+
+
+def _raiz_destino(raiz, destino, cfg_triagem):
+    if destino == "profissional":
+        return Path(raiz)
+    chave = {"pessoal": "pessoal", "administrativo": "administrativo"}[destino]
+    rel = cfg_triagem.get(chave)
+    if not rel:
+        raise TriagemErro(f"a estação não declara triagem.{chave} — pergunte para onde vai")
+    return (Path(raiz) / rel).resolve()
+
+
+def _resumo(texto, limite=160):
+    plano = " ".join(texto.split())
+    return plano if len(plano) <= limite else plano[:limite].rsplit(" ", 1)[0] + "…"
+
+
+def capturar(raiz_estacao, texto, slug, lote, trecho, removido=()):
+    """Captura crua a partir de um trecho triado: id pelo utilitário, arquivo no
+    estágio de entrada, linha no registro (append-only), sem-destino regenerado.
+    Mesma mecânica da captura da interface, com a origem e a linhagem da triagem."""
+    raiz = Path(raiz_estacao)
+    est = _json_estacao(raiz)
+    sigla = est["estagios"][0]["sigla"]
+    util = Path(__file__).resolve().parent / "estacao.py"
+    r = subprocess.run([sys.executable, str(util), "novo-id", "--raiz", str(raiz), "--etapa", sigla,
+                        "--slug", slug], capture_output=True, text=True, encoding="utf-8", timeout=60)
+    novo = (r.stdout or "").strip().splitlines()[0] if (r.stdout or "").strip() else ""
+    if r.returncode != 0 or not novo:
+        raise TriagemErro(f"novo-id falhou em {raiz}: {(r.stderr or r.stdout).strip()}")
+    entrada = raiz / est.get("entrada", est["estagios"][0]["pasta"])
+    entrada.mkdir(parents=True, exist_ok=True)
+    fm = est.get("frontmatter") or {}
+    marcas = ""
+    if fm.get("nucleo"):
+        marcas += f"{fm['nucleo']}: false\n"
+    marcas += f"{fm.get('processado') or 'registro-id'}: {novo}\n"
+    hoje = datetime.date.today().isoformat()
+    arquivo = entrada / f"{novo}.md"
+    arquivo.write_text(
+        f"---\nid: {novo}\ndata: {hoje}\norigem: triagem — lote {lote}, trecho {trecho}\n"
+        f"tags: []\nstatus: vaga\nlinks: []\ntriagem:\n  lote: {lote}\n  trecho: {trecho}\n"
+        f"  removido: [{', '.join(removido)}]\n{marcas}---\n\n## Conteúdo bruto\n\n{texto.strip()}\n",
+        encoding="utf-8")
+    registro = raiz / est["arquivos"]["registro"]
+    original = registro.read_text(encoding="utf-8") if registro.exists() else ""
+    eol = "\r\n" if "\r\n" in original else "\n"
+    rel = os.path.relpath(entrada, registro.parent).replace("\\", "/")
+    linha = f"| {novo} | {hoje} | {sigla} | `{rel}/` | {_resumo(texto)} | [arquivo](<{rel}/{novo}.md>) |"
+    titulo = f"## Entradas {hoje} — triagem"
+    if titulo in original:
+        ini = original.index(titulo)
+        prox = re.search(r"\r?\n## ", original[ini + len(titulo):])
+        fim = (ini + len(titulo) + prox.start()) if prox else len(original)
+        secao = original[ini:fim].rstrip("\r\n")
+        resto = original[fim:].lstrip("\r\n")
+        novo_texto = original[:ini] + secao + eol + linha + (eol * 2 + resto if resto else eol)
+    else:
+        bloco = eol.join([titulo, "", "| ID | Data | Etapa/Tipo | Local | Resumo | Link |",
+                          "|---|---|---|---|---|---|", linha])
+        pos = original.rfind(eol + "## Pendente")
+        if pos == -1:
+            novo_texto = original.rstrip("\r\n") + (eol * 2 if original.strip() else "") + bloco + eol
+        else:
+            novo_texto = original[:pos].rstrip("\r\n") + eol * 2 + bloco + eol * 2 + original[pos:].lstrip("\r\n")
+    with registro.open("w", encoding="utf-8", newline="") as f:
+        f.write(novo_texto)
+    if est.get("arquivos", {}).get("sem_destino") and (raiz / est["arquivos"]["sem_destino"]).exists():
+        subprocess.run([sys.executable, str(util), "gerar-sem-destino", "--raiz", str(raiz)],
+                       capture_output=True, text=True, encoding="utf-8", timeout=60)
+    return novo, str(arquivo)
+
+
+def planejar(d, respostas):
+    """O que as respostas fazem: aplica os efeitos e lista as saídas prontas."""
+    perguntas = {p["id"]: p for p in d["perguntas"]}
+    for pid, op in respostas.items():
+        if pid not in perguntas:
+            raise TriagemErro(f"pergunta {pid} não existe neste lote")
+        if op not in {o["id"] for o in perguntas[pid]["opcoes"]}:
+            raise TriagemErro(f"{pid} não tem a opção {op}")
+        perguntas[pid]["resposta"] = op
+    letras = {p["id"]: p["resposta"].lower() for p in d["perguntas"] if p.get("resposta")}
+    trechos = {t["id"]: t for t in d["trechos"]}
+    for p in d["perguntas"]:
+        if not p.get("resposta"):
+            continue
+        op = next(o for o in p["opcoes"] if o["id"] == p["resposta"])
+        for ef in op.get("efeitos") or []:
+            t = trechos.get(ef["trecho"])
+            if t is None:
+                raise TriagemErro(f"{p['id']}{op['id']} aponta para o trecho {ef['trecho']}, que não existe")
+            for k, v in ef.items():
+                if k != "trecho":
+                    t[k] = v
+    ja = {(s["trecho"], s.get("destino")) for s in d["seguiu"]}
+    prontas = []
+    for t in d["trechos"]:
+        if any(p not in letras for p in t.get("depende_de") or []):
+            continue
+        for s in t.get("saidas") or []:
+            if s["destino"] not in DESTINOS:
+                raise TriagemErro(f"trecho {t['id']}: destino '{s['destino']}' desconhecido")
+            if (t["id"], s["destino"]) in ja:
+                continue
+            texto = s.get("texto")
+            for pid, letra in letras.items():
+                texto = texto.replace("{" + pid + "}", letra) if texto else texto
+            prontas.append({"trecho": t, "destino": s["destino"], "texto": texto,
+                            "slug": s.get("slug") or t.get("slug") or t["id"]})
+    return prontas
+
+
+def cmd_aplicar(lote, raiz, respostas, confirmar=False):
+    lote = Path(lote)
+    d = ler_decisoes(lote)
+    cfg = carregar_config(raiz)
+    prontas = planejar(d, respostas)
+    if not prontas:
+        print("nada pronto para seguir: faltam respostas ou efeitos nas opções respondidas.")
+    erros = []
+    for p in prontas:
+        if p["destino"] == "encerrar":
+            print(f"  trecho {p['trecho']['id']}: encerrar (sem captura)")
+            continue
+        arq = lote / p["texto"] if p["texto"] else None
+        if not arq or not arq.exists():
+            erros.append(f"trecho {p['trecho']['id']}: texto {p['texto']} não existe no lote")
+            continue
+        texto = ler_texto(arq)
+        if p["destino"] != "pessoal":
+            vazam = sinais_que_vazam(texto)
+            if vazam:
+                erros.append(f"trecho {p['trecho']['id']} → {p['destino']}: o texto ainda tem "
+                             + ", ".join(sorted({s['rotulo'] for s in vazam})) + " — recusado")
+                continue
+        destino_raiz = _raiz_destino(raiz, p["destino"], cfg)
+        print(f"  trecho {p['trecho']['id']}: {p['destino']} → captura em {destino_raiz} "
+              f"({len(texto)} caracteres de {p['texto']})")
+        p["pronto"] = (destino_raiz, texto)
+    for e in erros:
+        print(f"  ERRO: {e}", file=sys.stderr)
+    if not confirmar:
+        print("simulação: nada foi gravado. Rode de novo com --confirmar.")
+        return 1 if erros else 0
+    mudou = bool(respostas)
+    for p in prontas:
+        t = p["trecho"]
+        if p["destino"] == "encerrar":
+            t["esfera"] = "encerrado"
+            d["seguiu"].append({"trecho": t["id"], "destino": "encerrar", "virou": "encerrado", "onde": "—"})
+            mudou = True
+        elif "pronto" in p:
+            destino_raiz, texto = p["pronto"]
+            novo, caminho = capturar(destino_raiz, texto, p["slug"], d["lote"], t["id"], t.get("removido") or ())
+            onde = "estação pessoal" if p["destino"] == "pessoal" else f"{Path(caminho).parent.name}/"
+            d["seguiu"].append({"trecho": t["id"], "destino": p["destino"],
+                                "virou": novo if p["destino"] != "pessoal" else "captura privada",
+                                "onde": onde})
+            print(f"  ✓ {t['id']} → {novo}")
+            mudou = True
+    if mudou:
+        d["versao"] += 1
+        hoje = datetime.date.today().isoformat()
+        d["nota_versao"] = f"respostas de {hoje}: " + ", ".join(f"{k}={v}" for k, v in respostas.items())
+        (lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        if d.get("saida_mascarado"):
+            mascarado = Path(d["saida_mascarado"])
+            if not mascarado.is_absolute():
+                mascarado = Path(raiz) / mascarado
+            cmd_decidir(lote, mascarado)
+        else:
+            cmd_decidir(lote)
+    return 1 if erros else 0
+
+
 def carregar_config(raiz):
     raiz = Path(raiz)
     for nome in ("estacao.json", "plataforma.json"):
@@ -643,7 +960,11 @@ def main(argv=None):
     for fluxo in (sys.stdout, sys.stderr):
         if hasattr(fluxo, "reconfigure"):
             fluxo.reconfigure(encoding="utf-8")
-    p = argparse.ArgumentParser(description="Triagem: levanta sinais de uma entrada bruta.")
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ("decidir", "aplicar"):
+        return _main_decisoes(argv)
+    p = argparse.ArgumentParser(description="Triagem: levanta sinais de uma entrada bruta. "
+                                            "Subcomandos: decidir, aplicar (ver triagem.md).")
     p.add_argument("alvos", nargs="+", help="arquivos ou pastas a levantar")
     p.add_argument("--raiz", default=".", help="estação cuja chave `triagem` vale (padrão: pasta atual)")
     p.add_argument("--lote", default="", help="nome do lote, para o título do relatório")
@@ -668,6 +989,35 @@ def main(argv=None):
         if cats & (CATEGORIAS_TERCEIRO | CATEGORIAS_SEGREDO):
             return 1
     return 0
+
+
+def _main_decisoes(argv):
+    p = argparse.ArgumentParser(prog="triagem.py")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    d = sub.add_parser("decidir", help="gera os relatórios a partir do decisoes.json do lote")
+    d.add_argument("lote")
+    d.add_argument("--mascarado", help="onde gravar o relatório mascarado (versionável)")
+    d.add_argument("--completo", help="onde gravar o completo (padrão: <lote>/relatorio-v<N>.md)")
+    a = sub.add_parser("aplicar", help="registra respostas e leva cada trecho pronto ao destino")
+    a.add_argument("lote")
+    a.add_argument("--raiz", required=True, help="a estação profissional (a que declara `triagem`)")
+    a.add_argument("--responder", action="append", default=[], metavar="P1=A",
+                   help="resposta a uma pergunta; repita para várias")
+    a.add_argument("--confirmar", action="store_true", help="sem isto, só simula")
+    args = p.parse_args(argv)
+    try:
+        if args.cmd == "decidir":
+            return cmd_decidir(args.lote, args.mascarado, args.completo)
+        respostas = {}
+        for r in args.responder:
+            if "=" not in r:
+                raise TriagemErro(f"--responder espera P1=A, veio '{r}'")
+            k, v = r.split("=", 1)
+            respostas[k.strip().upper()] = v.strip().upper()
+        return cmd_aplicar(args.lote, args.raiz, respostas, args.confirmar)
+    except TriagemErro as e:
+        print(f"ERRO: {e}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
