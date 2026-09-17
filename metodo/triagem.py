@@ -690,7 +690,8 @@ def render_relatorio(d, mascarado, aplicar_mascara=True):
         L.append("")
     L += ["## Decisões por trecho", ""]
     L += _tabela(["Trecho", "Esfera", "Terceiro", "Segredo", "Destino", "Por quê"],
-                 [[f"{t['id']}. {t.get('descricao', '')}", t.get("esfera", "duvida"),
+                 [[f"{t['id']}. {t.get('descricao', '')}",
+                   {"duvida": "**dúvida**"}.get(t.get("esfera", "duvida"), t.get("esfera")),
                    ", ".join(t.get("terceiro") or []) or "—", "sim" if t.get("segredo") else "não",
                    _destino_legivel(t, d), t.get("motivo", "")] for t in d["trechos"]])
     L.append("")
@@ -772,7 +773,7 @@ def _json_estacao(raiz):
 
 def _raiz_destino(raiz, destino, cfg_triagem):
     if destino == "profissional":
-        return Path(raiz)
+        return Path(raiz).resolve()
     chave = {"pessoal": "pessoal", "administrativo": "administrativo"}[destino]
     rel = cfg_triagem.get(chave)
     if not rel:
