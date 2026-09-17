@@ -15,6 +15,12 @@ indefinido é um estado normal, não um problema. O que não pode é ficar parad
 **invisível** — para isso existe o `_sem-destino.md`, que lista tudo que ainda
 não avançou.
 
+**E antes do primeiro estágio, a triagem.** Um item só chega a `1-capturas/`
+depois de responder de quem é o assunto e se carrega dado de outra pessoa ou
+segredo — ver [`triagem.md`](triagem.md) e a [regra 9](regras.md#9-triagem-antes-da-captura).
+A triagem não é um estágio: não emite identificador nem linha no registro, e
+acontece fora de lugar versionado.
+
 ---
 
 ## O que acontece em toda passagem

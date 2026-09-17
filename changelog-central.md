@@ -1,5 +1,34 @@
 # Changelog — Central
 
+## 0.11.0 — 2026-09-17
+
+**Triagem: o passo antes da captura.** A Central sabia levar uma ideia da
+Vida_Pessoal para a Plataforma, reescrita; não sabia impedir o caminho
+contrário. Agora toda entrada bruta espera em `_triagem/`, dentro da estação
+privada, até responder três perguntas — é trabalho ou vida pessoal, carrega
+dado pessoal de outra pessoa, carrega segredo — e só então ganha identificador,
+na estação certa.
+
+- **`metodo/triagem.md`** — as nove regras, a matriz de destino, a
+  especialização por tipo de entrada (nota, dump, transcrição, áudio, vídeo com
+  fala, sem fala e imagem parada com música, imagem, export de conversa, link,
+  documento, planilha, pacote) e o ciclo de um lote, com relatório versionado
+  em duas cópias: mascarada e completa.
+- **`metodo/triagem.py`** — o levantamento mecânico, stdlib: mídia e extração
+  necessária, duplicatas por hash, sinais (telefone, e-mail, CPF e CNPJ com
+  dígito verificador, CEP, registro profissional, link, segredo por
+  palavra-chave, por formato de chave e por forma de linha), participantes de
+  conversa exportada, vocabulário pessoal e de saúde, e os projetos citados —
+  com tolerância a erro de transcrição. **Mascara por padrão**; `--mostrar`
+  desliga, `--estrito` sai com 1 para varrer o que já entrou. Usa `ffprobe` se
+  houver, para dizer se um vídeo tem fala ou é uma imagem parada com música.
+- **Chave `triagem` do `estacao.json`** — onde fica a espera e o **de-para** dos
+  projetos da estação (esfera e apelidos).
+- **Regra 9** em `metodo/regras.md`; nota antes da passagem 1 em
+  `classificar.md`; seção "Triagem" em `taxonomia.md`; modelo
+  `templates/relatorio-triagem.md`.
+- `tests/test_triagem.py` — 20 testes, todos com dado fictício.
+
 ## 0.10.1 — 2026-09-14
 
 **O utilitário escreve sempre em UTF-8.** Num pipe do Windows a saída padrão usa

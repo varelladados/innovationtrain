@@ -145,7 +145,7 @@ central/                  ← a raiz do repositório É o hub
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
-├── metodo/               regras, taxonomia, templates e estacao.py (o utilitário)
+├── metodo/               regras, taxonomia, templates, estacao.py (o utilitário) e triagem.py (o passo antes da captura)
 ├── estacoes/            as de exemplo; as suas, que o Embarque cria aqui, ficam fora do git
 │   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
@@ -363,5 +363,6 @@ Central nunca commita em nome de ninguém.
 - [`README.md`](README.md) — a porta de entrada
 - [`metodo/taxonomia.md`](metodo/taxonomia.md) — os nomes, e a fonte de `config.PADROES`
 - [`metodo/regras.md`](metodo/regras.md) — as regras permanentes, cada uma com o porquê
+- [`metodo/triagem.md`](metodo/triagem.md) — pessoal × profissional, dado de terceiro e segredo, antes da captura
 - [`metodo/versionamento.md`](metodo/versionamento.md) — salvar, publicar, e o que fazer quando der ruim
 - [`docs/design-system.md`](docs/design-system.md) — tokens, temas, fontes e a regra de ouro do CSS

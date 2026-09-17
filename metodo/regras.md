@@ -116,11 +116,28 @@ IA, nem uma automação — decide "pelo contexto" o que ela queria. "Deixar par
 depois" é adiamento **visível**: conta uma vez a mais e a pendência volta na
 rodada seguinte, mais no topo.
 
+## 9. Triagem antes da captura
+
+Nenhuma entrada ganha identificador numa estação antes de responder três
+perguntas: **é trabalho ou vida pessoal?**, **carrega dado pessoal de outra
+pessoa?**, **carrega segredo?** O bruto espera na área privada enquanto isso.
+
+- Dado pessoal de terceiro **nunca** entra literal numa estação profissional —
+  entra reescrito sem ele, e a captura diz o que saiu.
+- Segredo não entra em lugar nenhum; vira alerta.
+- Na dúvida, fica na espera e vira pergunta — a regra 8 vale aqui também.
+
+**Por quê:** a estação profissional é versionada, e o commit é automático
+(regra 7). O que entra nela sem triagem está no histórico antes de alguém
+olhar — e histórico não desfaz barato. O método inteiro, com a especialização
+por tipo de mídia, está em [`triagem.md`](triagem.md).
+
 ---
 
 ## Links
 
 - [`taxonomia.md`](taxonomia.md) — os nomes: estágios, siglas, arquivos de sistema
 - [`classificar.md`](classificar.md) — quando um item passa de estágio
+- [`triagem.md`](triagem.md) — o passo antes da captura: pessoal × profissional, terceiro, segredo
 - [`versionamento.md`](versionamento.md) — salvar, publicar e o que fazer quando der ruim
 - [`estacao.py`](estacao.py) — o utilitário que gera identificador e confere as invariantes
