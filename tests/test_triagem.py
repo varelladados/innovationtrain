@@ -297,6 +297,15 @@ class DecidirEAplicar(unittest.TestCase):
         d = json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
         self.assertIn({"trecho": "A", "destino": "encerrar", "virou": "encerrado", "onde": "—"}, d["seguiu"])
 
+    def test_dependencia_por_saida_nao_trava_o_trecho(self):
+        d = triagem.ler_decisoes(self.lote)
+        d["trechos"][0]["depende_de"] = ["P1"]
+        d["perguntas"][0]["opcoes"][0]["efeitos"][0]["saidas"][0]["depende_de"] = ["P2"]
+        self.assertEqual([p["destino"] for p in triagem.planejar(d, {"P1": "A"})], ["pessoal"])
+        d = triagem.ler_decisoes(self.lote)
+        d["trechos"][0]["depende_de"] = ["P1"]
+        self.assertEqual([p["destino"] for p in triagem.planejar(d, {"P1": "B"})], ["encerrar", "pessoal"])
+
     def test_opcao_inexistente(self):
         with self.assertRaises(triagem.TriagemErro):
             triagem.planejar(triagem.ler_decisoes(self.lote), {"P1": "Z"})

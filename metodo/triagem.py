@@ -873,6 +873,10 @@ def planejar(d, respostas):
                 raise TriagemErro(f"trecho {t['id']}: destino '{s['destino']}' desconhecido")
             if (t["id"], s["destino"]) in ja:
                 continue
+            # a dependência também pode ser da saída: numa resposta em que a
+            # outra pergunta não importa, ela não trava o trecho inteiro
+            if any(p not in letras for p in s.get("depende_de") or []):
+                continue
             texto = s.get("texto")
             for pid, letra in letras.items():
                 texto = texto.replace("{" + pid + "}", letra) if texto else texto

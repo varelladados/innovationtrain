@@ -163,7 +163,9 @@ O formato, no essencial:
 `destino` é `profissional`, `pessoal`, `administrativo` ou `encerrar`. `{P2}`
 no caminho do texto vira a letra respondida na P2 — é como uma pergunta escolhe
 a variante preparada para a resposta da outra. Um trecho só segue quando todas
-as perguntas de `depende_de` estão respondidas.
+as perguntas de `depende_de` estão respondidas. Uma **saída** também pode ter
+`depende_de` próprio — para a resposta em que a outra pergunta não importa não
+travar o trecho inteiro.
 
 ## O ciclo de um lote
 
