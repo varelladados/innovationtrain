@@ -211,11 +211,13 @@ footer code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px}
     tipos_txt = " · ".join(f"{n} {TIPO_LABEL.get(t, t)}" for t, n in sorted(n_tipos.items(), key=lambda x: -x[1]))
 
     cadeia_txt = " → ".join(e["nome"] for e in config.atual().estagios)
+    assinatura = config.atual().get("assinatura") or ""
+    quem = f'<div class="quem">{esc(assinatura)}</div>' if assinatura else ""
     body = f"""
 <div class="wrap">
   <aside class="rail">
     <div>
-      <div class="quem">Bruno Varella · Seu Beira · mR.bRiNk</div>
+      {quem}
       <h1>Da ideia <em>à prateleira.</em></h1>
     </div>
     <p class="tese"><strong>Hub de inovação IA-first, MVP-first.</strong> {esc(tese)}</p>
