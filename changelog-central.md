@@ -1,5 +1,27 @@
 # Changelog — Central
 
+## 0.13.0 — 2026-09-17
+
+**A triagem entra no aplicativo de navegação.** O método existia desde a 0.11 e o
+fluxo com arquivo desde a 0.12, mas a interface seguia como a porta que escrevia
+direto no primeiro estágio — o furo que o próprio método nomeava.
+
+- **Aba Nota com portão.** `POST /api/nota/nova` confere o texto antes de gravar e
+  ganha `destino` (`auto`, `profissional`, `pessoal`, `espera`). No padrão, texto
+  com dado de terceiro, segredo ou cara de vida pessoal devolve **409 com o
+  levantamento mascarado** e **não grava nada**; a tela oferece guardar na espera,
+  mandar para a estação privada, ou seguir como captura — esta última só quando
+  não há dado de ninguém no meio.
+- **Aba Triagem** (`GET /api/triagem`): os lotes na espera, o que cada um já leu,
+  quantos trechos seguiram e as perguntas ainda abertas, com o comando do
+  `aplicar` pronto. Leitura pura.
+- **`app/triagem_ui.py`** importa `metodo/triagem.py` — detector é um só. Quem não
+  declara `triagem.espera`/`triagem.pessoal` vê a aba explicando a chave, e nada é
+  inventado.
+- O snapshot estático recusa `/api/triagem`: a espera mora na estação privada.
+- `capturar()` aceita `origem`, para a captura pessoal dizer de onde veio.
+- 10 testes novos (`tests/test_triagem_ui.py`), com estações temporárias.
+
 ## 0.12.0 — 2026-09-17
 
 **Triagem: o relatório e os destinos saem de um arquivo.** Na 0.11 a leitura de

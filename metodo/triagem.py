@@ -795,7 +795,7 @@ def _resumo(texto, limite=160):
     return plano if len(plano) <= limite else plano[:limite].rsplit(" ", 1)[0] + "…"
 
 
-def capturar(raiz_estacao, texto, slug, lote, trecho, removido=()):
+def capturar(raiz_estacao, texto, slug, lote, trecho, removido=(), origem=None):
     """Captura crua a partir de um trecho triado: id pelo utilitário, arquivo no
     estágio de entrada, linha no registro (append-only), sem-destino regenerado.
     Mesma mecânica da captura da interface, com a origem e a linhagem da triagem."""
@@ -818,7 +818,7 @@ def capturar(raiz_estacao, texto, slug, lote, trecho, removido=()):
     hoje = datetime.date.today().isoformat()
     arquivo = entrada / f"{novo}.md"
     arquivo.write_text(
-        f"---\nid: {novo}\ndata: {hoje}\norigem: triagem — lote {lote}, trecho {trecho}\n"
+        f"---\nid: {novo}\ndata: {hoje}\norigem: {origem or f'triagem — lote {lote}, trecho {trecho}'}\n"
         f"tags: []\nstatus: vaga\nlinks: []\ntriagem:\n  lote: {lote}\n  trecho: {trecho}\n"
         f"  removido: [{', '.join(removido)}]\n{marcas}---\n\n## Conteúdo bruto\n\n{texto.strip()}\n",
         encoding="utf-8")

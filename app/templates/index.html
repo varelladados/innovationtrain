@@ -218,6 +218,12 @@ th{background:var(--surface-2)}
 .vs-repo{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-4);margin-bottom:var(--sp-4)}
 .vs-repo h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-1);display:flex;align-items:center;gap:var(--sp-2)}
 .vs-repo .caminho{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-3);word-break:break-all}
+.tri-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-4)}
+.tri-card.parada{border-left-color:var(--danger)}
+.tri-card h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-2)}
+.tri-card ul{font-size:var(--fs-2);margin:var(--sp-2) 0}
+.tri-nota{font-size:var(--fs-1);color:var(--text-2)}
+.tri-acoes{margin-top:var(--sp-3);display:flex;gap:var(--sp-2);flex-wrap:wrap}
 .vs-sinal{display:inline-block;width:var(--sp-2);height:var(--sp-2);border-radius:50%;flex-shrink:0}
 .vs-sinal.verde{background:var(--success)}
 .vs-sinal.ambar{background:var(--warn)}
@@ -580,6 +586,7 @@ th{background:var(--surface-2)}
       <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto"><span class="ic" aria-hidden="true">🗂</span>Portfólio</button>
       <button id="fluxo-nav-btn" title="O método na tela: as passagens entre estágios e os critérios de promoção"><span class="ic" aria-hidden="true">🧩</span>Fluxo</button>
       <button id="nota-nav-btn" title="Captura rápida de ideia crua, sem abrir sessão de IA"><span class="ic" aria-hidden="true">📝</span>Nota</button>
+      <button id="triagem-nav-btn" title="O que chegou e ainda não entrou: lotes na espera, com o que cada um ainda pergunta"><span class="ic" aria-hidden="true">🧴</span>Triagem</button>
       <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem"><span class="ic" aria-hidden="true">📦</span>Versões</button>
       <button id="tour-nav-btn" title="A leitura guiada desta estação, uma parada por vez"><span class="ic" aria-hidden="true">🧭</span>Tour</button>
       <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira estação"><span class="ic" aria-hidden="true">🚂</span>Embarque</button>
@@ -2879,16 +2886,19 @@ async function openNotaView(){
       <button id="nota-salvar-btn">Salvar</button>
       <span id="nota-status" style="font-size:12.5px;color:var(--text-2)"></span>
     </div>
+    <p class="tri-nota">Antes de gravar, o texto passa pela <strong>triagem</strong>: é trabalho ou vida pessoal, tem dado de outra pessoa, tem segredo. Se ela parar, você escolhe o destino aqui mesmo.</p>
+    <div id="nota-portao" style="margin-top:16px"></div>
     <div id="nota-recentes" style="margin-top:24px"></div>
   `;
-  document.getElementById("nota-salvar-btn").onclick = salvarNota;
+  document.getElementById("nota-salvar-btn").onclick = () => salvarNota("auto");
   renderNotasRecentes();
   document.getElementById("nota-texto").focus();
 }
 
-async function salvarNota(){
+async function salvarNota(destino){
   const ta = document.getElementById("nota-texto");
   const status = document.getElementById("nota-status");
+  const portao = document.getElementById("nota-portao");
   const texto = ta.value.trim();
   if (!texto){
     status.textContent = "Escreva algo antes de salvar.";
@@ -2903,9 +2913,16 @@ async function salvarNota(){
     const r = await fetch("/api/nota/nova", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({texto}),
+      body: JSON.stringify({texto, destino: destino || "auto"}),
     });
     const data = await r.json();
+    if (r.status === 409 && data.triagem){
+      // a triagem parou: nada foi gravado, e a decisão é de quem está na tela
+      status.textContent = "";
+      renderPortaoTriagem(data.triagem, data.error);
+      btn.disabled = false;
+      return;
+    }
     if (!r.ok){
       status.textContent = "Erro: " + (data.error || r.status);
       status.style.color = "var(--danger)";
@@ -2913,17 +2930,116 @@ async function salvarNota(){
       return;
     }
     status.textContent = "";
-    NOTAS_CRIADAS_SESSAO.unshift(data);
+    if (portao) portao.innerHTML = "";
     ta.value = "";
-    renderNotasRecentes();
-    await reindex(); // pra aparecer na árvore/no Workflow sem precisar clicar em "reindexar"
-    toast("Nota salva: " + data.id);
+    if (data.destino === "espera"){
+      toast("Guardado na espera: " + data.lote);
+    } else if (data.destino === "pessoal"){
+      toast("Captura na estação pessoal: " + data.id);
+    } else {
+      NOTAS_CRIADAS_SESSAO.unshift(data);
+      renderNotasRecentes();
+      await reindex(); // pra aparecer na árvore/no Workflow sem precisar clicar em "reindexar"
+      toast("Nota salva: " + data.id);
+    }
   } catch(err){
     status.textContent = "Falha de rede: " + err;
     status.style.color = "var(--danger)";
   } finally {
     btn.disabled = false;
   }
+}
+
+// O portão: o que a triagem viu, com máscara, e as saídas que o método prevê.
+// Segredo não ganha botão nenhum de salvar — ele não entra em lugar nenhum.
+function renderPortaoTriagem(tri, titulo){
+  const portao = document.getElementById("nota-portao");
+  if (!portao) return;
+  const motivo = {
+    segredo: "Isto parece ter <strong>senha, chave ou token</strong>.",
+    terceiro: "Isto tem <strong>dado pessoal de outra pessoa</strong>.",
+    pessoal: "Isto parece <strong>vida pessoal</strong>, não trabalho.",
+  }[tri.veredito] || "";
+  const sinais = (tri.sinais || []).map(s =>
+    `<li><strong>${escapeHtml(s.rotulo)}</strong> ${s.linha ? `(linha ${s.linha})` : ""} — <code>${escapeHtml(s.valor)}</code></li>`).join("");
+  const voc = Object.entries(tri.vocabulario || {}).map(([g, p]) =>
+    `<li>vocabulário de <strong>${escapeHtml(g)}</strong>: ${escapeHtml(Object.keys(p).join(", "))}</li>`).join("");
+  const projs = Object.entries(tri.projetos || {}).map(([nome, p]) =>
+    `<li>cita <strong>${escapeHtml(nome)}</strong> (${escapeHtml(p.modo)}${p.esfera ? ", esfera " + escapeHtml(p.esfera) : ""})</li>`).join("");
+  const botoes = [];
+  if (tri.veredito !== "segredo"){
+    if (tri.espera) botoes.push(`<button data-tri="espera">Guardar na espera (privado)</button>`);
+    if (tri.pessoal) botoes.push(`<button data-tri="pessoal">É pessoal — estação privada</button>`);
+    if (tri.veredito === "pessoal") botoes.push(`<button data-tri="profissional">É trabalho — salvar como captura</button>`);
+  }
+  portao.innerHTML = `
+    <div class="tri-card parada">
+      <h2>${escapeHtml(titulo || "A triagem parou esta nota")}</h2>
+      <p>${motivo} Nada foi gravado. Valores aparecem mascarados de propósito.</p>
+      ${(sinais || voc || projs) ? `<ul>${sinais}${voc}${projs}</ul>` : ""}
+      ${tri.veredito === "terceiro" ? `<p class="tri-nota">Para virar captura de trabalho, o texto precisa ser <strong>reescrito sem o dado da outra pessoa</strong> — o original fica na espera.</p>` : ""}
+      ${tri.veredito === "segredo" ? `<p class="tri-nota">Tire o segredo do texto e salve de novo. Se ele for real, o que resolve é <strong>trocar a senha</strong> — apagar depois não desfaz o histórico.</p>` : ""}
+      <div class="tri-acoes">${botoes.join("")}</div>
+    </div>`;
+  portao.querySelectorAll("[data-tri]").forEach(b => {
+    b.onclick = () => salvarNota(b.dataset.tri);
+  });
+}
+
+// Aba Triagem: o que chegou e ainda não entrou. Leitura pura — responder uma
+// pergunta e aplicar o destino é trabalho do utilitário (`triagem.py aplicar`),
+// porque decisão não se fecha por inferência e escrever em duas estações de uma
+// vez não é coisa de botão.
+async function openTriagemView(){
+  marcarAba("triagem-nav-btn");
+  SELECTED_PATH = null;
+  renderTree();
+  document.getElementById("content").classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Triagem";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">antes do estágio 1</span><span id="meta-path">o bruto espera aqui até se saber de quem é o assunto</span>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `<h1>Triagem</h1><p class="dash-lead">Carregando…</p>`;
+  let d;
+  try{
+    const r = await fetch("/api/triagem");
+    d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.status);
+  } catch(err){
+    content.innerHTML = `<h1>Triagem</h1><p class="dash-lead">Não deu para ler a espera: ${escapeHtml(String(err.message || err))}</p>`;
+    return;
+  }
+  if (!d.espera){
+    content.innerHTML = `<h1>Triagem</h1>
+      <p class="dash-lead">Esta estação não declara <code>triagem.espera</code> no <code>estacao.json</code>, então não há área de espera: toda nota entra direto no primeiro estágio.</p>
+      <p>O método está em <code>metodo/triagem.md</code>; a chave é <code>triagem</code>, com <code>espera</code>, <code>pessoal</code> e o de-para dos projetos.</p>`;
+    return;
+  }
+  const abertas = d.lotes.reduce((n, l) => n + (l.perguntas || []).filter(p => !p.resposta).length, 0);
+  const cabecalho = `<h1>Triagem</h1>
+    <p class="dash-lead">${d.lotes.length} lote(s) na espera, ${abertas} pergunta(s) sem resposta. Espera: <code>${escapeHtml(d.espera)}</code>${d.pessoal ? ` · estação pessoal: <code>${escapeHtml(d.pessoal)}</code>` : ""}</p>`;
+  if (!d.lotes.length){
+    content.innerHTML = cabecalho + `<p>Nada esperando — o que chega é triado e segue. Esse é o estado bom.</p>`;
+    return;
+  }
+  content.innerHTML = cabecalho + d.lotes.map(l => {
+    const perguntas = (l.perguntas || []).map(p => `
+      <li><strong>${escapeHtml(p.id || "")}</strong> — ${escapeHtml(p.titulo || "")}
+        ${p.resposta ? `<span class="badge">respondida: ${escapeHtml(p.resposta)}</span>`
+                     : `<ul>${(p.opcoes || []).map(o => `<li><code>${escapeHtml(o.id)}</code> — ${escapeHtml((o.texto || "").replace(/\*\*/g, ""))}</li>`).join("")}</ul>`}
+      </li>`).join("");
+    const semDecisoes = !l.tem_decisoes
+      ? `<p class="tri-nota">Ainda sem leitura: só o bruto (${l.itens_brutos} arquivo(s)). Uma sessão de IA com a skill <code>triando-entrada</code> faz o levantamento e escreve o <code>decisoes.json</code>.</p>` : "";
+    const comando = (l.perguntas || []).some(p => !p.resposta)
+      ? `<p class="tri-nota">Para responder: <code>python metodo/triagem.py aplicar "${escapeHtml(l.path)}" --raiz . --responder ${escapeHtml((l.perguntas.find(p => !p.resposta) || {}).id || "P1")}=A --confirmar</code></p>` : "";
+    return `<div class="tri-card">
+      <h2>${escapeHtml(l.lote)} ${l.versao ? `<span class="badge">v${escapeHtml(String(l.versao))}</span>` : ""}</h2>
+      ${l.em_uma_frase ? `<p>${escapeHtml(l.em_uma_frase.replace(/\*\*/g, ""))}</p>` : ""}
+      <p class="tri-nota">${l.itens_brutos} arquivo(s) no bruto · ${l.trechos} trecho(s) · ${l.seguiu} já seguiu · ${(l.relatorios || []).join(", ") || "sem relatório"}</p>
+      ${semDecisoes}
+      ${perguntas ? `<ul>${perguntas}</ul>` : ""}
+      ${comando}
+    </div>`;
+  }).join("");
 }
 
 function renderNotasRecentes(){
@@ -3067,6 +3183,7 @@ document.getElementById("versoes-nav-btn").addEventListener("click", openVersoes
 document.getElementById("portfolio-nav-btn").addEventListener("click", openPortfolioView);
 document.getElementById("workflow-nav-btn").addEventListener("click", openWorkflowView);
 document.getElementById("nota-nav-btn").addEventListener("click", openNotaView);
+document.getElementById("triagem-nav-btn").addEventListener("click", openTriagemView);
 document.getElementById("fluxo-nav-btn").addEventListener("click", openFluxoView);
 document.getElementById("brf-fechar").addEventListener("click", fecharBriefing);
 document.getElementById("brf-copiar").addEventListener("click", copiarBriefing);

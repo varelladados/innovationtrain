@@ -112,6 +112,9 @@ SHIM = r"""
     if (p === "/api/workflow") return resp(D.workflow);
     if (p === "/api/avanco") return resp(D.avanco);
     if (p === "/api/projeto") return resp({error: "snapshot estático: a view de projeto só existe na Central local"}, 400);
+    // A triagem olha para a estação PRIVADA (a espera mora lá dentro). Um snapshot
+    // é publicação: ele não leva, nem de leitura, o que está esperando triagem.
+    if (p === "/api/triagem") return resp({error: "snapshot estático: a triagem só existe na Central local"}, 400);
     if (p === "/api/nota/nova" || p === "/api/pendencia/responder" || p === "/api/projeto/anotar")
       return resp({error: "snapshot estático, somente leitura — escreva na Central local"}, 400);
     return resp({error: "not found"}, 404);

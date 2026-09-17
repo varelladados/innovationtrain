@@ -42,6 +42,7 @@ import noar as noar_mod
 import briefing as briefing_mod
 import embarque as embarque_mod
 import versoes as versoes_mod
+import triagem_ui as triagem_mod
 import mimetypes
 import subprocess
 import sys
@@ -395,6 +396,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(avanco_mod.ultima_rodada())
             return
 
+        if path == "/api/triagem":
+            # leitura pura: o que está na espera e o que cada lote ainda pergunta.
+            # Responder continua fora daqui — decisão não se fecha por inferência
+            # (regra 8), e aplicar um destino é trabalho do utilitário.
+            try:
+                self._send_json(triagem_mod.estado())
+            except Exception as e:
+                self._send_json({"error": f"{type(e).__name__}: {e}"}, status=500)
+            return
+
         if path == "/api/briefing":
             entries, text_cache = get_state()
             try:
@@ -664,10 +675,51 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_nota_nova(self, payload):
         """Terceiro endpoint com efeito colateral: cria uma captura crua a
         partir de texto solto — arquivo no estágio de entrada + linha no registro
-        central. Nunca classifica, nunca decide destino (mesma disciplina da skill
-        rotina de encaminhamento equivalente, só que via HTTP em vez de chat).
-        Ver `app/notas.py`."""
+        central. Nunca classifica (isso continua sendo trabalho de uma sessão depois),
+        mas **passa pela triagem antes de gravar**: esta era a última porta que
+        escrevia direto num estágio versionado. Ver `app/triagem_ui.py` e
+        `metodo/triagem.md`.
+
+        `destino` diz o que fazer, e o padrão não decide nada sozinho:
+        - `auto` (padrão): confere; se a triagem parar, devolve 409 com o que ela
+          viu — nada é gravado, e quem está na tela escolhe;
+        - `profissional`: grava no estágio de entrada desta estação, **recusado**
+          se houver sinal de terceiro ou segredo;
+        - `pessoal`: captura na estação privada declarada em `triagem.pessoal`;
+        - `espera`: abre um lote em `triagem.espera` com o texto cru.
+        """
         texto = payload.get("texto", "")
+        destino = (payload.get("destino") or "auto").strip().lower()
+        if destino not in ("auto", "profissional", "pessoal", "espera"):
+            self._send_json({"error": f"destino desconhecido: {destino}"}, status=400)
+            return
+        try:
+            conferido = triagem_mod.conferir(texto)
+        except Exception as e:
+            self._send_json({"error": f"triagem falhou: {type(e).__name__}: {e}"}, status=500)
+            return
+
+        if destino == "auto" and conferido["veredito"] != "limpo":
+            self._send_json({"error": "a triagem parou esta nota", "triagem": conferido}, status=409)
+            return
+        if destino == "profissional" and conferido["veredito"] in ("terceiro", "segredo"):
+            self._send_json({"error": "dado de terceiro ou segredo não entra em captura profissional — "
+                                      "reescreva sem ele, ou guarde na espera",
+                             "triagem": conferido}, status=409)
+            return
+        if destino in ("pessoal", "espera"):
+            try:
+                fn = triagem_mod.captura_pessoal if destino == "pessoal" else triagem_mod.guardar_na_espera
+                resultado = fn(texto)
+            except triagem_mod.TriagemUIError as e:
+                self._send_json({"error": str(e)}, status=400)
+                return
+            except Exception as e:
+                self._send_json({"error": f"falha inesperada: {type(e).__name__}: {e}"}, status=500)
+                return
+            self._send_json({"ok": True, "destino": destino, "triagem": conferido, **resultado})
+            return
+
         try:
             resultado = notas_mod.criar_captura_crua(texto)
         except notas_mod.NotaError as e:
@@ -676,7 +728,7 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json({"error": f"falha inesperada: {type(e).__name__}: {e}"}, status=500)
             return
-        self._send_json({"ok": True, **resultado})
+        self._send_json({"ok": True, "destino": "profissional", "triagem": conferido, **resultado})
 
     def _handle_launch(self, payload):
         """Segundo endpoint com efeito colateral (o primeiro é o toggle de backlog): abre um

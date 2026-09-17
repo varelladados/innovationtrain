@@ -146,6 +146,7 @@ central/                  ← a raiz do repositório É o hub
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
 ├── metodo/               regras, taxonomia, templates, estacao.py (o utilitário) e triagem.py (o passo antes da captura)
+│   └── (o app importa triagem.py em app/triagem_ui.py — detector é um só, nunca copiado)
 ├── estacoes/            as de exemplo; as suas, que o Embarque cria aqui, ficam fora do git
 │   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
@@ -246,7 +247,7 @@ silêncio — `tests/test_trilha.py` cobra isso.
 | endpoint | escreve | módulo | trava de segurança |
 |---|---|---|---|
 | `POST /api/backlog/toggle` | `- [ ]`/`- [x]` em backlog | `server.py` | tipo `backlog` no índice + `expected_text` (409) + backup |
-| `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro | `notas.py` | identificador via utilitário (subprocess) + lock + append-only + backup |
+| `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional) + identificador via utilitário (subprocess) + lock + append-only + backup |
 | `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
 
@@ -363,6 +364,6 @@ Central nunca commita em nome de ninguém.
 - [`README.md`](README.md) — a porta de entrada
 - [`metodo/taxonomia.md`](metodo/taxonomia.md) — os nomes, e a fonte de `config.PADROES`
 - [`metodo/regras.md`](metodo/regras.md) — as regras permanentes, cada uma com o porquê
-- [`metodo/triagem.md`](metodo/triagem.md) — pessoal × profissional, dado de terceiro e segredo, antes da captura
+- [`metodo/triagem.md`](metodo/triagem.md) — pessoal × profissional, dado de terceiro e segredo, antes da captura (e a aba Triagem, que mostra a espera)
 - [`metodo/versionamento.md`](metodo/versionamento.md) — salvar, publicar, e o que fazer quando der ruim
 - [`docs/design-system.md`](docs/design-system.md) — tokens, temas, fontes e a regra de ouro do CSS

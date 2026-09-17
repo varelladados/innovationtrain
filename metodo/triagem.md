@@ -173,6 +173,25 @@ as perguntas de `depende_de` estão respondidas. Uma **saída** também pode ter
 `depende_de` próprio — para a resposta em que a outra pergunta não importa não
 travar o trecho inteiro.
 
+## Na Central — a aba Nota e a aba Triagem
+
+A captura pela interface era a última porta que escrevia direto no primeiro
+estágio. Desde a 0.13.0:
+
+- **A aba Nota passa pela triagem antes de gravar.** Se ela para, nada é escrito:
+  a tela mostra o que foi visto, **mascarado**, e as saídas que o método prevê —
+  guardar na espera, mandar para a estação privada, ou (só quando o que pesou foi
+  vocabulário de vida pessoal) seguir como captura profissional. Dado de terceiro
+  e segredo **não têm** o botão de seguir: o primeiro exige reescrita, o segundo
+  não entra em lugar nenhum.
+- **A aba Triagem mostra a espera**: cada lote, o que já foi lido, quantos trechos
+  seguiram e **o que cada um ainda pergunta**, com o comando pronto do `aplicar`.
+  É leitura pura — responder e aplicar continuam no utilitário, porque decisão não
+  se fecha por inferência (regra 8) e escrever em duas estações de uma vez não é
+  coisa de botão.
+- O **snapshot estático** recusa a rota: a espera mora dentro da estação privada, e
+  snapshot é publicação.
+
 ## O ciclo de um lote
 
 1. **Chegou** — o bruto vai para `_triagem/<AAAA-MM-DD>-<assunto>/`, cópia; a
