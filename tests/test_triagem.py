@@ -66,6 +66,14 @@ class Segredo(unittest.TestCase):
             with self.subTest(t=t):
                 self.assertNotIn("segredo", cats(t))
 
+    def test_codigo_que_gera_o_valor_nao_e_senha(self):
+        for t in ("const token = criarSessao(db, usuario.id, req.ip);",
+                  "senha = crypto.randomBytes(24).toString('hex');",
+                  "var x=" + "a" * 1200 + " senha: gato4213verde"):
+            with self.subTest(t=t[:30]):
+                self.assertNotIn("segredo", cats(t))
+        self.assertIn("segredo", cats("const token = 'gato4213verde';"))
+
     def test_linha_solta_com_cara_de_senha(self):
         self.assertIn("segredo", cats("ideias do dia\n\ngato4213verde\n\nmais ideias"))
 

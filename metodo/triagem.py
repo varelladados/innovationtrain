@@ -47,6 +47,7 @@ import zipfile
 from pathlib import Path
 
 LIMITE_TEXTO = 2_000_000   # bytes lidos de um arquivo de texto
+LINHA_MINIFICADA = 1000    # acima disso a linha é código de biblioteca, não texto
 
 MIDIAS = {
     "texto": {".txt", ".md", ".markdown"},
@@ -196,6 +197,10 @@ def detectar(texto):
 
     for n, linha in enumerate((texto or "").splitlines(), 1):
         ocupado = []
+        # linha de biblioteca minificada: milhares de caracteres de código, zero
+        # dado de pessoa, e ruído garantido em todo detector abaixo
+        if len(linha) > LINHA_MINIFICADA:
+            continue
 
         def livre(m):
             return all(m.end() <= a or m.start() >= b for a, b in ocupado)
@@ -235,6 +240,10 @@ def detectar(texto):
             # letras seguido de mais palavras não conta. Pego pela primeira vez
             # rodando a triagem sobre os próprios documentos dela.
             if len(valor) < 4 or (valor.isalpha() and re.match(r"\w", resto)):
+                continue
+            # `token = criarSessao(db, id)` e `senha = crypto.randomBytes(24)`: código
+            # que gera ou busca o valor, não o valor. Achado na varredura dos repositórios.
+            if "(" in valor:
                 continue
             add("segredo", valor, n, "segredo (palavra-chave)")
         for m in SEGREDO_CONHECIDO_RE.finditer(linha):

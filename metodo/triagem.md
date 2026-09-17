@@ -52,6 +52,12 @@ histórico não desfaz barato.
    nomes fica no lote, na espera.
 9. **O script levanta sinais; a leitura decide.** Detector de telefone não sabe
    de quem é o telefone.
+10. **Dado de exemplo nunca é derivado de dado real** — nem com o DDD trocado,
+    nem com duas letras a menos. Teste, protótipo e documentação usam números
+    inventados do zero. Os dígitos de um telefone real continuam identificando
+    a pessoa em qualquer DDD; e um exemplo que nasce de um caso real vai parar
+    em lugar versionado sem passar por triagem nenhuma. Já aconteceu: foi a
+    própria varredura desta triagem que pegou.
 
 ## Matriz de destino
 
