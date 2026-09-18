@@ -1,5 +1,38 @@
 # Changelog — Central
 
+## 0.13.1 — 2026-09-18
+
+**O índice de projetos volta a ser lido, a captura da triagem ganha a
+disciplina da captura profissional, e a documentação alcança o código** — ela
+tinha parado na 0.10.1.
+
+- **Índice de projetos lido de onde quer que more.** `portfolio.py` e
+  `indexer.py` só reconheciam `](../pasta/CLAUDE.md)`; com o índice dentro da
+  pasta de projetos, todo projeto aparecia "fora do índice" e sumia da vitrine —
+  numa estação real, 0 de 13. Um leitor só (`indexer.pasta_do_link`) resolve o
+  link a partir da pasta do índice, com `<…>`, acento e `%20`. O indexer também
+  tomava a pasta de projetos inteira por projeto e nunca marcava órfão. Estação
+  sem índice declarado não marca ninguém "fora do índice".
+- **Captura da triagem com disciplina.** `triagem.capturar` lia o registro
+  traduzindo o fim de linha — um registro CRLF era reescrito inteiro em LF —,
+  sobrescrevia arquivo com o mesmo identificador e deixava arquivo sem linha se o
+  registro falhasse. Agora grava arquivo e registro por temporário + `replace`,
+  preserva LF/CRLF, recusa identificador repetido e desfaz o arquivo se o
+  registro falhar. A captura pessoal pela interface usa a mesma trava da
+  profissional e não copia o registro da estação pessoal para o `cache/`.
+- Um teste deixava `.bak` no `cache/backups/` de verdade; agora vai para a pasta
+  temporária.
+- `.gitignore` cobre a cópia que o Explorer faz ao colar na mesma pasta
+  (`* - Copia*`, `* - Copy*`).
+- **Documentação.** `CENTRAL.md`: as nove abas, a triagem, as duas tabelas de
+  endpoints (com `POST /api/exemplo/passo` e `GET /api/triagem`), a árvore de
+  pastas, a regra 7, a aba nova como é hoje, a família de chaves `triagem` e o
+  limite da trava. `README.md`: a triagem, a tabela de documentos, e a frase sobre
+  escrita reescrita para o que é verdade. `docs/design-system.md`: o seletor de
+  tema no rodapé, a aba nova, os links mortos. Ajustes em `metodo/taxonomia.md` e
+  `metodo/classificar.md`. O cabeçalho HTTP passa a `Central/0.13`.
+- 12 testes novos (304 no total).
+
 ## 0.13.0 — 2026-09-17
 
 **A triagem entra no aplicativo de navegação.** O método existia desde a 0.11 e o

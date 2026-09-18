@@ -1,8 +1,8 @@
 # Design system da Central
 
-> **Documento operacional** · escrito em 2026-09-08 (Trecho 4 do
-> `plano-hub-estacao-e-embarque-2026-09-08.md`) · sucede
-> [`plano-incorporacao-dashboard-nova-identidade.md`](plano-incorporacao-dashboard-nova-identidade.md)
+> **Documento operacional** · escrito em 2026-09-08 (Trecho 4 do plano do hub e
+> do Embarque) · revisto em 2026-09-18 · os dois planos de onde ele veio eram
+> papel de trabalho e não são versionados
 
 Este documento existe porque a identidade visual da Central estava aplicada mas
 não estava **escrita**: os tokens viviam num `:root` sem explicação, e 17 valores
@@ -37,7 +37,7 @@ A Central tem **dois eixos independentes**: o *tema* (a identidade) e o *modo*
 
 | Eixo | Como se escolhe | Onde fica guardado |
 |---|---|---|
-| **Tema** — `padrão` ou `areia` | seletor no topo da barra lateral | `localStorage`, chave `estacao.tema.v1` |
+| **Tema** — `padrão` ou `areia` | seletor no rodapé da barra lateral | `localStorage`, chave `estacao.tema.v1` |
 | **Modo** — claro ou escuro | preferência do sistema operacional; `data-theme` força | o sistema |
 
 **Tema padrão** é a identidade do produto: verde-petróleo sobre cinza-frio.
@@ -176,17 +176,21 @@ o arquivo pode faltar num fork mal copiado.
 ## Criar uma aba nova: são três pontos, e esquecer um é silencioso
 
 Este era um fato solto que só existia na cabeça de quem já tinha feito. Está
-aqui porque **esquecer o ponto 2 deixa o botão sem estilo nenhum**, e nada
-avisa.
+aqui porque **esquecer o ponto 2 deixa a aba abrindo com o botão apagado**, e
+nada avisa.
 
-1. **O botão**, na barra lateral do `index.html`, junto dos outros:
+1. **O botão**, dentro de `<nav id="nav-abas">`, junto dos outros — o ícone vai
+   num `<span class="ic">`, e o estilo vem de `#nav-abas button`, sem id nenhum
+   no CSS:
    ```html
-   <button id="minha-nav-btn" title="uma frase do que a aba faz">🧭 Minha aba</button>
+   <button id="minha-nav-btn" title="uma frase do que a aba faz"><span class="ic" aria-hidden="true">🧭</span>Minha aba</button>
    ```
-2. **O id nas duas regras compartilhadas do CSS** — a de estilo e a de `:hover`.
-   Hoje são as linhas **194 e 195** do `index.html`. As duas, sempre; são
-   listas de seletores separadas por vírgula e o id precisa entrar nas duas.
-3. **O wiring**, no bloco final de `addEventListener` (perto da linha 2214):
+2. **`marcarAba` na função que abre a aba** — é ela que acende o botão da aba
+   aberta:
+   ```js
+   marcarAba("minha-nav-btn");
+   ```
+3. **O wiring**, no bloco final de `addEventListener`:
    ```js
    document.getElementById("minha-nav-btn").addEventListener("click", openMinhaView);
    ```
@@ -215,6 +219,5 @@ computados. Um print seria uma cópia pior de algo que já está aqui.)*
 
 ## Links
 
-- [`CLAUDE.md`](../CLAUDE.md) — como o app funciona
-- [`plano-incorporacao-dashboard-nova-identidade.md`](plano-incorporacao-dashboard-nova-identidade.md) — de onde a identidade veio
-- [`metodo/taxonomia.md`](../../metodo/taxonomia.md) — os nomes dos estágios que a escala de maturidade colore
+- [`CENTRAL.md`](../CENTRAL.md) — como o app funciona
+- [`metodo/taxonomia.md`](../metodo/taxonomia.md) — os nomes dos estágios que a escala de maturidade colore

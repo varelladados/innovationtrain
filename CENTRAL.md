@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.10.1 · atualizado em 2026-09-14
+> **Documento** · v0.13.1 · atualizado em 2026-09-18
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -15,8 +15,12 @@ IA — e de onde ela dispara a sessão quando quiser. Começou como navegador lo
 de um corpus de markdown: índice, árvore, busca, e um único write (toggle de
 checkbox de backlog). Hoje também:
 
-- **captura nota** crua (aba Nota) — vira item do primeiro estágio, com
-  identificador e linha no registro;
+- **captura nota** crua (aba Nota) — a triagem confere o texto antes de gravar:
+  o que é trabalho e não carrega dado de ninguém vira item do primeiro estágio,
+  com identificador e linha no registro; o resto vai para a espera ou para a
+  estação privada, por escolha de quem está na tela;
+- **mostra a espera** (aba Triagem) — os lotes que chegaram e ainda não entraram,
+  com o que cada um ainda pergunta;
 - **responde pendência** (aba Workflow) — grava a opção no próprio `.md`, e a
   rodada seguinte da automação encaminha; o app nunca fecha a pendência;
 - **abre projeto** (pelo Portfólio) — maturidade, backlogs com toggle, e anotação
@@ -27,6 +31,9 @@ checkbox de backlog). Hoje também:
   promoção;
 - **cria as estações padrão** (aba Embarque) — Plataforma, Admin_empresa e
   Vida_Pessoal; cinco perguntas, um prompt.
+
+São nove abas: Workflow, Dashboard, Portfólio, Fluxo, Nota, Triagem, Versões,
+Tour e Embarque.
 
 A taxonomia padrão tem **cinco** estágios desde a 0.9.0 (capturas → notas →
 ideias → funcionalidades → projetos). O quarto é a unidade de trabalho: uma
@@ -96,7 +103,7 @@ Duas regras que o código cobra:
 
 Tudo que é nome de estação sai de `config.atual()`, **lido na hora da
 chamada**, nunca no import — é isso que faz o seletor trocar de estação sem
-reiniciar o servidor. Isso vale para três famílias de coisa, e a terceira é a que
+reiniciar o servidor. Isso vale para seis famílias de coisa, e a terceira é a que
 se esquece:
 
 | Família | Onde é declarada | Exemplos |
@@ -106,6 +113,7 @@ se esquece:
 | **Campos de frontmatter** | `frontmatter.processado` · `.nucleo` · `.origem` | os nomes de campo que o app **lê e escreve** |
 | **Siglas de uma taxonomia anterior** | `siglas_legadas` | `{sigla: nº do estágio}` — lidas em todo lugar, nunca emitidas |
 | **Duplicatas que o acervo já trouxe** | `duplicatas_historicas` | identificadores repetidos de antes da convenção `-N`: viram AVISO, não PROBLEMA |
+| **Triagem** | `triagem` | onde ficam a espera e a estação pessoal, o de-para dos projetos (esfera e apelidos) e o vocabulário de cada esfera |
 
 A terceira existe porque nome de campo é comportamento, não prosa: o app grava
 `<processado>: <id>` no arquivo que cria e procura esse mesmo campo depois. Se
@@ -142,11 +150,14 @@ central/                  ← a raiz do repositório É o hub
 │   ├── embarque.py       POST /api/embarque/prompt — o texto que cria as estações padrão
 │   ├── versoes.py        GET /api/versoes — leitura do git, allow-list de subcomando, só leitura
 │   ├── trilha.py         a trilha das estações de exemplo — restaura instantâneos, não promove nada
+│   ├── triagem_ui.py     o portão da aba Nota e a aba Triagem — importa metodo/triagem.py, detector é um só
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
-├── metodo/               regras, taxonomia, templates, estacao.py (o utilitário) e triagem.py (o passo antes da captura)
-│   └── (o app importa triagem.py em app/triagem_ui.py — detector é um só, nunca copiado)
+├── metodo/               regras, taxonomia, classificar, triagem, versionamento, salvar-tudo e os templates
+│   ├── estacao.py        o utilitário: novo-id, gerar-sem-destino, verificar, reiniciar
+│   ├── plataforma.py     o nome dele até a 0.9 — poucas linhas que chamam o estacao.py
+│   └── triagem.py        o passo antes da captura: levantamento, relatório e aplicar
 ├── estacoes/            as de exemplo; as suas, que o Embarque cria aqui, ficam fora do git
 │   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
@@ -157,7 +168,11 @@ central/                  ← a raiz do repositório É o hub
 ├── cache/                index.json + backups/, gitignored
 ├── CENTRAL.md            este arquivo — e CLAUDE.md, a linha que aponta para ele
 ├── README.md  LICENSE    a porta de entrada pública e a Apache 2.0
+├── VERSION               a versão, e changelog-central.md o que mudou em cada uma
+├── iniciar-central.bat   o duplo clique do Windows — confere o Python e pergunta a porta a ele
 ├── central.exemplo.json  template — copie como central.json (que é gitignored)
+├── .githooks/ .github/   o guarda-corpo antes do commit e o CI em Linux e Windows
+├── .claude/launch.json   o servidor para o painel de pré-visualização do Claude Code
 └── pendencias/           decisões de quem usa; fora do versionamento
 ```
 
@@ -247,9 +262,10 @@ silêncio — `tests/test_trilha.py` cobra isso.
 | endpoint | escreve | módulo | trava de segurança |
 |---|---|---|---|
 | `POST /api/backlog/toggle` | `- [ ]`/`- [x]` em backlog | `server.py` | tipo `backlog` no índice + `expected_text` (409) + backup |
-| `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional) + identificador via utilitário (subprocess) + lock + append-only + backup |
+| `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional). Por destino: **profissional** — identificador via utilitário (subprocess) + trava + arquivo atômico + registro append-only com backup; **pessoal** — o mesmo, com o registro gravado de uma vez e **sem cópia para o cache** (o `cache/` é da estação aberta, e a pessoal é outra); **espera** — pasta nova + linha append-only no `_lotes.md`, nada é sobrescrito |
 | `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
+| `POST /api/exemplo/passo` | a estação de exemplo inteira, no passo pedido da trilha | `trilha.py` → `metodo/estacao.py reiniciar` | só existe em estação que declara `estado_inicial` (uma sua não declara); cada passo é um instantâneo pronto — nada é calculado, e o de origem continua em `estacoes/_inicial/` |
 
 `POST /api/estacao/ativar` e `POST /api/embarque/registrar` escrevem **só no
 `central.json` do hub** — que é config de quem usa, não corpus de estação. Por
@@ -266,13 +282,15 @@ estação nenhuma.
 | `GET /api/embarque/modelos` | nome, pasta e propósito das estações padrão | é leitura de `config.MODELOS` |
 | `GET /api/versoes` | estado do git dos repositórios | allow-list de subcomando, todos de leitura |
 | `GET /api/versoes/prompt` | "salvar um ponto", "mandar pra nuvem", "linha nova" | a Central lê o git e gera o texto; **nunca o executa** |
+| `GET /api/triagem` | os lotes na espera, o que cada um já leu e as perguntas abertas | aplicar um destino é trabalho do utilitário, com o `decisoes.json` respondido; o snapshot estático recusa a rota, porque a espera mora na estação privada |
 
-Sobre o último: automatismo de commit mora onde a IA está, não numa interface
-web onde um botão um dia é clicado sem querer. Ver `metodo/versionamento.md`.
+Sobre `versoes/prompt`: automatismo de commit mora onde a IA está, não numa
+interface web onde um botão um dia é clicado sem querer. Ver
+`metodo/versionamento.md`.
 
 `POST /api/launch` abre executável local (efeito colateral, não escreve arquivo).
 Toda escrita nova segue a mesma disciplina — ver a seção abaixo antes de somar a
-quinta.
+sexta.
 
 ## Efeitos colaterais que não são escrita de arquivo
 
@@ -294,7 +312,17 @@ existente (o registro é append-only), lê e escreve sem tradução de fim de li
 pra preservar LF/CRLF do arquivo original; um `threading.Lock()` serializa
 criações concorrentes, porque `novo-id` lê a maior sequência do dia no momento da
 chamada — duas notas quase simultâneas sem essa trava podiam colidir no mesmo
-número. Nunca classifica: o item nasce sempre no primeiro estágio.
+número. **A trava é do processo do servidor:** uma captura pela linha de comando
+(`triagem.py aplicar`) no mesmo instante não a enxerga. Nunca classifica: o item
+nasce sempre no primeiro estágio — ou, se a triagem mandar, na espera ou na
+estação privada, nunca em outro estágio.
+
+A captura **pessoal** (`triagem_ui.captura_pessoal` → `triagem.capturar`) segue
+a mesma mecânica, com a mesma trava, e grava o arquivo e o registro de uma vez
+(temporário + `replace`), recusa identificador que já existe e apaga o arquivo se
+o registro falhar. Ela **não** copia o registro para `cache/backups/`: o `cache/`
+guarda o que é da estação que a Central está operando, e a pessoal é outra — e
+privada. A proteção é a gravação de uma vez; o histórico dela é o git dela.
 
 ### A disciplina que todo endpoint de escrita segue
 
@@ -345,11 +373,12 @@ Central nunca commita em nome de ninguém.
   quatro falharam, e ele não desfaz o que já foi publicado: `push --force` só
   desreferencia o objeto no GitHub. Para remover de verdade, apagar e recriar o
   repositório.
-- **Aba nova exige três pontos**, e esquecer o segundo é silencioso: o botão no
-  `<aside>`, o id nas **duas** regras compartilhadas do CSS (a de estilo e a de
-  `:hover`), e o wiring no bloco final de `addEventListener`. Ver
-  `docs/design-system.md`.
-- **Salvar é automático; publicar é decisão** — `metodo/regras.md`, regra 6,
+- **Aba nova exige três pontos**, e esquecer o segundo é silencioso: o botão
+  dentro de `<nav id="nav-abas">`, com o ícone em `<span class="ic">`; a chamada
+  `marcarAba("<id-do-botão>")` na função que abre a aba — sem ela a aba abre e o
+  botão não acende; e o listener no bloco final de `addEventListener`. O estilo
+  vem de `#nav-abas button`, sem id nenhum no CSS. Ver `docs/design-system.md`.
+- **Salvar é automático; publicar é decisão** — `metodo/regras.md`, regra 7,
   definida depois de perda real de trabalho. A sessão commita local **sem pedir
   autorização** ao terminar um artefato e ao encerrar a sessão; ela **avisa** o
   que entrou, não pergunta. `git add` **nominal**, nunca `git add .` nem

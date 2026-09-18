@@ -5,8 +5,8 @@
 > strings: ele lê do `estacao.json` de cada estação, e os padrões de
 > `app/config.py` são uma cópia deste documento, não uma segunda opinião.
 >
-> Decidido em 2026-09-08 (Trecho 2 do `plano-hub-estacao-e-embarque-2026-09-08.md`),
-> em cinco paradas respondidas pelo usuário. O estágio 4, **Funcionalidade**,
+> Decidido em 2026-09-08 (Trecho 2 do plano do hub e do Embarque, papel de
+> trabalho que não é versionado), em cinco paradas respondidas pelo usuário. O estágio 4, **Funcionalidade**,
 > entrou em 2026-09-10 (sexta parada, abaixo). Se algum nome mudar, três coisas
 > mudam **juntas**: este arquivo, o `estacao.json` de cada estação e os
 > padrões do `app/config.py`.
@@ -263,7 +263,7 @@ oferece um tipo que ninguém usa nem esconde um que todo mundo usa.
 
 ---
 
-## As cinco decisões, e por quê
+## As sete decisões, e por quê
 
 | Parada | Decidido | Por quê |
 |---|---|---|
@@ -290,7 +290,8 @@ recria exatamente o vocabulário privado que este trabalho desfaz.
 - **Os critérios de promoção** entre os estágios — são quatro conjuntos
   (captura→nota, nota→ideia, ideia→funcionalidade, funcionalidade→projeto) e
   vivem em [`classificar.md`](classificar.md).
-- **As cores de cada estágio** — decisão do design system, no Trecho 4.
+- **As cores de cada estágio** — decididas no design system, no Trecho 4: a
+  escala `--estagio-1` a `--estagio-5` de [`docs/design-system.md`](../docs/design-system.md).
 - **O `estacao.json` de uma estação que não pode receber arquivo novo**
   — uma pasta lida em modo somente-leitura, por exemplo. A taxonomia dela é
   declarada inline no `central.json` do hub (Trecho 3), e nada é escrito lá

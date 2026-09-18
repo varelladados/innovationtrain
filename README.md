@@ -51,6 +51,16 @@ estágio se preserva como estava, e a parte ativa da pasta continua respondendo
 
 **Nada é apagado.** Encerrar é mover para o histórico, nunca remover.
 
+## Antes do primeiro estágio: a triagem
+
+Nada entra numa estação sem responder três perguntas: **é trabalho ou vida
+pessoal? carrega dado pessoal de outra pessoa? carrega segredo?** A aba
+**📝 Nota** confere o texto antes de gravar e, se achar alguma coisa, mostra o
+que achou — mascarado — e oferece três saídas: guardar na espera, mandar para
+a estação privada, ou seguir como captura quando não há dado de ninguém no
+meio. A aba **🧴 Triagem** mostra o que está esperando e o que cada lote ainda
+pergunta. O método inteiro está em [`metodo/triagem.md`](metodo/triagem.md).
+
 ## Se você está começando
 
 Abra o app e vá na aba **🚂 Embarque**. São cinco perguntas, e você sai com um
@@ -105,16 +115,18 @@ metodo/                    as regras, a taxonomia, os templates e o utilitário
 estacoes/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 estacoes/exemplo-precos/ preços e lojas clone — já povoada, e o que ficou pelo caminho
 docs/design-system.md  tokens, temas, fontes e a regra de ouro do CSS
-tests/                 137 testes, stdlib, sem dependência
+tests/                 mais de 300 testes, stdlib, sem dependência
 ```
 
 | Documento | Do que trata |
 |---|---|
 | [`metodo/taxonomia.md`](metodo/taxonomia.md) | os nomes: estágios, siglas, arquivos de sistema |
 | [`metodo/regras.md`](metodo/regras.md) | as regras permanentes, cada uma com o porquê |
+| [`metodo/triagem.md`](metodo/triagem.md) | o passo antes da captura: pessoal ou trabalho, dado de terceiro, segredo |
 | [`metodo/classificar.md`](metodo/classificar.md) | quando um item passa de estágio |
 | [`metodo/versionamento.md`](metodo/versionamento.md) | salvar, publicar, e o que fazer quando der ruim |
-| [`CLAUDE.md`](CLAUDE.md) | como a aplicação funciona por dentro |
+| [`metodo/salvar-tudo.md`](metodo/salvar-tudo.md) | o texto que salva todos os repositórios de uma vez |
+| [`CENTRAL.md`](CENTRAL.md) | como a aplicação funciona por dentro |
 
 ## Salvar é automático; publicar é decisão
 
@@ -143,8 +155,10 @@ quando der ruim.
   falha o build se um voltar.
 - **A Central lê o git, nunca o executa.** A aba Versões mostra o estado e gera o
   texto; quem roda é a sessão de IA, com você olhando.
-- **Todo endpoint de escrita** tem allow-list, trava de concorrência por
-  conteúdo (409) e backup antes de gravar.
+- **Toda escrita confere antes de gravar.** Quem muda uma linha de arquivo que
+  já existe (backlog, pendência, anotação) tem allow-list, trava de
+  concorrência por conteúdo (409) e backup; captura nova grava de uma vez, nunca
+  sobrescreve e só acrescenta linha ao registro.
 
 ## Se você for mexer no código
 

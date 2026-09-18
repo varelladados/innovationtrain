@@ -218,7 +218,7 @@ def get_state():
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "Central/0.10"  # header HTTP: sem acento, e acompanha o VERSION
+    server_version = "Central/0.13"  # header HTTP: sem acento, e acompanha o VERSION
 
     def log_message(self, fmt, *args):
         pass  # silencioso — evitar poluir o terminal do usuário

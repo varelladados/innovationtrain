@@ -1,7 +1,7 @@
 # Classificar — quando um item passa de estágio
 
-> **Quatro passagens, quatro conjuntos de critérios.** Derivado do checklist do
-> origem, que só cobria uma passagem porque lá os estágios eram três e a
+> **Quatro passagens, quatro conjuntos de critérios.** Derivado do checklist da
+> estação de origem, que só cobria uma passagem porque lá os estágios eram três e a
 > etapa de organizar acontecia invisivelmente. Com cinco estágios
 > ([`taxonomia.md`](taxonomia.md)), cada passagem tem a sua pergunta.
 
