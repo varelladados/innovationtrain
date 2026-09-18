@@ -61,8 +61,11 @@ class _Base(unittest.TestCase):
         ]
         self.cache = {BACKLOG: CONTEUDO, CLAUDE: CLAUDE_RAW}
         self.pf = {"projetos": [{"pasta": PASTA, "nome": "Meu projeto"}]}
+        self._orig_backups = projetos.BACKUPS_DIR
+        projetos.BACKUPS_DIR = self.tmp / "backups"
 
     def tearDown(self):
+        projetos.BACKUPS_DIR = self._orig_backups
         if self._anterior is not None:
             config.aplicar(self._anterior)
         shutil.rmtree(self.tmp, ignore_errors=True)
