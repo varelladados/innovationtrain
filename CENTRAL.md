@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.13.3 · atualizado em 2026-09-18
+> **Documento** · v0.14.1 · atualizado em 2026-09-18
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -161,7 +161,7 @@ central/                  ← a raiz do repositório É o hub
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN
-├── metodo/               regras, taxonomia, classificar, triagem, versionamento, salvar-tudo e os templates
+├── metodo/               princípios, regras, taxonomia, classificar, maturidade, promoção, triagem, versionamento, salvar-tudo e os templates
 │   ├── estacao.py        o utilitário: novo-id, gerar-sem-destino, verificar, reiniciar
 │   ├── plataforma.py     o nome dele até a 0.9 — poucas linhas que chamam o estacao.py
 │   ├── trava.py          a trava do registro: uma captura por vez na estação, entre processos
@@ -415,7 +415,11 @@ Central nunca commita em nome de ninguém.
 ## Links
 
 - [`README.md`](README.md) — a porta de entrada
+- [`metodo/principios.md`](metodo/principios.md) — o que é permanente no método
 - [`metodo/taxonomia.md`](metodo/taxonomia.md) — os nomes, e a fonte de `config.PADROES`
+- [`metodo/maturidade.md`](metodo/maturidade.md) — a maturidade 0–5 × 6 que a aba Portfólio lê dos perfis, e a ordem de ataque
+- [`metodo/promocao.md`](metodo/promocao.md) — quando um padrão de uma estação vira parte do método
+- [`docs/roteiros.md`](docs/roteiros.md) — três roteiros para apresentar o método
 - [`metodo/regras.md`](metodo/regras.md) — as regras permanentes, cada uma com o porquê
 - [`metodo/triagem.md`](metodo/triagem.md) — pessoal × profissional, dado de terceiro e segredo, antes da captura (e a aba Triagem, que mostra a espera)
 - [`metodo/versionamento.md`](metodo/versionamento.md) — salvar, publicar, e o que fazer quando der ruim
