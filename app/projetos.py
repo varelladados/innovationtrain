@@ -86,8 +86,9 @@ def _perfil(pasta):
 def prefixo_do_projeto(pasta):
     """Caminho da pasta do projeto **relativo à raiz da estação**.
 
-    `pastas_de_projeto()` devolve só o nome (`Anotai`); o índice guarda o
-    caminho inteiro (`5-projetos/Anotai/...`). Quem junta os dois é isto. Sem
+    `pastas_de_projeto()` devolve só o nome (`exemplo-monitor-de-precos`); o índice
+    guarda o caminho inteiro (`5-projetos/exemplo-monitor-de-precos/...`). Quem junta
+    os dois é isto. Sem
     ele, toda estação que guarda projeto em subpasta — que é a taxonomia
     padrão — abre a tela de projeto vazia.
     """
