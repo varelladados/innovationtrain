@@ -1,5 +1,29 @@
 # Changelog — Central
 
+## 0.14.0 — 2026-09-18
+
+**O método ganha o que o framework genérico tinha de único.** Existia, ao lado
+da Central, um framework em markdown com o método de três estágios; a Central
+já tinha superado o gate, o manual e os modelos de estágio dele, mas não quatro
+coisas, que entram agora — escritas de forma genérica e atualizadas para os
+cinco estágios:
+
+- **`metodo/principios.md`** — o que é permanente no método: oito princípios,
+  com o terceiro reescrito ("cinco estágios, cada um com uma pergunta").
+- **`metodo/maturidade.md`** — a escala de 0 a 5 em seis dimensões, medida pelo
+  disco, que a aba Portfólio já lia dos perfis sem que o método a definisse; o
+  score de ordem de ataque; o tamanho de uma rodada autônoma, agora com a regra
+  de salvar de hoje (commit local automático, push com autorização).
+- **`metodo/promocao.md`** — quando um padrão de uma estação vira parte do
+  método (três usos, um ciclo estável, genérico por acidente), o vocabulário
+  próprio de cada estação como configuração declarada, e os dois sentidos da
+  ponte — nenhum automático.
+- **`metodo/templates/propostas.md`** — o modelo de propostas por projeto, com
+  as lentes UX/CX/IX/HX.
+- **`docs/roteiros.md`** — três roteiros para apresentar o método (uma página
+  executiva, pitch e técnico), com `[PREENCHER]` onde o dado é de quem
+  apresenta.
+
 ## 0.13.2 — 2026-09-18
 
 **As estações do Embarque nascem com a triagem ligada.** Desde a 0.11 a chave

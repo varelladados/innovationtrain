@@ -115,15 +115,19 @@ metodo/                    as regras, a taxonomia, os templates e o utilitário
 estacoes/exemplo/       cozinha e fotografia — começa vazia, com uma trilha de 7 passos
 estacoes/exemplo-precos/ preços e lojas clone — já povoada, e o que ficou pelo caminho
 docs/design-system.md  tokens, temas, fontes e a regra de ouro do CSS
+docs/roteiros.md       três roteiros para apresentar o método
 tests/                 mais de 300 testes, stdlib, sem dependência
 ```
 
 | Documento | Do que trata |
 |---|---|
+| [`metodo/principios.md`](metodo/principios.md) | o que é permanente no método, e por quê |
 | [`metodo/taxonomia.md`](metodo/taxonomia.md) | os nomes: estágios, siglas, arquivos de sistema |
 | [`metodo/regras.md`](metodo/regras.md) | as regras permanentes, cada uma com o porquê |
 | [`metodo/triagem.md`](metodo/triagem.md) | o passo antes da captura: pessoal ou trabalho, dado de terceiro, segredo |
 | [`metodo/classificar.md`](metodo/classificar.md) | quando um item passa de estágio |
+| [`metodo/maturidade.md`](metodo/maturidade.md) | o quanto um projeto já existe, medido pelo disco, e o que atacar primeiro |
+| [`metodo/promocao.md`](metodo/promocao.md) | quando um padrão de uma estação vira parte do método |
 | [`metodo/versionamento.md`](metodo/versionamento.md) | salvar, publicar, e o que fazer quando der ruim |
 | [`metodo/salvar-tudo.md`](metodo/salvar-tudo.md) | o texto que salva todos os repositórios de uma vez |
 | [`CENTRAL.md`](CENTRAL.md) | como a aplicação funciona por dentro |
