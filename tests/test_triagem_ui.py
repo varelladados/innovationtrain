@@ -77,7 +77,7 @@ class PortaoDaNota(unittest.TestCase):
     def test_captura_pessoal_vai_para_a_estacao_privada(self):
         r = triagem_ui.captura_pessoal("Aniversário da sobrinha no sábado")
         self.assertTrue(Path(r["path"]).exists())
-        self.assertEqual(Path(r["path"]).parents[1], self.priv)
+        self.assertEqual(Path(r["path"]).parents[1].resolve(), self.priv.resolve())
         conteudo = Path(r["path"]).read_text(encoding="utf-8")
         self.assertIn("origem: nota direta pela Central, triada como pessoal", conteudo)
         self.assertIn(r["id"], (self.priv / "_registro.md").read_text(encoding="utf-8"))

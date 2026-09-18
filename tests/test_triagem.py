@@ -4,6 +4,8 @@ Todo dado aqui é fictício. CPF e CNPJ são números de teste com dígito
 verificador válido, de uso público em exemplos; telefones usam o prefixo de
 DDD 99, que não existe.
 """
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -252,6 +254,11 @@ class DecidirEAplicar(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def aplicar(self, *args, **kwargs):
+        # chamado sem o main(), o relatório com "→" esbarra na saída cp1252 do Windows
+        with contextlib.redirect_stdout(io.StringIO()):
+            return triagem.cmd_aplicar(*args, **kwargs)
+
     def test_decidir_gera_os_dois_e_o_mascarado_nao_tem_o_privado(self):
         masc = Path(self.tmp.name) / "masc.md"
         self.assertEqual(triagem.cmd_decidir(self.lote, masc), 0)
@@ -272,14 +279,14 @@ class DecidirEAplicar(unittest.TestCase):
 
     def test_simular_nao_grava_nada(self):
         antes = (self.prof / "_registro.md").read_text(encoding="utf-8")
-        triagem.cmd_aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=False)
+        self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=False)
         self.assertEqual((self.prof / "_registro.md").read_text(encoding="utf-8"), antes)
         self.assertFalse((self.prof / "1-capturas").exists())
         self.assertIsNone(json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
                           ["perguntas"][0].get("resposta"))
 
     def test_aplicar_leva_cada_trecho_ao_destino_uma_vez(self):
-        rc = triagem.cmd_aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
+        rc = self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
         self.assertEqual(rc, 0)
         caps = list((self.prof / "1-capturas").glob("*.md"))
         self.assertEqual(len(caps), 1)
@@ -291,17 +298,17 @@ class DecidirEAplicar(unittest.TestCase):
         self.assertEqual(d["versao"], 2)
         self.assertTrue((self.lote / "relatorio-v2.md").exists())
         # de novo: nada duplica
-        triagem.cmd_aplicar(self.lote, self.prof, {}, confirmar=True)
+        self.aplicar(self.lote, self.prof, {}, confirmar=True)
         self.assertEqual(len(list((self.prof / "1-capturas").glob("*.md"))), 1)
         self.assertEqual(len(list((self.priv / "1-capturas").glob("*.md"))), 1)
 
     def test_recusa_texto_profissional_com_dado_de_terceiro(self):
-        rc = triagem.cmd_aplicar(self.lote, self.prof, {"P1": "A", "P2": "B"}, confirmar=True)
+        rc = self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "B"}, confirmar=True)
         self.assertEqual(rc, 1)
         self.assertFalse(any((self.prof / "1-capturas").glob("*.md")) if (self.prof / "1-capturas").exists() else False)
 
     def test_encerrar(self):
-        triagem.cmd_aplicar(self.lote, self.prof, {"P1": "B", "P2": "A"}, confirmar=True)
+        self.aplicar(self.lote, self.prof, {"P1": "B", "P2": "A"}, confirmar=True)
         d = json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
         self.assertIn({"trecho": "A", "destino": "encerrar", "virou": "encerrado", "onde": "—"}, d["seguiu"])
 
