@@ -4,10 +4,13 @@ Dado fictício do começo ao fim (regra 10 de `metodo/triagem.md`): telefone com
 DDD 99, que não existe, e nomes inventados.
 """
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -89,6 +92,68 @@ class PortaoDaNota(unittest.TestCase):
             with self.assertRaises(triagem_ui.TriagemUIError):
                 fn("qualquer coisa")
         self.assertEqual(triagem_ui.lotes(), [])
+
+
+class CapturaPessoalSegueADisciplina(unittest.TestCase):
+    """A captura pessoal grava como a profissional: de uma vez, sem mudar o fim
+    de linha do registro, sem sobrescrever e sem deixar arquivo meio registrado."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        base = Path(self.tmp.name)
+        self.priv = base / "privada"
+        _estacao(self.priv)
+        _estacao(base / "plataforma", triagem={"pessoal": "../privada"})
+        apoio.aplicar(base / "plataforma")
+        self.registro = self.priv / "_registro.md"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _registro_com(self, eol):
+        self.registro.write_bytes(eol.join(["# Registro", "", "## Pendente", "", "nada", ""]).encode("utf-8"))
+
+    def test_registro_crlf_continua_crlf(self):
+        self._registro_com("\r\n")
+        triagem_ui.captura_pessoal("Comprar tinta para a cerca")
+        dados = self.registro.read_bytes()
+        self.assertIn(b"Comprar tinta", dados)
+        self.assertEqual(dados.count(b"\n"), dados.count(b"\r\n"))
+
+    def test_registro_lf_continua_lf(self):
+        self._registro_com("\n")
+        triagem_ui.captura_pessoal("Comprar tinta para a cerca")
+        self.assertNotIn(b"\r", self.registro.read_bytes())
+
+    def test_id_que_ja_existe_nao_e_sobrescrito(self):
+        fixo = "26.01.01-CAP-001-cerca-abcd"
+        (self.priv / "1-capturas").mkdir()
+        existente = self.priv / "1-capturas" / f"{fixo}.md"
+        existente.write_text("não mexa\n", encoding="utf-8")
+        antes = self.registro.read_bytes()
+        falso = subprocess.CompletedProcess([], 0, stdout=fixo + "\n", stderr="")
+        with mock.patch.object(triagem_ui.motor.subprocess, "run", return_value=falso):
+            with self.assertRaises(triagem_ui.motor.TriagemErro):
+                triagem_ui.captura_pessoal("Comprar tinta para a cerca")
+        self.assertEqual(existente.read_text(encoding="utf-8"), "não mexa\n")
+        self.assertEqual(self.registro.read_bytes(), antes)
+
+    def test_registro_que_falha_nao_deixa_arquivo(self):
+        original = os.replace
+
+        def falha_no_registro(src, dst):
+            if Path(dst).name == "_registro.md":
+                raise OSError("disco cheio (simulado)")
+            return original(src, dst)
+
+        antes = self.registro.read_bytes()
+        with mock.patch.object(triagem_ui.motor.os, "replace", side_effect=falha_no_registro):
+            with self.assertRaises(OSError):
+                triagem_ui.captura_pessoal("Comprar tinta para a cerca")
+        entrada = self.priv / "1-capturas"
+        self.assertEqual(list(entrada.iterdir()) if entrada.exists() else [], [])
+        self.assertEqual(self.registro.read_bytes(), antes)
+        self.assertEqual(list(self.priv.rglob("*.tmp")), [])
 
 
 class AbaTriagem(unittest.TestCase):

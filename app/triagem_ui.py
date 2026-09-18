@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 import config
+import notas
 
 APP_DIR = Path(__file__).resolve().parent
 METODO_DIR = APP_DIR.parent / "metodo"
@@ -130,8 +131,10 @@ def captura_pessoal(texto):
     texto = (texto or "").strip()
     if not texto:
         raise TriagemUIError("texto vazio")
-    ident, caminho = motor.capturar(alvo, texto, _slug(texto), lote="—", trecho="—",
-                                    origem="nota direta pela Central, triada como pessoal")
+    # a mesma trava da captura profissional: o novo-id lê o registro para achar a sequência do dia
+    with notas._LOCK:
+        ident, caminho = motor.capturar(alvo, texto, _slug(texto), lote="—", trecho="—",
+                                        origem="nota direta pela Central, triada como pessoal")
     return {"id": ident, "path": caminho, "estacao": str(alvo)}
 
 

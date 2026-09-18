@@ -42,6 +42,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import unicodedata
 import zipfile
 from pathlib import Path
@@ -795,10 +796,26 @@ def _resumo(texto, limite=160):
     return plano if len(plano) <= limite else plano[:limite].rsplit(" ", 1)[0] + "…"
 
 
+def _gravar_atomico(destino, texto, newline):
+    """Grava num temporário ao lado e troca de uma vez: quem lê nunca vê o
+    arquivo pela metade. O nome do temporário é único porque a interface e a
+    linha de comando podem gravar ao mesmo tempo."""
+    tmp = destino.with_name(f".{destino.name}.{os.getpid()}.{time.monotonic_ns()}.tmp")
+    try:
+        with tmp.open("w", encoding="utf-8", newline=newline) as f:
+            f.write(texto)
+        os.replace(tmp, destino)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
 def capturar(raiz_estacao, texto, slug, lote, trecho, removido=(), origem=None):
     """Captura crua a partir de um trecho triado: id pelo utilitário, arquivo no
     estágio de entrada, linha no registro (append-only), sem-destino regenerado.
-    Mesma mecânica da captura da interface, com a origem e a linhagem da triagem."""
+    Mesma mecânica da captura da interface, com a origem e a linhagem da triagem:
+    o arquivo e o registro são gravados de uma vez, o registro mantém o fim de
+    linha que já tinha, e um registro que falha não deixa o arquivo para trás."""
     raiz = Path(raiz_estacao)
     est = _json_estacao(raiz)
     sigla = est["estagios"][0]["sigla"]
@@ -817,34 +834,43 @@ def capturar(raiz_estacao, texto, slug, lote, trecho, removido=(), origem=None):
     marcas += f"{fm.get('processado') or 'registro-id'}: {novo}\n"
     hoje = datetime.date.today().isoformat()
     arquivo = entrada / f"{novo}.md"
-    arquivo.write_text(
+    if arquivo.exists():
+        raise TriagemErro(f"{arquivo.name} já existe em {entrada} (colisão de id) — nada foi gravado")
+    _gravar_atomico(
+        arquivo,
         f"---\nid: {novo}\ndata: {hoje}\norigem: {origem or f'triagem — lote {lote}, trecho {trecho}'}\n"
         f"tags: []\nstatus: vaga\nlinks: []\ntriagem:\n  lote: {lote}\n  trecho: {trecho}\n"
         f"  removido: [{', '.join(removido)}]\n{marcas}---\n\n## Conteúdo bruto\n\n{texto.strip()}\n",
-        encoding="utf-8")
+        newline=None)
     registro = raiz / est["arquivos"]["registro"]
-    original = registro.read_text(encoding="utf-8") if registro.exists() else ""
-    eol = "\r\n" if "\r\n" in original else "\n"
-    rel = os.path.relpath(entrada, registro.parent).replace("\\", "/")
-    linha = f"| {novo} | {hoje} | {sigla} | `{rel}/` | {_resumo(texto)} | [arquivo](<{rel}/{novo}.md>) |"
-    titulo = f"## Entradas {hoje} — triagem"
-    if titulo in original:
-        ini = original.index(titulo)
-        prox = re.search(r"\r?\n## ", original[ini + len(titulo):])
-        fim = (ini + len(titulo) + prox.start()) if prox else len(original)
-        secao = original[ini:fim].rstrip("\r\n")
-        resto = original[fim:].lstrip("\r\n")
-        novo_texto = original[:ini] + secao + eol + linha + (eol * 2 + resto if resto else eol)
-    else:
-        bloco = eol.join([titulo, "", "| ID | Data | Etapa/Tipo | Local | Resumo | Link |",
-                          "|---|---|---|---|---|---|", linha])
-        pos = original.rfind(eol + "## Pendente")
-        if pos == -1:
-            novo_texto = original.rstrip("\r\n") + (eol * 2 if original.strip() else "") + bloco + eol
+    try:
+        original = ""
+        if registro.exists():
+            with registro.open(encoding="utf-8", newline="") as f:
+                original = f.read()
+        eol = "\r\n" if "\r\n" in original else "\n"
+        rel = os.path.relpath(entrada, registro.parent).replace("\\", "/")
+        linha = f"| {novo} | {hoje} | {sigla} | `{rel}/` | {_resumo(texto)} | [arquivo](<{rel}/{novo}.md>) |"
+        titulo = f"## Entradas {hoje} — triagem"
+        if titulo in original:
+            ini = original.index(titulo)
+            prox = re.search(r"\r?\n## ", original[ini + len(titulo):])
+            fim = (ini + len(titulo) + prox.start()) if prox else len(original)
+            secao = original[ini:fim].rstrip("\r\n")
+            resto = original[fim:].lstrip("\r\n")
+            novo_texto = original[:ini] + secao + eol + linha + (eol * 2 + resto if resto else eol)
         else:
-            novo_texto = original[:pos].rstrip("\r\n") + eol * 2 + bloco + eol * 2 + original[pos:].lstrip("\r\n")
-    with registro.open("w", encoding="utf-8", newline="") as f:
-        f.write(novo_texto)
+            bloco = eol.join([titulo, "", "| ID | Data | Etapa/Tipo | Local | Resumo | Link |",
+                              "|---|---|---|---|---|---|", linha])
+            pos = original.rfind(eol + "## Pendente")
+            if pos == -1:
+                novo_texto = original.rstrip("\r\n") + (eol * 2 if original.strip() else "") + bloco + eol
+            else:
+                novo_texto = original[:pos].rstrip("\r\n") + eol * 2 + bloco + eol * 2 + original[pos:].lstrip("\r\n")
+        _gravar_atomico(registro, novo_texto, newline="")
+    except BaseException:
+        arquivo.unlink(missing_ok=True)
+        raise
     if est.get("arquivos", {}).get("sem_destino") and (raiz / est["arquivos"]["sem_destino"]).exists():
         subprocess.run([sys.executable, str(util), "gerar-sem-destino", "--raiz", str(raiz)],
                        capture_output=True, text=True, encoding="utf-8", timeout=60)
