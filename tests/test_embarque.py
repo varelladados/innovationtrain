@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import apoio  # noqa: E402,F401  (insere app/ no sys.path)
 import config  # noqa: E402
 import embarque  # noqa: E402
+import triagem_ui  # noqa: E402
 
 RAIZ_REPO = Path(__file__).resolve().parent.parent
 PADRAO = {"tem_conteudo": "vazia", "destino": "claude-code"}
@@ -29,6 +30,31 @@ PADRAO = {"tem_conteudo": "vazia", "destino": "claude-code"}
 
 def gerar(base, **extra):
     return embarque.gerar(dict(PADRAO, caminho=str(base) if base is not None else "", **extra))
+
+
+def executar(texto, base):
+    """Faz o que o texto manda, literal: as pastas do Passo 2 e os arquivos do
+    Passo 3. Devolve os arquivos criados, relativos a `base`."""
+    bloco = re.search(r"## Passo 2 —.*?```\n(.*?)```", texto, re.S).group(1)
+    base.mkdir(parents=True)
+    for l in bloco.splitlines():
+        if "├" in l and l.strip().endswith("/"):
+            (base / l.strip("├─ ").strip()).mkdir(parents=True, exist_ok=True)
+    parte = texto.split("## Passo 3", 1)[1].split("## Passo 4", 1)[0]
+    criados = []
+    for m in re.finditer(r"### `([^`]+)`\n\n```[a-z]*\n(.*?)\n```", parte, re.S):
+        destino = base / m.group(1)
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        destino.write_text(m.group(2) + "\n", encoding="utf-8")
+        criados.append(m.group(1))
+    return criados
+
+
+def estacao_json(texto, modelo):
+    """O `estacao.json` de `modelo` exatamente como o texto manda escrever."""
+    pasta = re.escape(config.MODELOS[modelo]["pasta"])
+    m = re.search(rf"### `{pasta}/estacao\.json`\n\n```json\n(.*?)\n```", texto, re.S)
+    return json.loads(m.group(1))
 
 
 def so(*modelos, **existentes):
@@ -171,18 +197,7 @@ class TestPromptCria(unittest.TestCase):
         cls.tmp = Path(tempfile.mkdtemp(prefix="embarque-cria-"))
         cls.base = cls.tmp / "estacoes"
         cls.texto = gerar(cls.base)["texto"]
-        bloco = re.search(r"## Passo 2 —.*?```\n(.*?)```", cls.texto, re.S).group(1)
-        cls.base.mkdir(parents=True)
-        for l in bloco.splitlines():
-            if "├" in l and l.strip().endswith("/"):
-                (cls.base / l.strip("├─ ").strip()).mkdir(parents=True, exist_ok=True)
-        parte = cls.texto.split("## Passo 3", 1)[1].split("## Passo 4", 1)[0]
-        cls.criados = []
-        for m in re.finditer(r"### `([^`]+)`\n\n```[a-z]*\n(.*?)\n```", parte, re.S):
-            destino = cls.base / m.group(1)
-            destino.parent.mkdir(parents=True, exist_ok=True)
-            destino.write_text(m.group(2) + "\n", encoding="utf-8")
-            cls.criados.append(m.group(1))
+        cls.criados = executar(cls.texto, cls.base)
 
     @classmethod
     def tearDownClass(cls):
@@ -258,6 +273,109 @@ class TestPromptCria(unittest.TestCase):
                 bloco = texto.split(f"<!-- gerado:{chave}:inicio -->")[1] \
                              .split(f"<!-- gerado:{chave}:fim -->")[0]
                 self.assertIn("nada nesta etapa", bloco)
+
+
+class TestTriagem(unittest.TestCase):
+    """A chave `triagem` sai do próprio texto. Sem ela, numa Central recém-criada,
+    a aba Triagem e as saídas "espera" e "pessoal" da aba Nota só funcionavam
+    depois de editar o `estacao.json` à mão. Os caminhos são relativos à raiz de
+    cada estação (`metodo/triagem.md`), e `.` é ela mesma."""
+
+    def test_o_texto_declara_os_caminhos_certos(self):
+        texto = gerar(r"C:\x\y")["texto"]
+        esperado = {
+            "plataforma": {"pessoal": "../vida_pessoal", "espera": "../vida_pessoal/_triagem",
+                           "administrativo": "../admin_empresa"},
+            "admin_empresa": {"pessoal": "../vida_pessoal", "espera": "../vida_pessoal/_triagem",
+                              "administrativo": "."},
+            "vida_pessoal": {"pessoal": ".", "espera": "_triagem",
+                             "administrativo": "../admin_empresa"},
+        }
+        for modelo, triagem in esperado.items():
+            with self.subTest(modelo):
+                self.assertEqual(estacao_json(texto, modelo).get("triagem"), triagem)
+
+    def test_so_aponta_para_estacao_criada_junto(self):
+        """Uma privada que a pessoa já tinha não vira espera: o texto não tem como
+        conferir se ela é mesmo privada, e o bruto nunca espera em lugar
+        versionado. Sem ninguém para apontar, a chave nem nasce."""
+        texto = gerar(r"C:\x\y", estacoes=so("plataforma", "admin_empresa",
+                                             vida_pessoal=r"C:\x\minha"))["texto"]
+        self.assertEqual(estacao_json(texto, "plataforma").get("triagem"),
+                         {"administrativo": "../admin_empresa"})
+        sozinha = gerar(r"C:\x\y", estacoes=so("plataforma"))["texto"]
+        self.assertNotIn("triagem", estacao_json(sozinha, "plataforma"))
+
+    def test_a_espera_nasce_so_dentro_da_privada(self):
+        """Regra 1 da triagem: o bruto espera na estação privada, nunca numa versionada."""
+        texto = gerar(r"C:\x\y")["texto"]
+        arvore = re.search(r"## Passo 2 —.*?```\n(.*?)```", texto, re.S).group(1)
+        esperas = [l.strip("├─ ") for l in arvore.splitlines() if l.endswith(f"/{config.ESPERA}/")]
+        self.assertEqual(esperas, [f"vida_pessoal/{config.ESPERA}/"])
+        # a porta de entrada da privada diz o que é a pasta; a das outras não a tem
+        for pasta, tem in (("vida_pessoal", True), ("plataforma", False)):
+            indice = texto.split(f"### `{pasta}/_indice.md`", 1)[1].split("### `", 1)[0]
+            self.assertEqual(f"| `{config.ESPERA}/` |" in indice, tem, pasta)
+        # o nome é o que o método dá, não um segundo
+        metodo = (RAIZ_REPO / "metodo" / "taxonomia.md").read_text(encoding="utf-8")
+        self.assertIn(f"`{config.ESPERA}/`", metodo)
+
+
+class TestTriagemFunciona(unittest.TestCase):
+    """Executa o texto e abre cada estação como o servidor abre: a nota que a
+    triagem para tem para onde ir, e a aba Triagem enxerga a mesma espera — sem
+    editar nada à mão. Dado fictício (regra 10 de `metodo/triagem.md`): telefone
+    com DDD 99, que não existe."""
+
+    TERCEIRO = "Orçamento da cerca: ligar para (99) 99999-8888 amanhã"
+    PESSOAL = "Aniversário da sobrinha no sábado"
+
+    def setUp(self):
+        self._anterior = config._ATUAL
+        self.tmp = Path(tempfile.mkdtemp(prefix="embarque-triagem-"))
+        base = self.tmp / "estacoes"
+        executar(gerar(base)["texto"], base)
+        self.raiz = {m: (base / d["pasta"]).resolve() for m, d in config.MODELOS.items()}
+        self.privada = self.raiz["vida_pessoal"]
+        self.espera = self.privada / config.ESPERA
+
+    def tearDown(self):
+        config._ATUAL = self._anterior
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def abrir(self, modelo):
+        return config.aplicar(config.carregar(self.raiz[modelo]))
+
+    def test_toda_estacao_tem_para_onde_mandar_a_nota_parada(self):
+        for modelo in config.MODELOS:
+            with self.subTest(modelo):
+                self.abrir(modelo)
+                c = triagem_ui.conferir(self.TERCEIRO)
+                self.assertEqual(c["veredito"], "terceiro")
+                # é destes dois que saem os botões "espera" e "pessoal" da aba Nota
+                self.assertEqual(c["espera"], str(self.espera))
+                self.assertEqual(c["pessoal"], str(self.privada))
+
+    def test_espera_e_captura_pessoal_caem_na_privada(self):
+        self.abrir("plataforma")
+        lote = triagem_ui.guardar_na_espera(self.TERCEIRO)
+        self.assertEqual(Path(lote["path"]).parent, self.espera)
+        nota = triagem_ui.captura_pessoal(self.PESSOAL)
+        entrada = config.carregar(self.privada).estagio_dir(1)
+        self.assertEqual(Path(nota["path"]).parent, entrada)
+        self.assertIn(nota["id"], (self.privada / "_registro.md").read_text(encoding="utf-8"))
+        # nada caiu na estação versionada de onde a nota saiu
+        self.assertEqual(list(self.abrir("plataforma").estagio_dir(1).glob("*.md")), [])
+        # a aba Triagem enxerga o lote de qualquer estação, inclusive da privada
+        for modelo in config.MODELOS:
+            with self.subTest(modelo):
+                self.abrir(modelo)
+                self.assertEqual([l["lote"] for l in triagem_ui.lotes()], [lote["lote"]])
+        # e a privada continua íntegra para o utilitário
+        r = subprocess.run([sys.executable, str(RAIZ_REPO / "metodo" / "estacao.py"),
+                            "verificar", "--raiz", str(self.privada)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
 class TestRegistrar(unittest.TestCase):

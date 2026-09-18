@@ -135,6 +135,8 @@ PADROES = {
 #: As estações com que toda Central começa — cópia executável da seção "As
 #: estações de uma Central" de `metodo/taxonomia.md`, na ordem em que o Embarque
 #: as oferece. As três são trens: o que muda é o tamanho e para que servem.
+#: `esfera` é a da triagem que cada uma recebe — a matriz de destino de
+#: `metodo/triagem.md` —, e é por ela que o Embarque escreve a chave `triagem`.
 MODELOS = {
     "plataforma": {
         "nome": "Plataforma",
@@ -142,6 +144,7 @@ MODELOS = {
         "estagios": 5,
         "projetos": True,
         "privada": False,
+        "esfera": "profissional",
         "resumo": "o trem de inovação",
         "proposito": "O trem de inovação: ideias que podem virar funcionalidade, projeto e solução para outras pessoas.",
     },
@@ -151,6 +154,7 @@ MODELOS = {
         "estagios": 3,
         "projetos": False,
         "privada": False,
+        "esfera": "administrativo",
         "resumo": "a burocracia da empresa",
         "proposito": "A burocracia da empresa: RH, impostos, jurídico, contábil e tributário, financeiro.",
     },
@@ -160,12 +164,18 @@ MODELOS = {
         "estagios": 3,
         "projetos": False,
         "privada": True,
+        "esfera": "pessoal",
         "resumo": "a vida fora do trabalho",
         "proposito": "A vida fora do trabalho: deveres civis, família, tarefas, rotinas, lazer, amigos, a festa aqui em casa.",
     },
 }
 #: O modelo de quem não declara `modelo` — o que toda estação era antes dos outros dois.
 MODELO_PADRAO = "plataforma"
+#: A espera da triagem: a pasta, **dentro da estação privada**, onde o bruto
+#: aguarda até se saber de quem é o assunto (`metodo/triagem.md`, regra 1). Não é
+#: padrão de leitura — cada estação diz onde fica a dela em `triagem.espera`; é o
+#: nome que o Embarque escreve ali.
+ESPERA = "_triagem"
 
 
 class Config:

@@ -111,6 +111,13 @@ Cada mídia tem uma extração antes da pergunta, e riscos que só ela tem.
   é o sinal de que ele está no lugar errado.
 - `esfera` aceita `profissional`, `pessoal`, `administrativo` e `misto`.
 - Os caminhos são relativos à raiz da estação.
+- **O Embarque já escreve esta chave** nas estações que cria juntas, com os
+  caminhos vistos da raiz de cada uma — `.` é a própria estação: a Vida_Pessoal
+  declara `"pessoal": "."` e `"espera": "_triagem"`. A espera nasce em
+  `vida_pessoal/_triagem/`. Estação que você já tinha fica de fora: o Embarque
+  não tem como conferir se ela é mesmo privada, e a espera não pode cair em lugar
+  versionado. Se ela for a sua privada, declare `pessoal` e `espera` à mão nas
+  outras.
 
 ## Como rodar
 

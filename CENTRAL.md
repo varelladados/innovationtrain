@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.13.1 · atualizado em 2026-09-18
+> **Documento** · v0.13.2 · atualizado em 2026-09-18
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -89,7 +89,7 @@ e a **Vida_Pessoal** (captura, nota, ideia). Quais são mora em
 `modelo` do `estacao.json` diz qual cada estação segue, e sem ela vale
 `plataforma`.
 
-Duas regras que o código cobra:
+Três regras que o código cobra:
 
 - **`"projetos": null` não é `"pasta": ""`.** O primeiro diz "não há
   projetos" e tira o Portfólio da barra; o segundo diz que os projetos moram
@@ -98,6 +98,13 @@ Duas regras que o código cobra:
   snapshot estático e a vitrine; a aba Versões não oferece git; o `.gitignore`
   da Central deixa de fora toda estação criada em `estacoes/` que não seja
   exemplo. Quem cobra as três é `tests/test_estacoes_padrao.py`.
+- **A espera mora na privada.** O Embarque escreve a chave `triagem` em cada
+  estação que cria, com os caminhos vistos da raiz dela: `pessoal` e `espera`
+  apontam para a Vida_Pessoal e para `_triagem/` dentro dela; `administrativo`,
+  para a Admin_empresa. Que estação recebe cada esfera está no campo `esfera`
+  de `config.MODELOS`; o nome da pasta, em `config.ESPERA`. Estação que a pessoa
+  já tinha não vira espera — o texto não tem como conferir que ela é privada.
+  Quem cobra é `tests/test_embarque.py`, executando o texto.
 
 ## Nada de estação fica escrito no código
 

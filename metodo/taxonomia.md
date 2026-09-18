@@ -76,7 +76,8 @@ identificador — na estação certa. Não é estágio: não tem sigla, identifi
 nem linha no registro.
 
 Cada estação declara na chave `triagem` do `estacao.json` onde fica a espera e
-o **de-para** dos seus projetos (esfera e apelidos). O método inteiro está em
+o **de-para** dos seus projetos (esfera e apelidos); as que o Embarque cria já
+nascem com a espera declarada. O método inteiro está em
 [`triagem.md`](triagem.md).
 
 ---

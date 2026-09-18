@@ -8,7 +8,9 @@ criar arquivo numa pasta que talvez já tenha coisa dentro.
 
 Desde a 0.10 o Embarque cria **as estações padrão de uma Central**, uma pasta
 cada, lado a lado. Quais são, quantos estágios cada uma tem e para que servem
-mora em `config.MODELOS`; aqui só se monta o texto.
+mora em `config.MODELOS`; aqui só se monta o texto. Desde a 0.13.2 elas nascem
+ligadas pela triagem: cada `estacao.json` já diz onde ficam a estação privada e a
+espera dentro dela (`_triagem`).
 
 `gerar()` é **gerador puro: não escreve nada em disco**. O endpoint
 `POST /api/embarque/prompt` é POST porque a entrada é um objeto de respostas
@@ -58,7 +60,7 @@ def _slug(texto, limite=40):
     return t[:limite].strip("-") or "estacao"
 
 
-def taxonomia(modelo, nome=None):
+def taxonomia(modelo, nome=None, juntas=None):
     """O `estacao.json` de uma estação do modelo `modelo`.
 
     Os estágios são os primeiros N da taxonomia padrão: uma estação de três é
@@ -66,6 +68,9 @@ def taxonomia(modelo, nome=None):
     estágios e a aba Fluxo mostra N-1 passagens. Sem estágio de projetos, a
     chave `projetos` vai **nula**, que é o que diz "não há projetos" (uma pasta
     vazia diria "os projetos moram na raiz").
+
+    `juntas` são os modelos que nascem na mesma pasta, este inclusive — por
+    padrão, todos. É deles que sai a chave `triagem` (ver `_triagem`).
     """
     m = config.MODELOS[modelo]
     estagios = [dict(e) for e in config.PADROES["estagios"] if e["n"] <= m["estagios"]]
@@ -86,7 +91,44 @@ def taxonomia(modelo, nome=None):
         d["tipos"] = list(config.PADROES["tipos"])
     if m["privada"]:
         d["privada"] = True
+    triagem = _triagem(modelo, list(config.MODELOS) if juntas is None else juntas)
+    if triagem:
+        d["triagem"] = triagem
     return d
+
+
+def _triagem(modelo, juntas):
+    """A chave `triagem` de uma estação que nasce ao lado de `juntas`.
+
+    Cada estação diz, da própria raiz, para onde vai o que a triagem manda para
+    outra esfera: `pessoal` (a estação privada), `espera` (a pasta dentro dela
+    onde o bruto aguarda) e `administrativo`. `.` é ela mesma. Sem a chave, as
+    saídas "espera" e "pessoal" da aba Nota e a aba Triagem só funcionavam
+    depois de editar o `estacao.json` à mão.
+
+    Só entra estação criada por este mesmo texto. Irmãs na mesma pasta, o
+    `../<pasta>` fica certo mesmo que a pasta de cima mude de lugar. E a espera
+    só vai para uma privada que este texto criou: de uma estação que a pessoa já
+    tinha ele não sabe se é mesmo privada, e o bruto nunca espera em lugar
+    versionado (`metodo/triagem.md`, regra 1).
+    """
+    def rel(outro):
+        return "." if outro == modelo else f"../{config.MODELOS[outro]['pasta']}"
+
+    por_esfera = {config.MODELOS[m]["esfera"]: m for m in juntas}
+    d = {}
+    if "pessoal" in por_esfera:
+        d["pessoal"] = rel(por_esfera["pessoal"])
+        d["espera"] = config.ESPERA if d["pessoal"] == "." else f"{d['pessoal']}/{config.ESPERA}"
+    if "administrativo" in por_esfera:
+        d["administrativo"] = rel(por_esfera["administrativo"])
+    return d
+
+
+def _espera_aqui(tax):
+    """A pasta da espera, se ela mora dentro desta estação — a privada. Senão None."""
+    espera = (tax.get("triagem") or {}).get("espera")
+    return espera if espera and not espera.startswith("..") else None
 
 
 def _pastas(tax):
@@ -96,6 +138,9 @@ def _pastas(tax):
         pastas.append(f"{e['pasta']}/")
         pastas.append(f"{e['pasta']}/{hist}/")
     pastas.append(f"{tax['pendencias']}/")
+    espera = _espera_aqui(tax)
+    if espera:
+        pastas.append(f"{espera}/")
     return pastas
 
 
@@ -122,8 +167,12 @@ def _indice(tax):
                f"| `{tax['arquivos']['registro']}` | a linha do tempo de tudo. Append-only: nunca se apaga |",
                f"| `{tax['arquivos']['sem_destino']}` | gerado — o que ainda não avançou |",
                "| `estacao.json` | os nomes: estágios, siglas, tipos |",
-               f"| `{tax['pendencias']}/` | as decisões esperando por você |",
-               "", "## Como trabalhar aqui", "",
+               f"| `{tax['pendencias']}/` | as decisões esperando por você |"]
+    espera = _espera_aqui(tax)
+    if espera:
+        linhas.append(f"| `{espera}/` | a espera da triagem, de todas as estações: "
+                      "o que chegou e ainda não se sabe de quem é |")
+    linhas += ["", "## Como trabalhar aqui", "",
                "1. **Capturar é a operação mais barata:** cole e siga em frente.",
                "   Organizar é uma etapa própria, depois.",
                "2. **Nunca monte identificador à mão** — use o utilitário.",
@@ -306,7 +355,8 @@ def gerar(respostas):
     destino = DESTINOS.get(respostas.get("destino"), DESTINOS["outro"])
     tem_conteudo = respostas.get("tem_conteudo") == "tem"
     util = config.hub_dir() / "metodo" / "estacao.py"
-    taxs = {e["modelo"]: taxonomia(e["modelo"], e["nome"]) for e in criar}
+    juntas = [e["modelo"] for e in criar]
+    taxs = {e["modelo"]: taxonomia(e["modelo"], e["nome"], juntas) for e in criar}
     todos = " · ".join(m["nome"] for m in config.MODELOS.values())
 
     L = [f"# Criar as estações da minha Central em `{base}`" if criar
@@ -401,6 +451,14 @@ def _fim(L, destino, base, lista, taxs=None):
         L += ["", "> Sobre as decisões: cada estação tem uma pasta `_pendencias/`, vazia "
               "agora. Quando uma dúvida sua depender de uma escolha, ela vira um "
               "arquivo lá — uma pergunta com opções — e aparece na aba Workflow do app.", ""]
+        espera = next((f"{config.MODELOS[t['modelo']]['pasta']}/{_espera_aqui(t)}/"
+                       for t in taxs.values() if _espera_aqui(t)), None)
+        if espera:
+            L += [f"> Sobre a triagem: o que chega sem se saber de quem é espera em `{espera}`, "
+                  "dentro da estação privada — nunca numa versionada. A chave `triagem` do "
+                  "`estacao.json` de cada estação aponta para lá e para as outras estações: é o "
+                  "que dá à aba 📝 Nota para onde mandar o que não é trabalho, e à aba 🧴 Triagem "
+                  "o que mostrar.", ""]
 
     L += ["---", "",
           f"*Este texto foi gerado pela aba Embarque da Central para ser colado "

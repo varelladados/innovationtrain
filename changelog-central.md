@@ -1,5 +1,33 @@
 # Changelog — Central
 
+## 0.13.2 — 2026-09-18
+
+**As estações do Embarque nascem com a triagem ligada.** Desde a 0.11 a chave
+`triagem` do `estacao.json` diz onde ficam a espera e a estação privada, mas
+nada a escrevia: numa Central recém-criada, a aba Triagem e as saídas "espera"
+e "pessoal" da aba Nota só funcionavam depois de editar o `estacao.json` à mão.
+
+- **O texto do Embarque declara `triagem` em cada estação que cria**, com os
+  caminhos vistos da raiz de cada uma. Na Plataforma e na Admin_empresa,
+  `pessoal` e `espera` apontam para `../vida_pessoal` e
+  `../vida_pessoal/_triagem`; `administrativo`, para `../admin_empresa`. A
+  Vida_Pessoal também declara (`"pessoal": "."`, `"espera": "_triagem"`): sem
+  isso, a aba Nota aberta nela parava a nota pessoal, ou com dado de terceiro, e
+  não tinha para onde mandá-la.
+- **A espera nasce dentro da privada.** `vida_pessoal/_triagem/` entra na árvore
+  do texto, e o `_indice.md` da Vida_Pessoal diz o que é a pasta. Só estação
+  criada junto é apontada: uma que a pessoa já tinha não vira espera, porque o
+  texto não tem como conferir que ela é privada.
+- `config.MODELOS` ganha `esfera` — a da triagem que cada estação recebe — e
+  `config.ESPERA` passa a ser a fonte do nome da pasta.
+- Os `estacao.json` de exemplo continuam sem a chave, de propósito: não há
+  estação privada de exemplo para onde apontar.
+- Documentação: `metodo/triagem.md`, `metodo/taxonomia.md` e a terceira regra das
+  estações padrão no `CENTRAL.md`.
+- 5 testes novos em `tests/test_embarque.py` (309 no total). Dois executam o
+  texto e usam as saídas da triagem de verdade: a nota parada tem para onde ir em
+  qualquer das três estações, e o que vai para a espera ou para a privada cai lá.
+
 ## 0.13.1 — 2026-09-18
 
 **O índice de projetos volta a ser lido, a captura da triagem ganha a
