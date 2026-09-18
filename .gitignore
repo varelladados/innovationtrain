@@ -35,3 +35,9 @@ estacoes/_teste-trilha/
 /backlog-*.md
 /portfolio.json
 /.design/
+
+# Copia que o Explorer do Windows faz ao colar na mesma pasta ("x - Copia",
+# "x - Copy"). Uma dessas parou no meio aqui dentro e levava o central.json e o
+# cache/index.json para fora do .gitignore.
+* - Copia*
+* - Copy*
