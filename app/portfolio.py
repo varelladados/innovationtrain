@@ -35,8 +35,10 @@ DRAFT_HINTS = ("copia", "old", "backup", ".bak", "antigo", "-v0", "_v0", "teste"
 NOAR_HOSTS = ("github.io", "vercel.app", "netlify.app", "onrender.com", "fly.dev", "railway.app",
               "pages.dev", "herokuapp.com", "claude.ai/code/artifact", "streamlit.app", "hf.space")
 URL_RE = re.compile(r"https?://[^\s)>\"'`\]\\]+")
+# A linha do índice: | [rótulo](<link para o CLAUDE.md>) | git | CLAUDE.md | status | resumo |
+# O link é resolvido por `indexer.pasta_do_link`, a partir da pasta do índice.
 PROJETOS_ROW_RE = re.compile(
-    r"^\|\s*\[([^\]]+)\]\(\.\./([^/]+)/CLAUDE\.md\)\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*(.*?)\s*\|\s*$",
+    r"^\|\s*\[([^\]]+)\]\(\s*<?([^)<>]*?CLAUDE\.md)>?\s*\)\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*(.*?)\s*\|\s*$",
     re.MULTILINE)
 MAX_EXECS_POR_PROJETO = 80
 
@@ -101,11 +103,17 @@ def _git(pasta: Path):
 
 
 def _tabela_projetos():
-    indice = config.atual().caminho("indice_projetos")
-    txt = _ler(indice) if indice else ""
+    """pasta -> status, resumo e ordem, das linhas do índice. None sem índice."""
+    cfg = config.atual()
+    indice = cfg.caminho("indice_projetos")
+    if not indice or not indice.exists():
+        return None
     out = {}
-    for m in PROJETOS_ROW_RE.finditer(txt):
-        _, pasta, git, claude, status, resumo = m.groups()
+    for m in PROJETOS_ROW_RE.finditer(_ler(indice)):
+        _, alvo, git, claude, status, resumo = m.groups()
+        pasta = indexer.pasta_do_link(cfg, indice, alvo)
+        if not pasta or pasta in out:
+            continue
         resumo = re.sub(r"^\(linhagem[^)]*\)\s*", "", resumo.strip())  # nota de linhagem não é resumo
         out[pasta] = {"status": status.strip().strip("*"), "resumo": resumo, "ordem": len(out)}
     return out
@@ -267,6 +275,9 @@ def build_portfolio():
     _LOG_CACHE.clear()  # o registro muda entre reindexações; cache vale só dentro de uma build
     cfg = config.atual()
     tabela = _tabela_projetos()
+    # sem índice declarado, ninguém está fora dele (o indexer pensa igual)
+    sem_indice = tabela is None
+    tabela = tabela or {}
     base = cfg.projetos_dir
     tem_prefixo = cfg.projetos_prefixo_re is not None
     projetos = []
@@ -310,7 +321,7 @@ def build_portfolio():
             "id": fm.get("id"),
             "status": meta.get("status") or fm.get("status", "").split("—")[0].strip() or "sem status",
             "resumo": meta.get("resumo") or "",
-            "listada": item.name in tabela,
+            "listada": sem_indice or item.name in tabela,
             "ordem": meta.get("ordem", 999),
             "git": git,
             "links": links,

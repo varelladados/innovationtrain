@@ -11,6 +11,7 @@ import os
 import re
 import time
 from pathlib import Path
+from urllib.parse import unquote
 
 import config
 
@@ -198,6 +199,44 @@ def pastas_de_projeto():
     return achadas
 
 
+#: Um link para o `CLAUDE.md` de um projeto, na forma que o índice usar:
+#: `(pasta/CLAUDE.md)`, `(../pasta/CLAUDE.md)`, `(<pasta com espaço/CLAUDE.md>)`.
+LINK_CLAUDE_RE = re.compile(r"\]\(\s*<?([^)<>]*?CLAUDE\.md)>?\s*\)")
+
+
+def pasta_do_link(cfg, indice: Path, alvo: str):
+    """A pasta de projeto para a qual um link do índice aponta, ou None.
+
+    O link é resolvido a partir da pasta do próprio índice — é o que decide se
+    ele se escreve `pasta/…` ou `../pasta/…`, e o índice pode morar em qualquer
+    lugar da estação."""
+    alvo = unquote(alvo.strip())
+    if re.match(r"^[a-z][a-z0-9+.-]*:", alvo, re.I):
+        return None
+    destino = os.path.normpath(os.path.join(str(indice.parent), alvo))
+    try:
+        rel = os.path.relpath(destino, os.path.normpath(str(cfg.projetos_dir)))
+    except ValueError:      # outro disco, no Windows
+        return None
+    partes = rel.replace("\\", "/").split("/")
+    if len(partes) == 2 and partes[1] == "CLAUDE.md" and partes[0] not in (".", ".."):
+        return partes[0]
+    return None
+
+
+def projetos_listados(cfg=None):
+    """As pastas de projeto que o índice canônico lista.
+
+    None quando a estação não declara índice (ou ele não existe): aí ninguém
+    está "fora do índice", porque não há índice para estar fora."""
+    cfg = cfg or config.atual()
+    indice = cfg.caminho("indice_projetos")
+    if not indice or not indice.exists():
+        return None
+    texto = read_text(indice) or ""
+    return {p for p in (pasta_do_link(cfg, indice, m.group(1)) for m in LINK_CLAUDE_RE.finditer(texto)) if p}
+
+
 def build_index():
     sanity_check()
     cfg = config.atual()
@@ -209,15 +248,11 @@ def build_index():
 
     # Órfão = pasta de projeto que o índice canônico não lista. Sem índice
     # canônico declarado não existe "estar fora dele" — ninguém é órfão.
-    listados = set()
-    indice_projetos = cfg.caminho("indice_projetos")
-    if indice_projetos and indice_projetos.exists():
-        content = read_text(indice_projetos) or ""
-        for m in re.finditer(r"\[([A-Za-z0-9_.\-À-ÿ]+)\]\(\.\./([A-Za-z0-9_.\-À-ÿ]+)/CLAUDE\.md\)", content):
-            listados.add(m.group(2))
-        orphan_folders = project_like_folders - listados
-    else:
-        orphan_folders = set()
+    listados = projetos_listados(cfg)
+    orphan_folders = project_like_folders - listados if listados is not None else set()
+    # onde começam as pastas de projeto, relativo à raiz: "" quando é a raiz
+    base_projetos = os.path.relpath(cfg.projetos_dir, root).replace("\\", "/")
+    base_projetos = "" if base_projetos == "." else base_projetos + "/"
 
     for dirpath, dirnames, filenames in os.walk(root):
         rel_dir = os.path.relpath(dirpath, root).replace("\\", "/")
@@ -258,8 +293,9 @@ def build_index():
             snippet = " ".join(body.split())[:220] if suffix == ".md" else " ".join(content.split())[:220]
 
             parent_folder = rel_dir
-            top_folder = rel_path.split("/", 1)[0] if "/" in rel_path else ""
-            orphaned = top_folder in orphan_folders
+            dentro = rel_path[len(base_projetos):] if rel_path.startswith(base_projetos) else ""
+            pasta_projeto = dentro.split("/", 1)[0] if "/" in dentro else ""
+            orphaned = pasta_projeto in orphan_folders
             stage = lifecycle_stage(rel_path)
 
             entry = {
