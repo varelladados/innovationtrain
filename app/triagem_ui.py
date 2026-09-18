@@ -131,7 +131,10 @@ def captura_pessoal(texto):
     texto = (texto or "").strip()
     if not texto:
         raise TriagemUIError("texto vazio")
-    # a mesma trava da captura profissional: o novo-id lê o registro para achar a sequência do dia
+    # as mesmas duas travas da captura profissional (o novo-id lê o registro para
+    # achar a sequência do dia): esta enfileira as threads do servidor, e a do
+    # registro, que vale entre processos, o `capturar` pega sozinho — a linha de
+    # comando do `aplicar` grava neste registro também
     with notas._LOCK:
         ident, caminho = motor.capturar(alvo, texto, _slug(texto), lote="—", trecho="—",
                                         origem="nota direta pela Central, triada como pessoal")

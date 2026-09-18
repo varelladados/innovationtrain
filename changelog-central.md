@@ -1,5 +1,42 @@
 # Changelog — Central
 
+## 0.13.3 — 2026-09-18
+
+**Uma captura por vez em cada estação, também entre processos.** A trava da
+captura era um `threading.Lock` do servidor, e a linha de comando da triagem
+(`triagem.py aplicar --confirmar`) é outro processo: capturava sem trava nenhuma.
+Medido com dois processos gravando juntos na mesma estação: SEQ repetido, linha
+perdida no registro (mais arquivos que linhas) e, no Windows, um dos dois morto
+por `PermissionError` no `os.replace` do registro que o outro lia.
+
+- **`metodo/trava.py`**: trava do sistema operacional (`fcntl.flock` no Linux,
+  `msvcrt.locking` no Windows) sobre `_registro.md.trava`, ao lado do registro.
+  Processo que morre não deixa a estação travada — quem solta é o sistema, sem
+  PID nem idade de arquivo para adivinhar. Quem espera desiste em 30 s, com uma
+  mensagem que diz onde está a trava.
+- **O arquivo só existe enquanto a captura grava**: quem solta, apaga, na ordem
+  que cada sistema pede — no Linux apaga antes de soltar, e quem pega confere que
+  o arquivo travado ainda é o do caminho; no Windows fecha antes de apagar.
+- **Os três caminhos que gravam usam a mesma trava**: `notas.criar_captura_crua`
+  e `triagem.capturar` — e por ele `triagem_ui.captura_pessoal` e o `aplicar`. Ela
+  cobre o identificador, o arquivo, o registro e o sem-destino. O
+  `threading.Lock` do servidor continua, antes dela: enfileira as threads sem
+  espera ativa e cobre o sistema de arquivos de rede em que o `flock` é por
+  processo.
+- **Nada novo no git das estações.** O `.gitignore` de uma estação que já existe
+  não é da Central para editar, e é por isso que o arquivo não fica. O `*.trava`
+  entrou no `.gitignore` que o Embarque escreve e no da Central (para os
+  exemplos), só para o instante da gravação e para o que sobra de um processo que
+  morreu no meio — a captura seguinte o leva.
+- Documentação: sai do `CENTRAL.md` o limite que ele registrava, entra o que a
+  trava é; uma frase no `aplicar` de `metodo/triagem.md`.
+- 9 testes novos em `tests/test_trava.py` (318 no total). Os de captura sobem dois
+  processos que largam juntos — a nota da interface contra o `capturar` da linha
+  de comando, e a captura pessoal contra ele — e conferem que toda captura tem a
+  sua linha, que a sequência do dia não repete nem pula e que nenhuma trava sobra.
+  Com a trava desligada, os dois falham. Os da trava cobrem outro processo
+  segurando (quem chega espera, ou desiste no prazo) e um processo morto no meio.
+
 ## 0.13.2 — 2026-09-18
 
 **As estações do Embarque nascem com a triagem ligada.** Desde a 0.11 a chave

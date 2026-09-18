@@ -291,6 +291,7 @@ def _claude_md(tax):
 
 GITIGNORE = "\n".join([
     "cache/", "__pycache__/", "*.pyc", ".env", "*.log",
+    "", "# a trava de uma captura em andamento — some quando ela termina", "*.trava",
     "", "# temporários de editor", "*~", ".DS_Store", "Thumbs.db", "",
 ])
 

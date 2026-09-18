@@ -25,6 +25,11 @@ APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
 CACHE_DIR = PROJECT_DIR / "cache"
 BACKUPS_DIR = CACHE_DIR / "backups"
+METODO_DIR = PROJECT_DIR / "metodo"
+if str(METODO_DIR) not in sys.path:
+    sys.path.insert(0, str(METODO_DIR))
+
+import trava  # noqa: E402
 
 SECAO_MARCADOR = "captura via console (Central)"
 #: O marcador até a 0.9. Só é procurado, nunca escrito — ver a busca da seção do dia.
@@ -46,7 +51,9 @@ links: []
 
 # Serializa toda a operação (novo-id lê o LOG pra achar o maior SEQ do dia; duas
 # chamadas concorrentes sem isso podem gerar o mesmo SEQ — bug real já documentado
-# na rotina de encaminhamento equivalente feita em chat).
+# na rotina de encaminhamento equivalente feita em chat). Esta enfileira as threads
+# do servidor; entre processos quem enfileira é a trava do registro
+# (`metodo/trava.py`), que se pega depois desta, nunca antes.
 _LOCK = threading.Lock()
 
 
@@ -239,19 +246,27 @@ def criar_captura_crua(texto):
     """Cria uma captura crua a partir de texto solto: gera identificador, grava
     o arquivo no estágio de entrada, registra no registro central e regenera o
     `sem-destino`. Levanta NotaError em qualquer falha (nunca deixa
-    meio-registrado sem avisar)."""
+    meio-registrado sem avisar).
+
+    Tudo isso com a trava do registro, que vale entre processos: a linha de
+    comando da triagem (`triagem.py aplicar`) grava no mesmo registro."""
     texto = (texto or "").strip()
     if not texto:
         raise NotaError("texto vazio")
+    registro = _registro()
 
     with _LOCK:
-        id_ = _gerar_id(texto)
-        caminho = _escrever_arquivo_sbc(id_, texto)
         try:
-            _append_log(id_, texto)
-        except Exception:
-            caminho.unlink(missing_ok=True)
-            raise
-        _sincronizar_pendentes()
+            with trava.do_registro(registro):
+                id_ = _gerar_id(texto)
+                caminho = _escrever_arquivo_sbc(id_, texto)
+                try:
+                    _append_log(id_, texto)
+                except Exception:
+                    caminho.unlink(missing_ok=True)
+                    raise
+                _sincronizar_pendentes()
+        except trava.TravaErro as e:
+            raise NotaError(str(e)) from None
 
     return {"id": id_, "path": str(caminho.relative_to(config.atual().raiz)).replace("\\", "/")}

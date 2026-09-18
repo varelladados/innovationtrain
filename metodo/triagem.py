@@ -47,6 +47,8 @@ import unicodedata
 import zipfile
 from pathlib import Path
 
+import trava
+
 LIMITE_TEXTO = 2_000_000   # bytes lidos de um arquivo de texto
 LINHA_MINIFICADA = 1000    # acima disso a linha é código de biblioteca, não texto
 
@@ -815,9 +817,22 @@ def capturar(raiz_estacao, texto, slug, lote, trecho, removido=(), origem=None):
     estágio de entrada, linha no registro (append-only), sem-destino regenerado.
     Mesma mecânica da captura da interface, com a origem e a linhagem da triagem:
     o arquivo e o registro são gravados de uma vez, o registro mantém o fim de
-    linha que já tinha, e um registro que falha não deixa o arquivo para trás."""
+    linha que já tinha, e um registro que falha não deixa o arquivo para trás.
+
+    E com a mesma trava do registro que a interface usa (`trava.py`): esta função
+    roda tanto no servidor quanto na linha de comando, e os dois gravam no mesmo
+    registro."""
     raiz = Path(raiz_estacao)
     est = _json_estacao(raiz)
+    registro = raiz / est["arquivos"]["registro"]
+    try:
+        with trava.do_registro(registro):
+            return _capturar(raiz, est, registro, texto, slug, lote, trecho, removido, origem)
+    except trava.TravaErro as e:
+        raise TriagemErro(str(e)) from None
+
+
+def _capturar(raiz, est, registro, texto, slug, lote, trecho, removido, origem):
     sigla = est["estagios"][0]["sigla"]
     util = Path(__file__).resolve().parent / "estacao.py"
     r = subprocess.run([sys.executable, str(util), "novo-id", "--raiz", str(raiz), "--etapa", sigla,
@@ -842,7 +857,6 @@ def capturar(raiz_estacao, texto, slug, lote, trecho, removido=(), origem=None):
         f"tags: []\nstatus: vaga\nlinks: []\ntriagem:\n  lote: {lote}\n  trecho: {trecho}\n"
         f"  removido: [{', '.join(removido)}]\n{marcas}---\n\n## Conteúdo bruto\n\n{texto.strip()}\n",
         newline=None)
-    registro = raiz / est["arquivos"]["registro"]
     try:
         original = ""
         if registro.exists():

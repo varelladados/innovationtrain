@@ -27,6 +27,11 @@ pendencias/
 # foi uma execucao interrompida.
 estacoes/_teste-trilha/
 
+# A trava de uma captura em andamento, ao lado do registro de cada estacao
+# (metodo/trava.py). Existe so' enquanto a captura grava; se sobrar, foi um
+# processo que morreu no meio, e a proxima captura a leva embora.
+*.trava
+
 # Papel de trabalho nao entra neste repositorio: ele e' publico.
 # Ver tests/test_publicacao.py, que falha o build se algum voltar.
 /plano-*.md

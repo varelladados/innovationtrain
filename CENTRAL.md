@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.13.2 · atualizado em 2026-09-18
+> **Documento** · v0.13.3 · atualizado em 2026-09-18
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -164,6 +164,7 @@ central/                  ← a raiz do repositório É o hub
 ├── metodo/               regras, taxonomia, classificar, triagem, versionamento, salvar-tudo e os templates
 │   ├── estacao.py        o utilitário: novo-id, gerar-sem-destino, verificar, reiniciar
 │   ├── plataforma.py     o nome dele até a 0.9 — poucas linhas que chamam o estacao.py
+│   ├── trava.py          a trava do registro: uma captura por vez na estação, entre processos
 │   └── triagem.py        o passo antes da captura: levantamento, relatório e aplicar
 ├── estacoes/            as de exemplo; as suas, que o Embarque cria aqui, ficam fora do git
 │   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
@@ -269,7 +270,7 @@ silêncio — `tests/test_trilha.py` cobra isso.
 | endpoint | escreve | módulo | trava de segurança |
 |---|---|---|---|
 | `POST /api/backlog/toggle` | `- [ ]`/`- [x]` em backlog | `server.py` | tipo `backlog` no índice + `expected_text` (409) + backup |
-| `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional). Por destino: **profissional** — identificador via utilitário (subprocess) + trava + arquivo atômico + registro append-only com backup; **pessoal** — o mesmo, com o registro gravado de uma vez e **sem cópia para o cache** (o `cache/` é da estação aberta, e a pessoal é outra); **espera** — pasta nova + linha append-only no `_lotes.md`, nada é sobrescrito |
+| `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional). Por destino: **profissional** — identificador via utilitário (subprocess) + trava do registro (vale entre processos) + arquivo atômico + registro append-only com backup; **pessoal** — o mesmo, com o registro gravado de uma vez e **sem cópia para o cache** (o `cache/` é da estação aberta, e a pessoal é outra); **espera** — pasta nova + linha append-only no `_lotes.md`, nada é sobrescrito |
 | `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
 | `POST /api/exemplo/passo` | a estação de exemplo inteira, no passo pedido da trilha | `trilha.py` → `metodo/estacao.py reiniciar` | só existe em estação que declara `estado_inicial` (uma sua não declara); cada passo é um instantâneo pronto — nada é calculado, e o de origem continua em `estacoes/_inicial/` |
@@ -316,18 +317,34 @@ chamado via `subprocess` (nunca import — `novo-id` faz `sys.exit()` em erro, o
 que mataria o servidor); grava o `.md` com gravação atômica (`os.replace`);
 acrescenta uma linha na seção do dia do registro central — nunca edita linha
 existente (o registro é append-only), lê e escreve sem tradução de fim de linha
-pra preservar LF/CRLF do arquivo original; um `threading.Lock()` serializa
-criações concorrentes, porque `novo-id` lê a maior sequência do dia no momento da
-chamada — duas notas quase simultâneas sem essa trava podiam colidir no mesmo
-número. **A trava é do processo do servidor:** uma captura pela linha de comando
-(`triagem.py aplicar`) no mesmo instante não a enxerga. Nunca classifica: o item
-nasce sempre no primeiro estágio — ou, se a triagem mandar, na espera ou na
-estação privada, nunca em outro estágio.
+pra preservar LF/CRLF do arquivo original. Nunca classifica: o item nasce sempre
+no primeiro estágio — ou, se a triagem mandar, na espera ou na estação privada,
+nunca em outro estágio.
+
+**Uma captura por vez em cada estação, venha de onde vier.** `novo-id` acha a
+sequência do dia lendo o registro, e a captura reescreve o registro com a linha
+nova: duas ao mesmo tempo pegam o mesmo número, e a segunda reescrita apaga a
+linha da primeira. São duas travas, e a ordem é sempre esta: um
+`threading.Lock()` enfileira as threads do servidor, e a **trava do registro**
+(`metodo/trava.py`) enfileira os processos — a linha de comando
+(`triagem.py aplicar`) grava no mesmo registro que a interface. A segunda é do
+sistema operacional (`flock` no Linux, `msvcrt.locking` no Windows) sobre um
+`_registro.md.trava` ao lado do registro, e disso saem as duas propriedades que
+importam:
+
+- **processo que morre não trava a estação** — quem solta é o sistema, sem PID
+  gravado nem idade de arquivo para adivinhar;
+- **o arquivo só existe enquanto uma captura grava** — quem solta, apaga. Uma
+  trava permanente apareceria no `git status` de toda estação versionada, e o
+  `.gitignore` de uma estação que já existe não é da Central para editar. O
+  `*.trava` do `.gitignore` do Embarque e do da Central cobre só esse instante, e
+  o que sobra de um processo que morreu no meio (a captura seguinte o leva).
 
 A captura **pessoal** (`triagem_ui.captura_pessoal` → `triagem.capturar`) segue
-a mesma mecânica, com a mesma trava, e grava o arquivo e o registro de uma vez
-(temporário + `replace`), recusa identificador que já existe e apaga o arquivo se
-o registro falhar. Ela **não** copia o registro para `cache/backups/`: o `cache/`
+a mesma mecânica, com as mesmas duas travas (a do registro é a da estação
+pessoal), e grava o arquivo e o registro de uma vez (temporário + `replace`),
+recusa identificador que já existe e apaga o arquivo se o registro falhar. Ela
+**não** copia o registro para `cache/backups/`: o `cache/`
 guarda o que é da estação que a Central está operando, e a pessoal é outra — e
 privada. A proteção é a gravação de uma vez; o histórico dela é o git dela.
 

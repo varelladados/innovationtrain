@@ -151,7 +151,8 @@ python metodo/triagem.py aplicar <lote> --raiz <estação> --responder P1=A --re
   frontmatter `triagem: {lote, trecho, removido}`. Sem `--confirmar`, só
   simula. **Recusa** texto que vai para estação não privada e ainda tem sinal
   de terceiro. Rodar de novo não duplica. Ao terminar, sobe a versão e refaz os
-  relatórios.
+  relatórios. Pode rodar com a Central aberta: cada captura segura a trava do
+  registro da estação de destino (`trava.py`), a mesma que a aba Nota usa.
 
 O formato, no essencial:
 
