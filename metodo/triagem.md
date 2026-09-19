@@ -150,9 +150,12 @@ python metodo/triagem.py aplicar <lote> --raiz <estação> --responder P1=A --re
   utilitário, linha no registro sob `## Entradas <data> — triagem`, e no
   frontmatter `triagem: {lote, trecho, removido}`. Sem `--confirmar`, só
   simula. **Recusa** texto que vai para estação não privada e ainda tem sinal
-  de terceiro. Rodar de novo não duplica. Ao terminar, sobe a versão e refaz os
-  relatórios. Pode rodar com a Central aberta: cada captura segura a trava do
-  registro da estação de destino (`trava.py`), a mesma que a aba Nota usa.
+  de terceiro. Rodar de novo não duplica — nem depois de uma captura que falhou
+  no meio: o que já tinha seguido vai para o `decisoes.json` antes de o erro
+  aparecer, e a rodada seguinte leva só o que faltou. Ao terminar, sobe a versão
+  e refaz os relatórios. Pode rodar com a Central aberta: cada captura segura a
+  trava do registro da estação de destino (`trava.py`), a mesma que a aba Nota
+  usa.
 
 O formato, no essencial:
 

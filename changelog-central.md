@@ -1,5 +1,35 @@
 # Changelog — Central
 
+## 0.14.2 — 2026-09-19
+
+**Uma captura que falha no meio do `aplicar` não faz a rodada seguinte repetir
+as que já tinham seguido.** O `aplicar --confirmar` juntava o `seguiu` em
+memória e só gravava o `decisoes.json` no fim. Se uma captura do meio levantava
+(o `novo-id` que falha, disco, o `PermissionError` do Windows no registro, a
+trava ocupada por mais de 30 s), as que já eram arquivo e linha no registro
+ficavam fora do `seguiu`, e rodar de novo as capturava outra vez, com outro
+identificador. Medido pela linha de comando: o mesmo trecho capturado duas
+vezes, duas linhas no registro, e o `seguiu` apontando só para a segunda.
+
+- **O que já seguiu é gravado antes de o erro subir**: o `seguiu`, as respostas
+  e a versão nova, com "parou antes do fim" na nota da versão; os relatórios são
+  refeitos. Vale também para o Ctrl+C.
+- **O erro que sobe é o que interrompeu.** Se refazer os relatórios falha (o
+  mascarado recusado, por exemplo), isso vai para a saída de erro sem tomar o
+  lugar dele. Se nem o `decisoes.json` grava, a saída de erro traz, pronto para
+  acrescentar ao `seguiu`, o que já tinha seguido.
+- **O sem-destino não desfaz uma captura feita.** Ele é refeito depois de o
+  arquivo e a linha do registro estarem gravados; se passava do prazo, o
+  `capturar` levantava por uma captura que já tinha acontecido, e o `aplicar` a
+  repetia. Agora o sem-destino só fica atrasado, como já era na captura da
+  interface.
+- Documentação: uma frase no `aplicar` de `metodo/triagem.md`.
+- 4 testes novos em `tests/test_triagem.py` (322 no total): a segunda captura
+  falha e a mesma linha de comando, rodada de novo, não repete a primeira; o
+  relatório recusado não esconde o erro; o `decisoes.json` que não grava diz o
+  que já seguiu; o sem-destino que passa do prazo. Os quatro falham no código de
+  antes.
+
 ## 0.14.1 — 2026-09-18
 
 **Uma captura por vez em cada estação, também entre processos.** A trava da

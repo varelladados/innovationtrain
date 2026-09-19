@@ -885,9 +885,16 @@ def _capturar(raiz, est, registro, texto, slug, lote, trecho, removido, origem):
     except BaseException:
         arquivo.unlink(missing_ok=True)
         raise
-    if est.get("arquivos", {}).get("sem_destino") and (raiz / est["arquivos"]["sem_destino"]).exists():
-        subprocess.run([sys.executable, str(util), "gerar-sem-destino", "--raiz", str(raiz)],
-                       capture_output=True, text=True, encoding="utf-8", timeout=60)
+    # daqui em diante a captura está feita, e o sem-destino é derivado do
+    # registro: se regenerar falhar ou passar do prazo, ele só fica atrasado,
+    # como na captura da interface. Levantar diria a quem chamou que a captura
+    # não aconteceu — e o `aplicar` a repetiria na rodada seguinte
+    try:
+        if est.get("arquivos", {}).get("sem_destino") and (raiz / est["arquivos"]["sem_destino"]).exists():
+            subprocess.run([sys.executable, str(util), "gerar-sem-destino", "--raiz", str(raiz)],
+                           capture_output=True, text=True, encoding="utf-8", timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        pass
     return novo, str(arquivo)
 
 
@@ -967,35 +974,72 @@ def cmd_aplicar(lote, raiz, respostas, confirmar=False):
     if not confirmar:
         print("simulação: nada foi gravado. Rode de novo com --confirmar.")
         return 1 if erros else 0
-    mudou = bool(respostas)
-    for p in prontas:
-        t = p["trecho"]
-        if p["destino"] == "encerrar":
-            t["esfera"] = "encerrado"
-            d["seguiu"].append({"trecho": t["id"], "destino": "encerrar", "virou": "encerrado", "onde": "—"})
-            mudou = True
-        elif "pronto" in p:
-            destino_raiz, texto = p["pronto"]
-            novo, caminho = capturar(destino_raiz, texto, p["slug"], d["lote"], t["id"], t.get("removido") or ())
-            onde = "estação pessoal" if p["destino"] == "pessoal" else f"{Path(caminho).parent.name}/"
-            d["seguiu"].append({"trecho": t["id"], "destino": p["destino"],
-                                "virou": novo if p["destino"] != "pessoal" else "captura privada",
-                                "onde": onde})
-            print(f"  ✓ {t['id']} → {novo}")
-            mudou = True
-    if mudou:
-        d["versao"] += 1
-        hoje = datetime.date.today().isoformat()
-        d["nota_versao"] = f"respostas de {hoje}: " + ", ".join(f"{k}={v}" for k, v in respostas.items())
-        (lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        if d.get("saida_mascarado"):
-            mascarado = Path(d["saida_mascarado"])
-            if not mascarado.is_absolute():
-                mascarado = Path(raiz) / mascarado
-            cmd_decidir(lote, mascarado)
-        else:
-            cmd_decidir(lote)
+    antes = len(d["seguiu"])
+    try:
+        for p in prontas:
+            t = p["trecho"]
+            if p["destino"] == "encerrar":
+                t["esfera"] = "encerrado"
+                d["seguiu"].append({"trecho": t["id"], "destino": "encerrar", "virou": "encerrado", "onde": "—"})
+            elif "pronto" in p:
+                destino_raiz, texto = p["pronto"]
+                novo, caminho = capturar(destino_raiz, texto, p["slug"], d["lote"], t["id"], t.get("removido") or ())
+                onde = "estação pessoal" if p["destino"] == "pessoal" else f"{Path(caminho).parent.name}/"
+                d["seguiu"].append({"trecho": t["id"], "destino": p["destino"],
+                                    "virou": novo if p["destino"] != "pessoal" else "captura privada",
+                                    "onde": onde})
+                print(f"  ✓ {t['id']} → {novo}")
+    except BaseException:
+        # o que já virou captura precisa estar em `seguiu` antes de o erro subir:
+        # sem isso, rodar de novo captura o mesmo trecho outra vez, com outro id
+        if respostas or len(d["seguiu"]) > antes:
+            _gravar_interrompida(lote, raiz, d, respostas, d["seguiu"][antes:])
+        raise
+    if respostas or len(d["seguiu"]) > antes:
+        _gravar_decisoes(lote, d, respostas)
+        _refazer_relatorios(lote, raiz, d)
     return 1 if erros else 0
+
+
+def _gravar_decisoes(lote, d, respostas, nota=""):
+    """Sobe a versão e grava no decisoes.json o que a rodada fez."""
+    d["versao"] += 1
+    hoje = datetime.date.today().isoformat()
+    d["nota_versao"] = f"respostas de {hoje}: " + ", ".join(f"{k}={v}" for k, v in respostas.items()) + nota
+    (lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _refazer_relatorios(lote, raiz, d):
+    if d.get("saida_mascarado"):
+        mascarado = Path(d["saida_mascarado"])
+        if not mascarado.is_absolute():
+            mascarado = Path(raiz) / mascarado
+        cmd_decidir(lote, mascarado)
+    else:
+        cmd_decidir(lote)
+
+
+def _gravar_interrompida(lote, raiz, d, respostas, nesta_rodada):
+    """Uma captura do meio falhou: grava o que a rodada já tinha feito.
+
+    Não levanta. Quem chamou precisa ver o erro que interrompeu, não um desta
+    gravação — o relatório mascarado recusado, por exemplo —, e o que falhar
+    aqui vai para a saída de erro, que, ao contrário da padrão, não levanta por
+    acento numa saída cp1252."""
+    try:
+        _gravar_decisoes(lote, d, respostas, " — parou antes do fim; rodar de novo leva o que faltou")
+    except Exception as e:
+        print(f"  ERRO: o decisoes.json não foi gravado ({e})."
+              + (" Antes de rodar de novo, acrescente ao `seguiu` dele o que já seguiu nesta rodada "
+                 "— senão vira captura outra vez: " + json.dumps(nesta_rodada, ensure_ascii=False)
+                 if nesta_rodada else ""), file=sys.stderr)
+        return
+    try:
+        print(f"  parou antes do fim: o que já seguiu está no decisoes.json (v{d['versao']}); "
+              "rodar de novo leva só o que faltou.", file=sys.stderr)
+        _refazer_relatorios(lote, raiz, d)
+    except Exception as e:
+        print(f"  ERRO ao refazer os relatórios (o decisoes.json está gravado): {e}", file=sys.stderr)
 
 
 def carregar_config(raiz):

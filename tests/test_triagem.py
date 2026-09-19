@@ -7,10 +7,12 @@ DDD 99, que não existe.
 import contextlib
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "metodo"))
 
@@ -255,9 +257,25 @@ class DecidirEAplicar(unittest.TestCase):
         self.tmp.cleanup()
 
     def aplicar(self, *args, **kwargs):
-        # chamado sem o main(), o relatório com "→" esbarra na saída cp1252 do Windows
-        with contextlib.redirect_stdout(io.StringIO()):
+        # chamado sem o main(), o relatório com "→" esbarra na saída cp1252 do Windows;
+        # a saída de erro fica em self.erro, para o teste conferir o que ela disse
+        self.erro = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(self.erro):
             return triagem.cmd_aplicar(*args, **kwargs)
+
+    def segunda_captura_falha(self, erro):
+        """Troca o `capturar`: a primeira captura acontece de verdade, a segunda levanta `erro`."""
+        real, chamadas = triagem.capturar, []
+
+        def capturar(*a, **k):
+            chamadas.append(a)
+            if len(chamadas) == 2:
+                raise erro
+            return real(*a, **k)
+        return mock.patch.object(triagem, "capturar", side_effect=capturar)
+
+    def decisoes(self):
+        return json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))
 
     def test_decidir_gera_os_dois_e_o_mascarado_nao_tem_o_privado(self):
         masc = Path(self.tmp.name) / "masc.md"
@@ -301,6 +319,69 @@ class DecidirEAplicar(unittest.TestCase):
         self.aplicar(self.lote, self.prof, {}, confirmar=True)
         self.assertEqual(len(list((self.prof / "1-capturas").glob("*.md"))), 1)
         self.assertEqual(len(list((self.priv / "1-capturas").glob("*.md"))), 1)
+
+    def test_captura_que_falha_no_meio_nao_perde_o_que_ja_seguiu(self):
+        # A (profissional) vira captura; B (pessoal) esbarra na trava ocupada. A tem de
+        # estar em `seguiu` antes de o erro subir — senão a rodada seguinte a captura de novo
+        ocupada = triagem.TriagemErro("outra captura está gravando nesta estação há mais de 30 s")
+        with self.segunda_captura_falha(ocupada), self.assertRaises(triagem.TriagemErro) as cm:
+            self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
+        self.assertIs(cm.exception, ocupada)
+        caps = list((self.prof / "1-capturas").glob("*.md"))
+        self.assertEqual(len(caps), 1)
+        d = self.decisoes()
+        self.assertEqual([(s["trecho"], s["virou"]) for s in d["seguiu"]], [("A", caps[0].stem)])
+        self.assertEqual(d["versao"], 2)
+        self.assertEqual([p.get("resposta") for p in d["perguntas"]], ["A", "A"])
+        self.assertIn("parou antes do fim", d["nota_versao"])
+        self.assertTrue((self.lote / "relatorio-v2.md").exists())
+        # a mesma linha de comando outra vez: A não vira captura de novo, e B segue
+        self.assertEqual(self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True), 0)
+        self.assertEqual(list((self.prof / "1-capturas").glob("*.md")), caps)
+        self.assertEqual((self.prof / "_registro.md").read_text(encoding="utf-8").count("[arquivo]("), 1)
+        self.assertEqual(len(list((self.priv / "1-capturas").glob("*.md"))), 1)
+        self.assertEqual([s["trecho"] for s in self.decisoes()["seguiu"]], ["A", "B"])
+
+    def test_relatorio_recusado_nao_esconde_o_erro_que_interrompeu(self):
+        # Ctrl+C na espera da trava, e o relatório mascarado recusado: sobe o que
+        # interrompeu, não a recusa — e o que seguiu fica gravado do mesmo jeito
+        masc = Path(self.tmp.name) / "masc.md"
+        d = self.decisoes()
+        d.update(saida_mascarado=str(masc), alertas=["senha: gato4213verde"])
+        (self.lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        with self.segunda_captura_falha(KeyboardInterrupt()), self.assertRaises(KeyboardInterrupt):
+            self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
+        self.assertEqual([s["trecho"] for s in self.decisoes()["seguiu"]], ["A"])
+        self.assertFalse(masc.exists())
+        self.assertIn("ERRO ao refazer os relatórios", self.erro.getvalue())
+
+    def test_decisoes_que_nao_grava_diz_o_que_ja_seguiu(self):
+        # nem o decisoes.json grava: o erro que sobe continua sendo o da captura, e a
+        # saída de erro diz o que acrescentar ao `seguiu` antes de rodar de novo
+        ocupada = triagem.TriagemErro("trava ocupada")
+        with self.segunda_captura_falha(ocupada), \
+                mock.patch.object(triagem, "_gravar_decisoes", side_effect=OSError("disco cheio")), \
+                self.assertRaises(triagem.TriagemErro) as cm:
+            self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
+        self.assertIs(cm.exception, ocupada)
+        cap = next((self.prof / "1-capturas").glob("*.md"))
+        self.assertIn(f'"virou": "{cap.stem}"', self.erro.getvalue())
+
+    def test_sem_destino_que_passa_do_prazo_nao_desfaz_a_captura(self):
+        # o sem-destino é refeito depois de a captura estar gravada: se ele passar do
+        # prazo, a captura vale — e vai para o `seguiu`, em vez de ser repetida depois
+        (self.prof / "_sem-destino.md").write_text("# Sem destino\n", encoding="utf-8")
+        rodar, lentos = subprocess.run, []
+
+        def sem_destino_lento(cmd, *a, **k):
+            if "gerar-sem-destino" in cmd:
+                lentos.append(cmd)
+                raise subprocess.TimeoutExpired(cmd, k.get("timeout"))
+            return rodar(cmd, *a, **k)
+        with mock.patch.object(subprocess, "run", side_effect=sem_destino_lento):
+            self.assertEqual(self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True), 0)
+        self.assertEqual(len(lentos), 1)
+        self.assertEqual([s["trecho"] for s in self.decisoes()["seguiu"]], ["A", "B"])
 
     def test_recusa_texto_profissional_com_dado_de_terceiro(self):
         rc = self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "B"}, confirmar=True)
