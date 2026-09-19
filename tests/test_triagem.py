@@ -355,15 +355,25 @@ class DecidirEAplicar(unittest.TestCase):
         self.assertFalse(masc.exists())
         self.assertIn("ERRO ao refazer os relatórios", self.erro.getvalue())
 
-    def test_decisoes_que_nao_grava_diz_o_que_ja_seguiu(self):
-        # nem o decisoes.json grava: o erro que sobe continua sendo o da captura, e a
-        # saída de erro diz o que acrescentar ao `seguiu` antes de rodar de novo
+    def test_decisoes_que_nao_grava_fica_inteiro_e_diz_o_que_ja_seguiu(self):
+        # nem o decisoes.json grava (aberto em outro programa, no Windows): o anterior
+        # fica inteiro, sobe o erro da captura, e a saída de erro diz o que acrescentar
+        # ao `seguiu` antes de rodar de novo
+        trocar = triagem.os.replace
+
+        def decisoes_preso(origem, destino):
+            if Path(destino).name == "decisoes.json":
+                raise PermissionError(13, "o arquivo está aberto em outro processo")
+            return trocar(origem, destino)
         ocupada = triagem.TriagemErro("trava ocupada")
         with self.segunda_captura_falha(ocupada), \
-                mock.patch.object(triagem, "_gravar_decisoes", side_effect=OSError("disco cheio")), \
+                mock.patch.object(triagem.os, "replace", side_effect=decisoes_preso), \
                 self.assertRaises(triagem.TriagemErro) as cm:
             self.aplicar(self.lote, self.prof, {"P1": "A", "P2": "A"}, confirmar=True)
         self.assertIs(cm.exception, ocupada)
+        d = self.decisoes()
+        self.assertEqual((d["versao"], d["seguiu"]), (1, []))
+        self.assertEqual(list(self.lote.glob(".decisoes.json.*")), [])
         cap = next((self.prof / "1-capturas").glob("*.md"))
         self.assertIn(f'"virou": "{cap.stem}"', self.erro.getvalue())
 

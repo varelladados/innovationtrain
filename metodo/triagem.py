@@ -996,17 +996,27 @@ def cmd_aplicar(lote, raiz, respostas, confirmar=False):
             _gravar_interrompida(lote, raiz, d, respostas, d["seguiu"][antes:])
         raise
     if respostas or len(d["seguiu"]) > antes:
-        _gravar_decisoes(lote, d, respostas)
+        _gravar_decisoes(lote, d, respostas, d["seguiu"][antes:])
         _refazer_relatorios(lote, raiz, d)
     return 1 if erros else 0
 
 
-def _gravar_decisoes(lote, d, respostas, nota=""):
-    """Sobe a versão e grava no decisoes.json o que a rodada fez."""
+def _gravar_decisoes(lote, d, respostas, nesta_rodada, nota=""):
+    """Sobe a versão e grava no decisoes.json o que a rodada fez — de uma vez,
+    como o registro: um disco cheio no meio deixa o anterior inteiro, em vez de
+    um arquivo pela metade. Se não gravar, a saída de erro diz o que seguiu
+    nesta rodada, porque fora do `seguiu` ele vira captura outra vez."""
     d["versao"] += 1
     hoje = datetime.date.today().isoformat()
     d["nota_versao"] = f"respostas de {hoje}: " + ", ".join(f"{k}={v}" for k, v in respostas.items()) + nota
-    (lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    try:
+        _gravar_atomico(lote / "decisoes.json", json.dumps(d, ensure_ascii=False, indent=2) + "\n", newline=None)
+    except BaseException as e:
+        print(f"  ERRO: o decisoes.json não foi gravado ({e})."
+              + (" Antes de rodar de novo, acrescente ao `seguiu` dele o que já seguiu nesta rodada "
+                 "— senão vira captura outra vez: " + json.dumps(nesta_rodada, ensure_ascii=False)
+                 if nesta_rodada else ""), file=sys.stderr)
+        raise
 
 
 def _refazer_relatorios(lote, raiz, d):
@@ -1027,13 +1037,9 @@ def _gravar_interrompida(lote, raiz, d, respostas, nesta_rodada):
     aqui vai para a saída de erro, que, ao contrário da padrão, não levanta por
     acento numa saída cp1252."""
     try:
-        _gravar_decisoes(lote, d, respostas, " — parou antes do fim; rodar de novo leva o que faltou")
-    except Exception as e:
-        print(f"  ERRO: o decisoes.json não foi gravado ({e})."
-              + (" Antes de rodar de novo, acrescente ao `seguiu` dele o que já seguiu nesta rodada "
-                 "— senão vira captura outra vez: " + json.dumps(nesta_rodada, ensure_ascii=False)
-                 if nesta_rodada else ""), file=sys.stderr)
-        return
+        _gravar_decisoes(lote, d, respostas, nesta_rodada, " — parou antes do fim; rodar de novo leva o que faltou")
+    except Exception:
+        return  # o que seguiu nesta rodada já foi para a saída de erro
     try:
         print(f"  parou antes do fim: o que já seguiu está no decisoes.json (v{d['versao']}); "
               "rodar de novo leva só o que faltou.", file=sys.stderr)

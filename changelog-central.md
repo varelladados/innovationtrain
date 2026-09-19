@@ -16,8 +16,13 @@ vezes, duas linhas no registro, e o `seguiu` apontando só para a segunda.
   refeitos. Vale também para o Ctrl+C.
 - **O erro que sobe é o que interrompeu.** Se refazer os relatórios falha (o
   mascarado recusado, por exemplo), isso vai para a saída de erro sem tomar o
-  lugar dele. Se nem o `decisoes.json` grava, a saída de erro traz, pronto para
-  acrescentar ao `seguiu`, o que já tinha seguido.
+  lugar dele.
+- **O `decisoes.json` é gravado de uma vez**, por temporário + `replace`, como o
+  registro. A gravação que o erro agora dispara pode cair num disco cheio, e o
+  `write_text` de antes, interrompido, deixava o arquivo pela metade: as
+  decisões do lote perdidas. Se ele não grava — no fim da rodada ou depois de um
+  erro —, o anterior fica inteiro e a saída de erro traz, pronto para
+  acrescentar ao `seguiu`, o que seguiu nesta rodada.
 - **O sem-destino não desfaz uma captura feita.** Ele é refeito depois de o
   arquivo e a linha do registro estarem gravados; se passava do prazo, o
   `capturar` levantava por uma captura que já tinha acontecido, e o `aplicar` a
@@ -26,9 +31,9 @@ vezes, duas linhas no registro, e o `seguiu` apontando só para a segunda.
 - Documentação: uma frase no `aplicar` de `metodo/triagem.md`.
 - 4 testes novos em `tests/test_triagem.py` (322 no total): a segunda captura
   falha e a mesma linha de comando, rodada de novo, não repete a primeira; o
-  relatório recusado não esconde o erro; o `decisoes.json` que não grava diz o
-  que já seguiu; o sem-destino que passa do prazo. Os quatro falham no código de
-  antes.
+  relatório recusado não esconde o erro; o `decisoes.json` que não grava fica
+  inteiro e diz o que já seguiu; o sem-destino que passa do prazo. Os quatro
+  falham no código de antes.
 
 ## 0.14.1 — 2026-09-18
 
