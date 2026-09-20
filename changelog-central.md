@@ -1,5 +1,34 @@
 # Changelog — Central
 
+## 0.16.0 — 2026-09-20
+
+**O snapshot estático ganha `--sem-dado-pessoal`, e é ele que torna publicável o
+arquivo que já existia para ser publicado.** O exportador nasceu "pra quando o
+servidor local não alcança quem precisa ver (celular, alguém de fora)", mas
+levava o acervo como ele é — e um acervo profissional real carrega telefone de
+terceiro em dossiê de fornecedor, nota de stakeholder e captura antiga. Medido
+numa estação real antes de publicar: **193 telefones, 54 e-mails, 32 CNPJ e 1
+CPF**. Dado que não é do dono, que ninguém decidiu publicar, e que sairia num
+link aberto no celular.
+
+- `--sem-dado-pessoal` mascara telefone, e-mail, CPF e CNPJ, e imprime a
+  contagem do que removeu; o banner do snapshot ganha o selo, e o arquivo sai
+  com nome próprio (`central-static-sem-dado-pessoal.html`), pra não se
+  confundir com o completo.
+- **A máscara roda sobre o JSON já serializado**, não campo a campo: o snapshot
+  carrega texto em seis lugares (índice, corpo dos arquivos, registro,
+  portfólio, pendências, avanço) e varrer um só deixaria os outros cinco
+  passando. O rótulo é fixo e sem aspas, então o JSON continua parseável — tem
+  teste.
+- **As bordas do padrão são o filtro de verdade.** A primeira versão casava
+  dentro de uma sequência maior e trocava só a cauda: num trecho de transcrição
+  sobrou `21 9998…` visível ao lado do rótulo de removido. Exigir
+  não-alfanumérico dos dois lados come o número inteiro e poupa identificador
+  hexadecimal (id do OneNote, hash de imagem), que tem letra grudada no dígito.
+  O caso virou `tests/test_export_static.py::test_nao_deixa_cauda_visivel`.
+- O padrão do comando **não mudou**: sem a opção, o snapshot sai como sempre
+  saiu. Publicar é decisão (regra 7), e agora ela tem as duas formas.
+
 ## 0.15.0 — 2026-09-20
 
 **A aba Workflow passa a mostrar as pendências de todas as estações, não só as

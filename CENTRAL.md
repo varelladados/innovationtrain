@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.15.0 · atualizado em 2026-09-20
+> **Documento** · v0.16.0 · atualizado em 2026-09-20
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -147,7 +147,7 @@ central/                  ← a raiz do repositório É o hub
 │   ├── search.py         busca em memória sobre o índice
 │   ├── log_parser.py     parser dedicado das tabelas do registro central
 │   ├── metrics.py        métricas do Dashboard
-│   ├── export_static.py  snapshot estático de arquivo único (dist/), pra compartilhar sem servidor
+│   ├── export_static.py  snapshot estático de arquivo único (dist/), pra compartilhar sem servidor; `--sem-dado-pessoal` mascara telefone/e-mail/CPF/CNPJ antes de publicar
 │   ├── portfolio.py      inventário de "tudo que roda" por projeto — curadoria via portfolio.json
 │   ├── export_portfolio.py vitrine pública — só o que pode ser visto de fora
 │   ├── notas.py          POST /api/nota/nova — cria captura crua sem sessão de IA

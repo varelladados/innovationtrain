@@ -13,6 +13,13 @@ que tolera a ausência dessas tags).
 
     python app/export_static.py            # gera dist/central-static.html
     python app/export_static.py --full     # inclui o <html>/<head>/<body> pra abrir sozinho
+    python app/export_static.py --sem-dado-pessoal   # mascara telefone, e-mail, CPF e CNPJ
+
+`--sem-dado-pessoal` existe porque publicar é diferente de exportar: o acervo
+profissional carrega telefone de terceiro em dossiê de loja, nota de stakeholder
+e captura antiga — dado que não é do dono. Sem a máscara, "abrir a Central no
+celular por um link" leva o dado dos outros junto, e isso é decisão de
+publicação, não de conveniência.
 """
 import json
 import re
@@ -162,7 +169,49 @@ document.body.classList.add("static");
 """
 
 
-def build_html(full=False):
+#: Padrões de dado pessoal mascarados por `--sem-dado-pessoal`. Aplicados sobre o
+#: JSON já serializado, e não campo a campo, porque o snapshot carrega texto em
+#: seis lugares diferentes (índice, corpo dos arquivos, registro, portfólio,
+#: pendências, avanço) — varrer um só deixaria os outros cinco passando.
+#: A substituição é um rótulo fixo, sem aspas nem barra, então não quebra o JSON.
+#: As duas bordas são o que faz o filtro funcionar, e a primeira versão não as
+#: tinha: sem elas a máscara casava DENTRO de uma sequência maior e trocava só a
+#: cauda — num trecho de transcrição sobrou `21 9998299829` visível, com o resto
+#: mascarado ao lado. Exigir não-alfanumérico antes e depois faz a máscara comer
+#: o número inteiro, e de quebra poupa identificador hexadecimal (id do OneNote,
+#: hash de imagem), que tem letra grudada no dígito.
+#: O custo é mascarar também id numérico longo solto (catalogid, timestamp). É o
+#: erro que se prefere: número técnico a menos é inconveniência, telefone de
+#: terceiro a mais é dado de outra pessoa publicado.
+_B0, _B1 = r"(?<![0-9A-Za-z])", r"(?![0-9A-Za-z])"
+MASCARAS = [
+    # sequência telefônica BR: +55 opcional, DDD opcional, 8 ou 9 dígitos
+    (re.compile(_B0 + r"(?:\+?55[\s.-]*)?(?:\(?\d{2}\)?[\s.-]*)?\d{4,5}[\s.-]?\d{4}" + _B1),
+     "[telefone removido]"),
+    (re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"), "[e-mail removido]"),
+    (re.compile(_B0 + r"\d{3}\.\d{3}\.\d{3}-\d{2}" + _B1), "[CPF removido]"),
+    (re.compile(_B0 + r"\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}" + _B1), "[CNPJ removido]"),
+]
+
+
+def mascarar(texto):
+    """Troca dado pessoal por rótulo. Devolve (texto, {padrão: quantas vezes}).
+
+    Serve a um caso concreto: publicar o snapshot num link que se abre no celular.
+    O acervo profissional carrega telefone de terceiro em dossiê de loja, nota de
+    stakeholder e captura antiga — dado que não é do dono e que ninguém decidiu
+    publicar. Mascarar é o que separa "levar a Central no bolso" de "levar o dado
+    dos outros junto".
+    """
+    contagem = {}
+    for padrao, rotulo in MASCARAS:
+        texto, n = padrao.subn(rotulo, texto)
+        if n:
+            contagem[rotulo] = contagem.get(rotulo, 0) + n
+    return texto, contagem
+
+
+def build_html(full=False, sem_dado_pessoal=False):
     tpl = TEMPLATE_PATH.read_text(encoding="utf-8")
     title = re.search(r"<title>(.*?)</title>", tpl).group(1)
     links = "\n".join(re.findall(r"<link [^>]*>", tpl))
@@ -175,13 +224,18 @@ def build_html(full=False):
     snap = build_snapshot()
     # "</" escapado pra não fechar o <script>; U+FFFD literal (de arquivo com encoding ruim,
     # lido com errors="replace") quebra o publicador de Artifacts — vira escape JS
-    data_js = json.dumps(snap, ensure_ascii=False).replace("</", "<\\/").replace("�", "\\ufffd")
+    data_js = json.dumps(snap, ensure_ascii=False)
+    if sem_dado_pessoal:
+        data_js, mascarado = mascarar(data_js)
+        snap["mascarado"] = mascarado
+    data_js = data_js.replace("</", "<\\/").replace("�", "\\ufffd")
     shim = (f"<script>window.CENTRAL_STATIC = {data_js};\nconst MERMAID_CDN_URL = {json.dumps(MERMAID_CDN)};\n{SHIM}</script>\n")
     body = body.replace("<script>\n// ====", shim + "<script>\n// ====", 1)
 
     # banner de snapshot no cabeçalho da sidebar
+    selo = " · sem dado pessoal" if sem_dado_pessoal else ""
     banner = (f'<div class="static-note">Snapshot estático · {snap["gerado_em"]} · somente leitura · '
-              f'{len(snap["entries"])} arquivos</div>')
+              f'{len(snap["entries"])} arquivos{selo}</div>')
     body = body.replace("<h1>Central</h1>", "<h1>Central</h1>" + banner, 1)
 
     # cauda: sobrescreve o renderizador de mermaid e esconde o reindexar
@@ -198,16 +252,23 @@ def build_html(full=False):
 
 def main():
     full = "--full" in sys.argv
+    sem_dp = "--sem-dado-pessoal" in sys.argv
     config.iniciar(sys.argv[1:])   # sem isto, pela linha de comando não havia estação ativa
     try:
-        page, snap = build_html(full=full)
+        page, snap = build_html(full=full, sem_dado_pessoal=sem_dp)
     except config.EstacaoPrivada as e:
         print(e)
         return 2
     DIST_DIR.mkdir(exist_ok=True)
-    out = OUT_PATH if not full else DIST_DIR / "central-static-full.html"
+    nome = "central-static"
+    if sem_dp:
+        nome += "-sem-dado-pessoal"
+    out = DIST_DIR / f"{nome}{'-full' if full else ''}.html"
     out.write_text(page, encoding="utf-8")
     print(f"{out} — {len(page.encode('utf-8'))/1e6:.2f} MB, {len(snap['entries'])} arquivos, gerado {snap['gerado_em']}")
+    if sem_dp:
+        m = snap.get("mascarado") or {}
+        print("  mascarado: " + (", ".join(f"{v}× {k}" for k, v in sorted(m.items())) if m else "nada encontrado"))
 
 
 if __name__ == "__main__":
