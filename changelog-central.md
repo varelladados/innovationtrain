@@ -1,5 +1,35 @@
 # Changelog — Central
 
+## 0.15.0 — 2026-09-20
+
+**A aba Workflow passa a mostrar as pendências de todas as estações, não só as
+da pasta que a estação ativa declara.** O app lia uma pasta só — a da chave
+`pendencias` da estação aberta. Medido numa Central real: 28 pendências ativas
+no disco, 2 visíveis. As outras 26 estavam no `_pendencias/` de cada projeto,
+em outras estações registradas e na pasta da própria Central — existiam, e não
+apareciam em tela nenhuma. Decisão parada que ninguém vê é exatamente o que
+esta aba existe para evitar.
+
+- **Três níveis de origem, um `_pastas(escopo)` só**: a pasta declarada, o
+  `_pendencias/` de cada projeto da estação, e — no escopo `todas` — cada
+  estação do `central.json` mais a pasta `pendencias/` da Central.
+- **Estação que não declara a chave continua sendo lida**: sem `pendencias` no
+  `estacao.json`, valem os nomes de convenção na raiz dela. Sem isso, as
+  estações que o próprio Embarque cria ficariam de fora.
+- **Cada card leva a `origem`**, com o nome do `central.json` — e a lista ganha
+  um seletor por origem, com a contagem de cada uma, que só aparece quando há
+  mais de uma.
+- **`ref` ambíguo é recusado, não adivinhado.** Com várias origens,
+  `<data>-<slug>` deixa de ser único: a escrita manda a origem junto, e sem ela
+  duas pendências homônimas fazem o pedido falhar em vez de gravar na errada.
+- **A publicação não mudou.** O escopo padrão continua sendo só a estação
+  ativa, e é o que `export_static.py` e o briefing usam: nada de outra estação
+  (e nada de estação privada) entra no snapshot. O escopo `todas` é do servidor
+  local, onde a decisão é de quem está na frente da tela.
+- **`local` no card**: `/files/` serve só de dentro da raiz ativa, então a
+  pendência de outra estação mostra o caminho em texto em vez de um link que
+  daria 404.
+
 ## 0.14.3 — 2026-09-20
 
 **Fechar a linhagem de um item passa a funcionar sem reescrever o registro.**

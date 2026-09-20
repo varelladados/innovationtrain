@@ -7,6 +7,8 @@ existem de fato na pasta execucao/ (se o parser voltar a exigir o heading
 canônico, pendência some da tela sem erro nenhum), a preservação de CRLF, e as
 regras de escrita — só a linha pedida muda, e conflito vira 409.
 """
+import json
+import os
 import shutil
 import sys
 import tempfile
@@ -15,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import apoio  # noqa: E402  (insere app/ no sys.path)
+import config  # noqa: E402
 import pendencias  # noqa: E402
 
 
@@ -196,6 +199,134 @@ class TestParse(BaseTemp):
         self.escrever("aaa", RESPOSTA_NUA)  # Adiada: 2
         cards = pendencias.listar_pendencias_ativas()["cards"]
         self.assertEqual(cards[0]["slug"], "aaa")
+
+
+class TestOrigens(BaseTemp):
+    """A lista junta mais de uma pasta: a declarada pela estação, a de cada
+    projeto dentro dela e — no escopo "todas" — as outras estações do
+    central.json. Sem isto, pendência de projeto some da tela sem erro nenhum."""
+
+    def _projeto(self, nome, slug, conteudo=CANONICA):
+        pasta = self.tmp / "5-projetos" / nome / "_pendencias"
+        pasta.mkdir(parents=True, exist_ok=True)
+        (pasta / f"pendencia-ativa-2026-09-08-{slug}.md").write_text(
+            conteudo, encoding="utf-8")
+        return pasta
+
+    def test_pendencia_de_projeto_aparece_com_a_da_estacao(self):
+        self.escrever("da-estacao", CANONICA)
+        self._projeto("meu-projeto", "do-projeto")
+        cards = pendencias.listar_pendencias_ativas()["cards"]
+        self.assertEqual(
+            sorted(c["slug"] for c in cards), ["da-estacao", "do-projeto"])
+
+    def test_origem_rotula_estacao_e_projeto(self):
+        self.escrever("da-estacao", CANONICA)
+        self._projeto("meu-projeto", "do-projeto")
+        por_slug = {c["slug"]: c for c in pendencias.listar_pendencias_ativas()["cards"]}
+        nome = config.atual().nome
+        self.assertEqual(por_slug["da-estacao"]["origem"], nome)
+        self.assertEqual(por_slug["do-projeto"]["origem"], f"{nome} › meu-projeto")
+
+    def test_projeto_sem_pasta_de_pendencias_nao_quebra(self):
+        (self.tmp / "5-projetos" / "SemPendencias").mkdir(parents=True)
+        self.escrever("so-essa", CANONICA)
+        self.assertEqual(len(pendencias.listar_pendencias_ativas()["cards"]), 1)
+
+    def test_responder_acha_a_de_projeto(self):
+        pasta = self._projeto("meu-projeto", "do-projeto")
+        card = pendencias.parse_pendencia(
+            pasta / "pendencia-ativa-2026-09-08-do-projeto.md")
+        op = card["perguntas"][0]["opcoes"][0]
+        r = pendencias.responder("2026-09-08-do-projeto", op["line_number"],
+                                 op["text"], "marcar")
+        self.assertEqual(r["estado"], "respondida")
+        self.assertEqual(r["card"]["origem"], f"{config.atual().nome} › meu-projeto")
+
+    def test_ref_ambiguo_entre_origens_e_recusado(self):
+        """Mesmo <data>-<slug> em duas pastas: recusar é melhor que escrever
+        na errada. Só acontece sem a origem — a UI sempre manda a dela."""
+        self.escrever("mesmo", CANONICA)
+        self._projeto("meu-projeto", "mesmo")
+        op = pendencias.parse_pendencia(
+            self.exec_dir / "pendencia-ativa-2026-09-08-mesmo.md"
+        )["perguntas"][0]["opcoes"][0]
+        with self.assertRaises(pendencias.PendenciaError):
+            pendencias.responder("2026-09-08-mesmo", op["line_number"],
+                                 op["text"], "marcar")
+        r = pendencias.responder("2026-09-08-mesmo", op["line_number"],
+                                 op["text"], "marcar", origem=config.atual().nome)
+        self.assertEqual(r["estado"], "respondida")
+
+    def test_local_marca_o_que_a_aba_pode_abrir(self):
+        self.escrever("aqui", CANONICA)
+        card = pendencias.listar_pendencias_ativas()["cards"][0]
+        self.assertTrue(card["local"])
+
+
+class TestEscopoTodas(unittest.TestCase):
+    """O escopo "todas" lê o central.json do hub. O teste monta um hub próprio
+    (CENTRAL_DIR) para nunca tocar no central.json real de quem roda a suíte."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-test-hub-"))
+        self.hub = self.tmp / "hub"
+        (self.hub / "pendencias").mkdir(parents=True)
+        self.a = self.tmp / "EstacaoA"
+        self.b = self.tmp / "EstacaoB"
+        for raiz in (self.a, self.b):
+            (raiz / "_pendencias").mkdir(parents=True)
+        (self.hub / "central.json").write_text(json.dumps({
+            "versao": 1,
+            "estacoes": [
+                {"nome": "EstacaoA", "caminho": str(self.a), "ativa": True},
+                {"nome": "EstacaoB", "caminho": str(self.b), "ativa": False},
+                {"nome": "Sumida", "caminho": str(self.tmp / "nao-existe"), "ativa": False},
+            ],
+        }), encoding="utf-8")
+        self._env = os.environ.get("CENTRAL_DIR")
+        os.environ["CENTRAL_DIR"] = str(self.hub)
+        apoio.aplicar(self.a, pendencias="_pendencias")
+
+    def tearDown(self):
+        if self._env is None:
+            os.environ.pop("CENTRAL_DIR", None)
+        else:
+            os.environ["CENTRAL_DIR"] = self._env
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _por(self, raiz, slug):
+        (raiz / "_pendencias" / f"pendencia-ativa-2026-09-08-{slug}.md").write_text(
+            CANONICA, encoding="utf-8")
+
+    def test_estacao_so_ve_a_propria(self):
+        self._por(self.a, "da-a")
+        self._por(self.b, "da-b")
+        cards = pendencias.listar_pendencias_ativas()["cards"]
+        self.assertEqual([c["slug"] for c in cards], ["da-a"])
+
+    def test_todas_junta_as_outras_estacoes_e_o_hub(self):
+        self._por(self.a, "da-a")
+        self._por(self.b, "da-b")
+        (self.hub / "pendencias" / "pendencia-ativa-2026-09-08-do-hub.md").write_text(
+            CANONICA, encoding="utf-8")
+        cards = pendencias.listar_pendencias_ativas("todas")["cards"]
+        self.assertEqual(sorted(c["slug"] for c in cards), ["da-a", "da-b", "do-hub"])
+        self.assertEqual(
+            {c["slug"]: c["origem"] for c in cards},
+            {"da-a": "EstacaoA", "da-b": "EstacaoB", "do-hub": "hub"})
+
+    def test_estacao_registrada_que_sumiu_do_disco_e_pulada(self):
+        self._por(self.a, "da-a")
+        r = pendencias.listar_pendencias_ativas("todas")
+        self.assertIsNone(r["erro"])
+        self.assertEqual([c["slug"] for c in r["cards"]], ["da-a"])
+
+    def test_card_de_outra_estacao_nao_e_local(self):
+        self._por(self.b, "da-b")
+        card = [c for c in pendencias.listar_pendencias_ativas("todas")["cards"]
+                if c["slug"] == "da-b"][0]
+        self.assertFalse(card["local"])
 
 
 class TestResponder(BaseTemp):

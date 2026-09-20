@@ -309,8 +309,10 @@ th{background:var(--surface-2)}
 .wf-pend .tit{font-weight:600;font-size:var(--fs-3);margin:0 0 var(--sp-1)}
 .wf-pend .ctx{font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-2);line-height:1.5}
 .wf-pend .meta{font-size:var(--fs-1);color:var(--text-2);font-family:"IBM Plex Mono",ui-monospace,monospace;margin:var(--sp-2) 0 0;border-top:1px solid var(--border);padding-top:var(--sp-1);display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.wf-origem-sel{font-size:var(--fs-1);font-family:inherit;padding:2px var(--sp-1);border:1px solid var(--border);border-radius:var(--r-2);background:var(--surface-2);color:var(--text-2);max-width:22rem}
 .wf-badges{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin-bottom:var(--sp-1)}
 .wf-b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:var(--fs-1);padding:var(--sp-1) var(--sp-2);border-radius:var(--r-2)}
+.wf-b-origem{background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
 .wf-b-incremento{background:var(--accent-bg);color:var(--accent)}
 .wf-b-sustentacao{background:var(--surface-2);color:var(--text-2)}
 .wf-b-essencial{background:var(--danger-bg);color:var(--danger)}
@@ -1821,6 +1823,7 @@ const WF_KANBAN_MAX = 12;  // panorama, não lista completa — a árvore/busca 
 let WF_CARDS = [];
 let WF_ERRO_PEND = null;
 let WF_FILTRO = "todas";  // todas | aberta | respondida
+let WF_ORIGEM = "todas";  // "todas" ou o rótulo de uma origem
 
 const WF_ESTADO_LABEL = {
   "aberta": "aberta",
@@ -1830,6 +1833,7 @@ const WF_ESTADO_LABEL = {
 };
 
 function wfPassa(c){
+  if (WF_ORIGEM !== "todas" && (c.origem || "") !== WF_ORIGEM) return false;
   if (WF_FILTRO === "todas") return true;
   if (WF_FILTRO === "aberta") return c.estado === "aberta" || c.estado === "nao-parseavel";
   if (WF_FILTRO === "respondida") return c.estado === "respondida" || c.estado === "adiada-marcada";
@@ -1843,7 +1847,9 @@ function drawPendencias(){
 
   const header = document.getElementById("wf-pend-header");
   const respondidas = WF_CARDS.filter(c => c.estado === "respondida").length;
+  const origens = [...new Set(WF_CARDS.map(c => c.origem).filter(Boolean))].sort();
   header.textContent = `Pendências ativas (${WF_CARDS.length})`
+    + (origens.length > 1 ? ` em ${origens.length} origens` : "")
     + (respondidas ? ` · ${respondidas} aguardando o avanço` : "");
 
   const filtros = document.getElementById("wf-filtros");
@@ -1855,6 +1861,26 @@ function drawPendencias(){
     chip.onclick = () => { WF_FILTRO = k; drawPendencias(); };
     filtros.appendChild(chip);
   });
+
+  // O seletor só aparece com mais de uma origem: com uma só ele não filtra nada
+  // e a lista de uma estação sozinha continua exatamente como era.
+  if (origens.length > 1){
+    if (WF_ORIGEM !== "todas" && !origens.includes(WF_ORIGEM)) WF_ORIGEM = "todas";
+    const sel = document.createElement("select");
+    sel.className = "wf-origem-sel";
+    const conta = (o) => WF_CARDS.filter(c => c.origem === o).length;
+    const opcoes = [["todas", `todas as origens (${WF_CARDS.length})`]]
+      .concat(origens.map(o => [o, `${o} (${conta(o)})`]));
+    opcoes.forEach(([valor, rotulo]) => {
+      const op = document.createElement("option");
+      op.value = valor;
+      op.textContent = rotulo;
+      op.selected = WF_ORIGEM === valor;
+      sel.appendChild(op);
+    });
+    sel.onchange = () => { WF_ORIGEM = sel.value; drawPendencias(); };
+    filtros.appendChild(sel);
+  }
 
   const brf = document.createElement("button");
   brf.className = "brf-btn";
@@ -1890,8 +1916,10 @@ function wfCard(c){
   const box = document.createElement("div");
   box.className = "wf-pend " + c.estado;
 
-  const badges = [`<span class="wf-b wf-b-${c.categoria === "Incremento" ? "incremento" : "sustentacao"}">${escapeHtml(c.categoria)}</span>`,
-                  `<span class="wf-b wf-b-${c.estado}">${WF_ESTADO_LABEL[c.estado] || c.estado}</span>`];
+  const badges = [];
+  if (c.origem) badges.push(`<span class="wf-b wf-b-origem">${escapeHtml(c.origem)}</span>`);
+  badges.push(`<span class="wf-b wf-b-${c.categoria === "Incremento" ? "incremento" : "sustentacao"}">${escapeHtml(c.categoria)}</span>`,
+              `<span class="wf-b wf-b-${c.estado}">${WF_ESTADO_LABEL[c.estado] || c.estado}</span>`);
   if (c.essencial) badges.push(`<span class="wf-b wf-b-essencial">essencial</span>`);
   if (c.adiada) badges.push(`<span class="wf-b wf-b-adiada">adiada ${c.adiada}x</span>`);
 
@@ -1931,11 +1959,19 @@ function wfCard(c){
   if (c.revisar_quando) partes.push(`revisar quando: ${escapeHtml(c.revisar_quando)}`);
   if (c.fonte) partes.push(`fonte: ${escapeHtml(c.fonte)}`);
   meta.innerHTML = partes.join(" · ");
-  const abrir = document.createElement("a");
-  abrir.href = "#";
-  abrir.textContent = "abrir arquivo →";
-  abrir.onclick = (ev) => { ev.preventDefault(); openFile(c.path); };
-  meta.appendChild(abrir);
+  if (c.local === false){
+    // /files/ serve só de dentro da estação ativa: pendência de outra estação
+    // ganha o caminho em texto, em vez de um link que daria 404.
+    const onde = document.createElement("span");
+    onde.textContent = c.path;
+    meta.appendChild(onde);
+  } else {
+    const abrir = document.createElement("a");
+    abrir.href = "#";
+    abrir.textContent = "abrir arquivo →";
+    abrir.onclick = (ev) => { ev.preventDefault(); openFile(c.path); };
+    meta.appendChild(abrir);
+  }
   box.appendChild(meta);
   return box;
 }
@@ -1987,7 +2023,7 @@ async function wfResponder(card, op, acao, texto){
     const r = await fetch("/api/pendencia/responder", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ref: card.ref, line_number: op.line_number, expected_text: op.text, acao, texto: texto || ""}),
+      body: JSON.stringify({ref: card.ref, origem: card.origem || "", line_number: op.line_number, expected_text: op.text, acao, texto: texto || ""}),
     });
     const data = await r.json();
     if (!r.ok){
@@ -2000,7 +2036,8 @@ async function wfResponder(card, op, acao, texto){
       await recarregarPendencias();
       return;
     }
-    const i = WF_CARDS.findIndex(c => c.ref === card.ref);
+    // ref + origem: duas estações podem ter o mesmo <data>-<slug>
+    const i = WF_CARDS.findIndex(c => c.ref === card.ref && (c.origem || "") === (card.origem || ""));
     if (i >= 0) WF_CARDS[i] = data.card;
     drawPendencias();
     toast(data.estado === "respondida" ? "Respondida — o avanço encaminha na próxima rodada" : "Gravado");

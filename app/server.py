@@ -389,7 +389,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/workflow":
             entries, _ = get_state()
-            self._send_json(workflow_mod.build_workflow(entries))
+            # "todas": o servidor local mostra as pendências de todas as estações
+            # registradas. O snapshot estático continua chamando sem isso.
+            self._send_json(workflow_mod.build_workflow(entries, escopo_pendencias="todas"))
             return
 
         if path == "/api/avanco":
@@ -660,6 +662,7 @@ class Handler(BaseHTTPRequestHandler):
                 expected_text=payload.get("expected_text", ""),
                 acao=payload.get("acao", ""),
                 texto=payload.get("texto", ""),
+                origem=payload.get("origem") or None,
             )
         except pendencias_mod.ConflitoError as e:
             self._send_json({"error": str(e), "current": e.atual}, status=409)

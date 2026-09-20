@@ -27,9 +27,116 @@ PROJECT_DIR = APP_DIR.parent
 BACKUPS_DIR = PROJECT_DIR / "cache" / "backups"
 
 
-def _execucao_dir():
-    """Pasta das pendências da estação ativa, ou None se ela não declara uma."""
-    return config.atual().caminho("pendencias")
+#: Os nomes que uma pasta de pendência tem quando a estação não declara a chave.
+PASTAS_CONVENCIONAIS = ("_pendencias", "pendencias")
+
+
+def _rotulo_da_ativa(cfg):
+    """O nome da estação ativa como o `central.json` a chama.
+
+    O `estacao.json` de uma estação pode chamá-la de outra coisa que o registro
+    do hub: usar o nome do registro faz a ativa aparecer na lista com o mesmo
+    rótulo das outras, em vez de dois nomes para a mesma coisa.
+    """
+    try:
+        raiz = cfg.raiz.resolve()
+    except OSError:
+        return cfg.nome
+    for reg in config.estacoes():
+        caminho = reg.get("caminho")
+        if not caminho or not reg.get("nome"):
+            continue
+        try:
+            if Path(caminho).resolve() == raiz:
+                return reg["nome"]
+        except OSError:
+            continue
+    return cfg.nome
+
+
+def _pastas_da_estacao(cfg, rotulo):
+    """As pastas de pendência de uma estação: a que ela declara, e a de cada
+    projeto dentro dela. Devolve [(rótulo da origem, Path)].
+
+    Os dois níveis existem porque a estação só declara o primeiro: pendência de
+    projeto mora no `_pendencias/` do próprio projeto (`T_*.md`, "as de cada
+    projeto, no `_pendencias/` … do projeto"). Ler só o declarado é o que
+    mantinha 23 das 28 pendências ativas invisíveis no app.
+    """
+    saida = []
+    declarada = cfg.caminho("pendencias")
+    if declarada and declarada.is_dir():
+        saida.append((rotulo, declarada))
+    elif not declarada:
+        # Estação que não declara a chave (as do Embarque não declaram) ainda
+        # pode ter a pasta pelo nome de sempre. Convenção como plano B da
+        # configuração: sem isto a pendência existe no disco e some da tela.
+        for nome in PASTAS_CONVENCIONAIS:
+            p = cfg.raiz / nome
+            if p.is_dir():
+                saida.append((rotulo, p))
+                break
+    if not cfg.tem_projetos:
+        return saida
+    base = cfg.projetos_dir
+    if not base.is_dir():
+        return saida
+    excluir = set(cfg.excluir)
+    for proj in sorted(base.iterdir()):
+        if not proj.is_dir() or proj.name.startswith("_") or proj.name in excluir:
+            continue
+        for nome in PASTAS_CONVENCIONAIS:
+            p = proj / nome
+            if p.is_dir():
+                saida.append((f"{rotulo} › {proj.name}", p))
+    return saida
+
+
+def _pastas(escopo="estacao"):
+    """Onde mora pendência-formulário, com o rótulo da origem de cada pasta.
+
+    `escopo="estacao"` é só a estação ativa — é o que o snapshot estático e o
+    briefing usam, e é o que preserva a fronteira da estação na publicação.
+    `escopo="todas"` soma as outras estações do `central.json` e a pasta da
+    própria Central: o console local mostra o que está em aberto no ecossistema
+    inteiro, que é o que ninguém enxerga olhando uma estação de cada vez.
+
+    Estação registrada cujo caminho não existe (volume não montado, pasta
+    movida) é pulada em silêncio: a aba continua mostrando o resto.
+    """
+    vistos = set()
+    saida = []
+
+    def somar(pares):
+        for rotulo, pasta in pares:
+            try:
+                chave = pasta.resolve()
+            except OSError:
+                continue
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            saida.append((rotulo, pasta))
+
+    ativa = config.atual()
+    somar(_pastas_da_estacao(ativa, _rotulo_da_ativa(ativa)))
+    if escopo != "todas":
+        return saida
+
+    for reg in config.estacoes():
+        caminho = reg.get("caminho")
+        if not caminho or not Path(caminho).is_dir():
+            continue
+        try:
+            cfg = config.carregar(caminho, reg.get("taxonomia"))
+        except RuntimeError:
+            continue  # estacao.json ilegível não derruba a lista inteira
+        somar(_pastas_da_estacao(cfg, reg.get("nome") or cfg.nome))
+
+    hub = config.hub_dir() / "pendencias"
+    if hub.is_dir():
+        somar([(config.hub_dir().name, hub)])
+    return saida
 
 NOME_RE = re.compile(r"^pendencia-ativa-(\d{4}-\d{2}-\d{2})-(.+)\.md$")
 REF_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9._-]*$", re.IGNORECASE)
@@ -69,11 +176,25 @@ class ConflitoError(PendenciaError):
 
 def _rel(caminho: Path):
     """Caminho relativo à raiz da estação; devolve o absoluto se estiver fora
-    dela (acontece só em teste, com fixture em pasta temporária)."""
+    dela (pendência de outra estação, ou fixture em pasta temporária)."""
     try:
         return str(caminho.relative_to(config.atual().raiz)).replace("\\", "/")
     except ValueError:
         return str(caminho).replace("\\", "/")
+
+
+def _dentro_da_ativa(caminho: Path):
+    """O arquivo está sob a raiz da estação ativa?
+
+    É o que decide se a UI pode oferecer "abrir arquivo": `/files/` serve só de
+    dentro da raiz ativa, de propósito. Para a pendência de outra estação a tela
+    mostra o caminho em vez de um link que daria 404.
+    """
+    try:
+        caminho.resolve().relative_to(config.atual().raiz.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
 
 
 def _campo(texto, campo, default=None):
@@ -233,6 +354,7 @@ def parse_pendencia(caminho: Path):
         "data": data,
         "arquivo": caminho.name,
         "path": _rel(caminho),
+        "local": _dentro_da_ativa(caminho),
         "title": titulo_m.group(1).strip() if titulo_m else slug,
         "fonte": _campo(texto, "Fonte", ""),
         "item_relacionado": _campo(texto, "Item relacionado", ""),
@@ -252,17 +374,29 @@ def parse_pendencia(caminho: Path):
     return card
 
 
-def listar_pendencias_ativas():
-    """Contrato consumido por workflow.py: {cards, erro}. Nunca levanta."""
+def listar_pendencias_ativas(escopo="estacao"):
+    """Contrato consumido por workflow.py: {cards, erro}. Nunca levanta.
+
+    Cada card leva a `origem` — o rótulo da pasta de onde veio —, porque com
+    mais de uma origem na mesma lista "de quem é esta decisão?" deixa de ser
+    dedutível do título.
+    """
     try:
-        execucao = _execucao_dir()
-        if execucao is None:
-            return {"cards": [], "erro": "esta estação não declara uma pasta de pendências"}
-        if not execucao.exists():
-            return {"cards": [], "erro": f"pasta não encontrada: {execucao}"}
-        cards = [parse_pendencia(p) for p in sorted(execucao.glob("pendencia-ativa-*.md"))]
-        cards = [c for c in cards if c]
-        cards.sort(key=lambda c: (-c["adiada"], c["ref"]))
+        pastas = _pastas(escopo)
+        if not pastas:
+            declarada = config.atual().caminho("pendencias")
+            if declarada is None:
+                return {"cards": [], "erro": "esta estação não declara uma pasta de pendências"}
+            return {"cards": [], "erro": f"pasta não encontrada: {declarada}"}
+        cards = []
+        for rotulo, pasta in pastas:
+            for arquivo in sorted(pasta.glob("pendencia-ativa-*.md")):
+                card = parse_pendencia(arquivo)
+                if not card:
+                    continue
+                card["origem"] = rotulo
+                cards.append(card)
+        cards.sort(key=lambda c: (-c["adiada"], c["origem"], c["ref"]))
         return {"cards": cards, "erro": None}
     except Exception as e:  # nunca derruba a aba Workflow inteira
         return {"cards": [], "erro": f"{type(e).__name__}: {e}"}
@@ -271,20 +405,34 @@ def listar_pendencias_ativas():
 # ---------------------------------------------------------------- escrita
 
 
-def _caminho_de(ref):
+def _caminho_de(ref, origem=None):
+    """O arquivo de uma pendência ativa, procurado em todas as pastas conhecidas.
+
+    `origem` é o rótulo que o card carrega; com ele a busca fica presa àquela
+    pasta. Sem ele, duas estações com o mesmo `<data>-<slug>` tornam o `ref`
+    ambíguo — e aí o pedido é recusado, em vez de escrever no arquivo errado.
+    """
     if not ref or not REF_RE.match(ref):
         raise PendenciaError("ref inválido")
-    execucao = _execucao_dir()
-    if execucao is None:
+    pastas = _pastas("todas")
+    if not pastas:
         raise PendenciaError("esta estação não declara uma pasta de pendências")
-    caminho = execucao / f"pendencia-ativa-{ref}.md"
-    try:
-        caminho.resolve().relative_to(execucao.resolve())
-    except ValueError:
-        raise PendenciaError("ref fora da pasta de execução")
-    if not caminho.is_file():
+    achados = []
+    for rotulo, pasta in pastas:
+        if origem and rotulo != origem:
+            continue
+        caminho = pasta / f"pendencia-ativa-{ref}.md"
+        try:
+            caminho.resolve().relative_to(pasta.resolve())
+        except (ValueError, OSError):
+            continue  # ref que tenta sair da pasta
+        if caminho.is_file():
+            achados.append(caminho)
+    if not achados:
         raise PendenciaError("pendência ativa não encontrada")
-    return caminho
+    if len(achados) > 1:
+        raise PendenciaError("ref ambíguo entre origens: recarregue a lista")
+    return achados[0]
 
 
 def _opcao_por_linha(card, line_number):
@@ -295,7 +443,7 @@ def _opcao_por_linha(card, line_number):
     return None
 
 
-def responder(ref, line_number, expected_text, acao, texto=""):
+def responder(ref, line_number, expected_text, acao, texto="", origem=None):
     """Marca/desmarca uma opção ou preenche 'Outra resposta'. Só isso.
 
     Concorrência otimista: a linha no disco tem que bater com `expected_text`
@@ -310,7 +458,7 @@ def responder(ref, line_number, expected_text, acao, texto=""):
         raise PendenciaError("line_number precisa ser inteiro")
 
     with _LOCK:
-        caminho = _caminho_de(ref)
+        caminho = _caminho_de(ref, origem)
         card = parse_pendencia(caminho)
         if card is None or not card["parse_ok"]:
             raise PendenciaError("pendência sem bloco de resposta reconhecível")
@@ -361,9 +509,27 @@ def responder(ref, line_number, expected_text, acao, texto=""):
             f.write(eol.join(linhas))
 
         atualizado = parse_pendencia(caminho)
+        # o card volta pra lista no lugar do antigo: sem a origem ele perderia
+        # de onde veio e o próximo clique nele ficaria ambíguo
+        atualizado["origem"] = origem or _origem_de(caminho)
         return {
             "ok": True,
             "new_line": nova,
             "estado": atualizado["estado"],
             "card": atualizado,
         }
+
+
+def _origem_de(caminho: Path):
+    """O rótulo da pasta em que este arquivo está, ou '' se não for uma conhecida."""
+    try:
+        pai = caminho.resolve().parent
+    except OSError:
+        return ""
+    for rotulo, pasta in _pastas("todas"):
+        try:
+            if pasta.resolve() == pai:
+                return rotulo
+        except OSError:
+            continue
+    return ""

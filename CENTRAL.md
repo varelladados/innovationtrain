@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.14.3 · atualizado em 2026-09-20
+> **Documento** · v0.15.0 · atualizado em 2026-09-20
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -22,7 +22,11 @@ checkbox de backlog). Hoje também:
 - **mostra a espera** (aba Triagem) — os lotes que chegaram e ainda não entraram,
   com o que cada um ainda pergunta;
 - **responde pendência** (aba Workflow) — grava a opção no próprio `.md`, e a
-  rodada seguinte da automação encaminha; o app nunca fecha a pendência;
+  rodada seguinte da automação encaminha; o app nunca fecha a pendência. O
+  servidor local junta as pendências de **todas** as estações registradas e as
+  dos projetos dentro de cada uma, cada card com o rótulo da origem; o snapshot
+  estático continua só com a estação ativa (ver "Pendências: uma lista, várias
+  origens");
 - **abre projeto** (pelo Portfólio) — maturidade, backlogs com toggle, e anotação
   que vira linha de checkbox no backlog do projeto;
 - **gera briefing pra IA** — texto pronto pra colar numa sessão de IA, com
@@ -216,6 +220,40 @@ extrai e mostra o **título** (primeiro `# heading` do arquivo) em vez do nome
 cru — é assim que a UI resolve "não sei do que se trata, só que é um CLAUDE.md"
 sem tocar no arquivo.
 
+## Pendências: uma lista, várias origens
+
+A estação declara **uma** pasta de pendência (`pendencias`), mas pendência
+também mora no `_pendencias/` de cada projeto dentro dela, e cada estação
+registrada tem as suas. Ler só a pasta declarada da estação ativa escondia a
+maioria das decisões abertas — elas existiam no disco e não apareciam em tela
+nenhuma, que é o modo de falha que este app existe para evitar.
+
+`pendencias._pastas(escopo)` resolve de onde vem a lista:
+
+| escopo | o que junta | quem usa |
+|---|---|---|
+| `estacao` (padrão) | a pasta declarada pela estação ativa + o `_pendencias/` de cada projeto dela | `export_static.py` e o briefing — é o que mantém a fronteira da estação na publicação |
+| `todas` | o acima + cada estação do `central.json` + a pasta `pendencias/` da própria Central | `GET /api/workflow` no servidor local |
+
+Três regras que o código cobra:
+
+- **Estação que não declara a chave ainda é lida**: sem `pendencias` no
+  `estacao.json`, valem os nomes de convenção (`_pendencias/`, `pendencias/`)
+  na raiz dela. As estações que o Embarque cria não declaram a chave.
+- **Cada card leva a `origem`** — o rótulo da pasta de onde veio, e o nome
+  usado é o do `central.json`, não o do `estacao.json` de cada uma, para a
+  ativa não aparecer com um nome diferente das outras. Com mais de uma origem
+  na mesma lista, `<data>-<slug>` deixa de ser único: a escrita manda também a
+  origem, e um `ref` ambíguo **sem** ela é recusado em vez de escrito no
+  arquivo errado.
+- **`local` diz o que a aba pode abrir.** `/files/` serve só de dentro da raiz
+  ativa, de propósito; a pendência de outra estação mostra o caminho em texto
+  em vez de um link que daria 404.
+
+A **estação privada** aparece no console local — ele é local, e a decisão
+parada é de quem está na frente dele. O que não muda é a publicação: o snapshot
+estático usa o escopo `estacao`, então nada de outra estação entra nele.
+
 ## Ciclo de vida físico dentro de um estágio
 
 Uma estação pode dividir um estágio em subpastas de **triagem**, ortogonais à
@@ -271,7 +309,7 @@ silêncio — `tests/test_trilha.py` cobra isso.
 |---|---|---|---|
 | `POST /api/backlog/toggle` | `- [ ]`/`- [x]` em backlog | `server.py` | tipo `backlog` no índice + `expected_text` (409) + backup |
 | `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional). Por destino: **profissional** — identificador via utilitário (subprocess) + trava do registro (vale entre processos) + arquivo atômico + registro append-only com backup; **pessoal** — o mesmo, com o registro gravado de uma vez e **sem cópia para o cache** (o `cache/` é da estação aberta, e a pessoal é outra); **espera** — pasta nova + linha append-only no `_lotes.md`, nada é sobrescrito |
-| `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + linha tem que ser opção + `expected_text` (409) + backup |
+| `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + resolvido dentro de uma pasta conhecida (ambíguo entre origens é recusado) + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
 | `POST /api/exemplo/passo` | a estação de exemplo inteira, no passo pedido da trilha | `trilha.py` → `metodo/estacao.py reiniciar` | só existe em estação que declara `estado_inicial` (uma sua não declara); cada passo é um instantâneo pronto — nada é calculado, e o de origem continua em `estacoes/_inicial/` |
 

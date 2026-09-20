@@ -52,7 +52,15 @@ def colunas_do_quadro():
     return [e["pasta"] for e in cfg.estagios], "estagio"
 
 
-def build_workflow(entries):
+def build_workflow(entries, escopo_pendencias="estacao"):
+    """O quadro da estação ativa + as pendências.
+
+    `escopo_pendencias="todas"` é o console local: as pendências de todas as
+    estações registradas, porque decisão parada não avisa e ninguém abre onze
+    estações pra procurar. O padrão continua sendo só a estação ativa — é com
+    ele que o snapshot estático é gerado, e é o que mantém a fronteira da
+    estação (e a privada fora) na publicação.
+    """
     stages, modo = colunas_do_quadro()
     colunas = {stage: [] for stage in stages}
     for e in entries:
@@ -84,7 +92,7 @@ def build_workflow(entries):
         "colunas": colunas,
         "totais": {stage: len(colunas[stage]) for stage in stages},
         "rotulos": _rotulos(stages, modo),
-        "pendencias": pendencias.listar_pendencias_ativas(),
+        "pendencias": pendencias.listar_pendencias_ativas(escopo_pendencias),
     }
 
 
