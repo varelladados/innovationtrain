@@ -1,5 +1,20 @@
 # Changelog — Central
 
+## 0.16.1 — 2026-09-20
+
+**"Orquestra" sai da tela.** `metodo/taxonomia.md` fixa cinco termos — Central,
+estação, projeto, trem, embarque — e manda não inventar outros. "Orquestra" era
+o nome desses arquivos no vocabulário anterior à Central e continuava aparecendo
+no filtro de tipo, no rodapé do Portfólio e no briefing gerado para a IA. Na
+tela agora é **índice**, que é o que `_indice.md` e o `CLAUDE.md` de projeto são.
+
+- A **chave** do tipo continua `orquestra` no indexer: renomeá-la invalidaria
+  todo cache de índice já gravado, e ela não aparece para ninguém. Trocou-se o
+  rótulo, não o dado.
+- `briefing.py` dizia "a orquestra do projeto" no texto que se cola numa sessão
+  de IA — o único lugar em que o termo antigo sairia da Central e entraria em
+  outra ferramenta.
+
 ## 0.16.0 — 2026-09-20
 
 **O snapshot estático ganha `--sem-dado-pessoal`, e é ele que torna publicável o

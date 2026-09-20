@@ -184,7 +184,7 @@ def briefing_avancar(pasta, entries, text_cache):
 
     linhas = [
         _cabecalho(f"Avançar o projeto {pasta}"), "",
-        f"Leia primeiro `{base}CLAUDE.md` (a orquestra do projeto) e os backlogs:",
+        f"Leia primeiro `{base}CLAUDE.md` (o índice do projeto) e os backlogs:",
         "",
     ]
     linhas += [f"- `{b['path']}`" for b in backlogs] or ["- (nenhum backlog indexado)"]

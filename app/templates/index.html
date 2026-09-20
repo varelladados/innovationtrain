@@ -662,8 +662,14 @@ const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Central") + " / ";
 let ACTIVE_TYPE_FILTER = null;
 let SELECTED_PATH = null;
 
+// O rótulo é o que a pessoa lê; a chave é o tipo que o indexer grava e que o
+// cache já tem gravado. "orquestra" era o nome desses arquivos no vocabulário
+// anterior à Central, e `metodo/taxonomia.md` fixa cinco termos — Central,
+// estação, projeto, trem, embarque — sem ele. Na tela, então, "índice": é o que
+// `_indice.md` e o `CLAUDE.md` de projeto são. A chave fica como está, porque
+// renomear o tipo invalidaria todo cache de índice já gerado.
 const TYPE_LABELS = {
-  "orquestra": "orquestra", "backlog": "backlog", "log": "log",
+  "orquestra": "índice", "backlog": "backlog", "log": "log",
   "changelog": "changelog", "readme": "readme", "skill": "skill",
   "glossary": "glossário", "doctrine": "doutrina", "linkmap": "mapa de links", "script": "script", "trilha": "trilha",
   "dashboard-html": "dashboard", "other-markdown": "outro (.md)", "other-pertinent": "outro"
@@ -1581,7 +1587,7 @@ function drawPortfolioGrid(){
     }
     const foot = document.createElement("div");
     foot.className = "pf-foot";
-    foot.innerHTML = `<a data-abrir-projeto>abrir projeto →</a><a data-open="${escapeHtml(p.pasta)}/CLAUDE.md">orquestra (CLAUDE.md)</a><span>${p.contagens.rascunhos ? p.contagens.rascunhos + " rascunho(s) oculto(s)" : ""}</span>`;
+    foot.innerHTML = `<a data-abrir-projeto>abrir projeto →</a><a data-open="${escapeHtml(p.pasta)}/CLAUDE.md">índice (CLAUDE.md)</a><span>${p.contagens.rascunhos ? p.contagens.rascunhos + " rascunho(s) oculto(s)" : ""}</span>`;
     foot.querySelector("[data-abrir-projeto]").onclick = () => openProjetoView(p.pasta);
     foot.querySelector("[data-open]").onclick = () => tryOpenTarget(p.pasta + "/CLAUDE.md");
     card.appendChild(foot);
