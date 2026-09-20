@@ -14,6 +14,14 @@ que tolera a ausência dessas tags).
     python app/export_static.py            # gera dist/central-static.html
     python app/export_static.py --full     # inclui o <html>/<head>/<body> pra abrir sozinho
     python app/export_static.py --sem-dado-pessoal   # mascara telefone, e-mail, CPF e CNPJ
+    python app/export_static.py --pendencias-de-todas  # decisões de todas as estações não privadas
+
+`--pendencias-de-todas` troca o escopo das pendências de `estacao` para
+`publicavel` (ver `pendencias._pastas`): o corpus continua sendo o da estação
+ativa, e só a aba Workflow fica mais larga. Sem ele, levar a Central no bolso
+mostrava as decisões de uma estação e escondia as das outras dez — omissão que
+parecia fronteira e não era: a fronteira que existe é a estação **privada**, que
+continua fora nos dois casos.
 
 `--sem-dado-pessoal` existe porque publicar é diferente de exportar: o acervo
 profissional carrega telefone de terceiro em dossiê de loja, nota de stakeholder
@@ -46,7 +54,7 @@ MARKED_CDN = "https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js
 MERMAID_CDN = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"
 
 
-def build_snapshot():
+def build_snapshot(escopo_pendencias="estacao"):
     config.recusar_se_privada(config.atual(), "o snapshot estático")
     entries, cache = indexer.build_index()
     raw = {}
@@ -66,7 +74,7 @@ def build_snapshot():
         "portfolio": portfolio_mod.build_portfolio(),
         # v0.6: as abas Workflow e o card de Avanço também viajam no snapshot,
         # em modo leitura — responder pendência e anotar continuam só no local.
-        "workflow": workflow_mod.build_workflow(entries),
+        "workflow": workflow_mod.build_workflow(entries, escopo_pendencias),
         "avanco": avanco_mod.ultima_rodada(),
     }
 
@@ -211,12 +219,15 @@ def mascarar(texto):
     return texto, contagem
 
 
-def build_html(full=False, sem_dado_pessoal=False):
+def build_html(full=False, sem_dado_pessoal=False, escopo_pendencias="estacao"):
     tpl = TEMPLATE_PATH.read_text(encoding="utf-8")
-    # O título carrega a estação: o snapshot vira um arquivo publicado, e dois
-    # deles (estações diferentes, ou mascarado e completo) com o mesmo nome são
-    # indistinguíveis na galeria de quem publica.
+    # O título carrega a estação **e a máscara**: o snapshot vira um arquivo
+    # publicado, e dois deles com o mesmo nome são indistinguíveis na galeria de
+    # quem publica. A estação sozinha não bastava — mascarado e completo da mesma
+    # estação colidiam de novo, e aí o link errado é o que abre no telefone.
     title = f"{re.search(r'<title>(.*?)</title>', tpl).group(1)} · {config.atual().nome}"
+    if sem_dado_pessoal:
+        title += " · sem dado pessoal"
     links = "\n".join(re.findall(r"<link [^>]*>", tpl))
     style = re.search(r"<style>.*?</style>", tpl, re.S).group(0)
     body = re.search(r"<body>(.*)</body>", tpl, re.S).group(1)
@@ -224,7 +235,7 @@ def build_html(full=False, sem_dado_pessoal=False):
     # scripts: vendor locais viram cdnjs; shim entra antes do script principal
     body = body.replace('<script src="/app/templates/vendor/marked.min.js"></script>', f'<script src="{MARKED_CDN}"></script>')
     body = body.replace('<script src="/app/templates/vendor/mermaid.min.js"></script>', "")
-    snap = build_snapshot()
+    snap = build_snapshot(escopo_pendencias)
     # "</" escapado pra não fechar o <script>; U+FFFD literal (de arquivo com encoding ruim,
     # lido com errors="replace") quebra o publicador de Artifacts — vira escape JS
     data_js = json.dumps(snap, ensure_ascii=False)
@@ -237,6 +248,14 @@ def build_html(full=False, sem_dado_pessoal=False):
 
     # banner de snapshot no cabeçalho da sidebar
     selo = " · sem dado pessoal" if sem_dado_pessoal else ""
+    # O corpus é sempre o da estação ativa; só a lista de pendências pode ser
+    # mais larga. Sem dizer isso no banner, a aba Workflow mostra decisão de
+    # estação que não aparece em lugar nenhum da árvore ao lado — e quem abre no
+    # celular não tem como saber se é bug ou escopo.
+    if escopo_pendencias != "estacao":
+        cards = snap["workflow"]["pendencias"]["cards"]
+        estacoes = {c["origem"].split(" › ")[0] for c in cards}
+        selo += f" · {len(cards)} decisões de {len(estacoes)} estações"
     banner = (f'<div class="static-note">Snapshot estático · {snap["gerado_em"]} · somente leitura · '
               f'{len(snap["entries"])} arquivos{selo}</div>')
     body = body.replace("<h1>Central</h1>", "<h1>Central</h1>" + banner, 1)
@@ -256,9 +275,11 @@ def build_html(full=False, sem_dado_pessoal=False):
 def main():
     full = "--full" in sys.argv
     sem_dp = "--sem-dado-pessoal" in sys.argv
+    escopo = "publicavel" if "--pendencias-de-todas" in sys.argv else "estacao"
     config.iniciar(sys.argv[1:])   # sem isto, pela linha de comando não havia estação ativa
     try:
-        page, snap = build_html(full=full, sem_dado_pessoal=sem_dp)
+        page, snap = build_html(full=full, sem_dado_pessoal=sem_dp,
+                                escopo_pendencias=escopo)
     except config.EstacaoPrivada as e:
         print(e)
         return 2
@@ -269,6 +290,10 @@ def main():
     out = DIST_DIR / f"{nome}{'-full' if full else ''}.html"
     out.write_text(page, encoding="utf-8")
     print(f"{out} — {len(page.encode('utf-8'))/1e6:.2f} MB, {len(snap['entries'])} arquivos, gerado {snap['gerado_em']}")
+    if escopo != "estacao":
+        cards = snap["workflow"]["pendencias"]["cards"]
+        origens = sorted({c["origem"].split(" › ")[0] for c in cards})
+        print(f"  pendências: {len(cards)} de {len(origens)} estações — {', '.join(origens)}")
     if sem_dp:
         m = snap.get("mascarado") or {}
         print("  mascarado: " + (", ".join(f"{v}× {k}" for k, v in sorted(m.items())) if m else "nada encontrado"))

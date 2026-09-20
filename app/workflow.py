@@ -57,9 +57,9 @@ def build_workflow(entries, escopo_pendencias="estacao"):
 
     `escopo_pendencias="todas"` é o console local: as pendências de todas as
     estações registradas, porque decisão parada não avisa e ninguém abre onze
-    estações pra procurar. O padrão continua sendo só a estação ativa — é com
-    ele que o snapshot estático é gerado, e é o que mantém a fronteira da
-    estação (e a privada fora) na publicação.
+    estações pra procurar. `"publicavel"` é o snapshot estático — o mesmo, menos
+    as estações privadas. O padrão continua sendo só a estação ativa, que é o
+    que o briefing usa. Quem define cada um é `pendencias._pastas`.
     """
     stages, modo = colunas_do_quadro()
     colunas = {stage: [] for stage in stages}

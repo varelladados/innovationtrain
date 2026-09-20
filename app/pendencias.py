@@ -30,6 +30,9 @@ BACKUPS_DIR = PROJECT_DIR / "cache" / "backups"
 #: Os nomes que uma pasta de pendência tem quando a estação não declara a chave.
 PASTAS_CONVENCIONAIS = ("_pendencias", "pendencias")
 
+#: Os escopos da lista, do mais estreito ao mais largo. Ver `_pastas`.
+ESCOPOS = ("estacao", "publicavel", "todas")
+
 
 def _rotulo_da_ativa(cfg):
     """O nome da estação ativa como o `central.json` a chama.
@@ -95,15 +98,29 @@ def _pastas_da_estacao(cfg, rotulo):
 def _pastas(escopo="estacao"):
     """Onde mora pendência-formulário, com o rótulo da origem de cada pasta.
 
-    `escopo="estacao"` é só a estação ativa — é o que o snapshot estático e o
-    briefing usam, e é o que preserva a fronteira da estação na publicação.
-    `escopo="todas"` soma as outras estações do `central.json` e a pasta da
-    própria Central: o console local mostra o que está em aberto no ecossistema
-    inteiro, que é o que ninguém enxerga olhando uma estação de cada vez.
+    | escopo | junta | quem usa |
+    |---|---|---|
+    | `estacao` | só a ativa, e os projetos dentro dela | o briefing |
+    | `publicavel` | + as estações registradas **não privadas** e o hub | o snapshot estático |
+    | `todas` | + as privadas | o console local |
+
+    A diferença entre os dois últimos é a única que protege alguém, e o
+    `publicavel` nasceu de um erro de fronteira: publicar só a estação ativa
+    parecia prudência, mas o que não pode sair do volume é a estação **privada**
+    — não a vizinha. Numa instalação real isso deixou 27 das 55 decisões abertas
+    em casa, quase todas de estações do mesmo dono e do mesmo trabalho, e fez o
+    snapshot no telefone mentir por omissão sobre o que está parado. Quem fica de
+    fora é decidido pelo `privada` do `estacao.json` de cada
+    uma, nunca por uma lista de nomes aqui: lista se desatualiza no dia em que
+    alguém registra a décima segunda estação.
 
     Estação registrada cujo caminho não existe (volume não montado, pasta
-    movida) é pulada em silêncio: a aba continua mostrando o resto.
+    movida) é pulada em silêncio: a aba continua mostrando o resto. A que tem
+    `estacao.json` ilegível também — e no escopo publicável isso é fail-closed
+    de propósito: sem conseguir ler, não dá pra afirmar que ela não é privada.
     """
+    if escopo not in ESCOPOS:
+        raise PendenciaError(f"escopo desconhecido: {escopo}")
     vistos = set()
     saida = []
 
@@ -119,8 +136,12 @@ def _pastas(escopo="estacao"):
             saida.append((rotulo, pasta))
 
     ativa = config.atual()
+    if escopo == "publicavel":
+        # A ativa privada não vira snapshot nem por engano: o mesmo erro que o
+        # exportador já sabe mostrar, levantado antes de varrer qualquer pasta.
+        config.recusar_se_privada(ativa, "o escopo publicável")
     somar(_pastas_da_estacao(ativa, _rotulo_da_ativa(ativa)))
-    if escopo != "todas":
+    if escopo == "estacao":
         return saida
 
     for reg in config.estacoes():
@@ -131,6 +152,8 @@ def _pastas(escopo="estacao"):
             cfg = config.carregar(caminho, reg.get("taxonomia"))
         except RuntimeError:
             continue  # estacao.json ilegível não derruba a lista inteira
+        if escopo == "publicavel" and cfg.privada:
+            continue
         somar(_pastas_da_estacao(cfg, reg.get("nome") or cfg.nome))
 
     hub = config.hub_dir() / "pendencias"

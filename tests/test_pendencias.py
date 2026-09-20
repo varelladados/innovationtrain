@@ -328,6 +328,37 @@ class TestEscopoTodas(unittest.TestCase):
                 if c["slug"] == "da-b"][0]
         self.assertFalse(card["local"])
 
+    def _tornar_privada(self, raiz):
+        """Privacidade pelo caminho real: o `estacao.json` da própria estação."""
+        (raiz / "estacao.json").write_text(
+            json.dumps({"privada": True}), encoding="utf-8")
+
+    def test_publicavel_deixa_a_privada_de_fora(self):
+        """O escopo do snapshot: tudo menos a privada. É o único ponto em que a
+        diferença entre "publicavel" e "todas" protege alguém — se os dois
+        escopos devolvessem a mesma coisa, publicar levaria a estação privada
+        junto e nada no caminho avisaria."""
+        self._por(self.a, "da-a")
+        self._por(self.b, "da-b")
+        self._tornar_privada(self.b)
+        publicavel = pendencias.listar_pendencias_ativas("publicavel")["cards"]
+        todas = pendencias.listar_pendencias_ativas("todas")["cards"]
+        self.assertEqual([c["slug"] for c in publicavel], ["da-a"])
+        self.assertEqual(sorted(c["slug"] for c in todas), ["da-a", "da-b"])
+
+    def test_publicavel_recusa_quando_a_propria_ativa_e_privada(self):
+        """Sem isto a ativa privada entraria pela primeira linha de `_pastas`,
+        antes do filtro que só olha as registradas."""
+        self._por(self.a, "da-a")
+        apoio.aplicar(self.a, pendencias="_pendencias", privada=True)
+        with self.assertRaises(config.EstacaoPrivada):
+            pendencias._pastas("publicavel")
+
+    def test_escopo_desconhecido_e_recusado(self):
+        """Escopo errado por digitação não pode degradar para o mais largo."""
+        with self.assertRaises(pendencias.PendenciaError):
+            pendencias._pastas("todas-mesmo")
+
 
 class TestResponder(BaseTemp):
     def _opcao(self, ref, indice=0, pergunta=0):

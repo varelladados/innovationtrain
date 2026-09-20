@@ -232,8 +232,9 @@ nenhuma, que é o modo de falha que este app existe para evitar.
 
 | escopo | o que junta | quem usa |
 |---|---|---|
-| `estacao` (padrão) | a pasta declarada pela estação ativa + o `_pendencias/` de cada projeto dela | `export_static.py` e o briefing — é o que mantém a fronteira da estação na publicação |
-| `todas` | o acima + cada estação do `central.json` + a pasta `pendencias/` da própria Central | `GET /api/workflow` no servidor local |
+| `estacao` (padrão) | a pasta declarada pela estação ativa + o `_pendencias/` de cada projeto dela | o briefing |
+| `publicavel` | o acima + cada estação **não privada** do `central.json` + a pasta `pendencias/` da própria Central | `export_static.py --pendencias-de-todas` |
+| `todas` | o acima + as privadas | `GET /api/workflow` no servidor local |
 
 Três regras que o código cobra:
 
@@ -251,8 +252,20 @@ Três regras que o código cobra:
   em vez de um link que daria 404.
 
 A **estação privada** aparece no console local — ele é local, e a decisão
-parada é de quem está na frente dele. O que não muda é a publicação: o snapshot
-estático usa o escopo `estacao`, então nada de outra estação entra nele.
+parada é de quem está na frente dele. Na publicação ela nunca entra, e é o
+`privada` do `estacao.json` de cada uma que decide, nunca uma lista de nomes no
+código: lista se desatualiza no dia em que alguém registra a décima segunda
+estação. A ativa privada é recusada antes de varrer qualquer pasta.
+
+O escopo `publicavel` corrigiu uma fronteira errada. O snapshot saía com
+`estacao`, o que parecia prudência e era omissão: numa instalação real, das 55
+decisões abertas, 27 ficavam em casa — quase todas de estações do mesmo dono e
+do mesmo trabalho. O que não pode sair do volume é a **privada**, não a
+vizinha. O corpus
+do snapshot continua sendo o da estação ativa; só a aba Workflow fica mais
+larga, e o banner diz de quantas estações — sem isso a aba mostraria decisão de
+estação que não aparece na árvore ao lado, e quem abrisse no telefone não teria
+como saber se era defeito ou escopo.
 
 ## Ciclo de vida físico dentro de um estágio
 
