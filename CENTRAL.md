@@ -427,9 +427,9 @@ Central nunca commita em nome de ninguém.
 - **A porta tem uma fonte só:** `config.PORTA`. O `.bat` pergunta ao Python; o
   `.claude/launch.json` é o único lugar que repete o número, porque é JSON lido
   pelo harness — e um teste cobra que os dois concordem.
-- **Este repositório é público, e nenhum nome de estação de ninguém entra
-  nele.** São **quatro camadas**, e a ordem importa — cada uma pega o que a
-  anterior deixou passar:
+- **Este repositório é público, e nenhum nome próprio de estação entra no
+  código nem nos caminhos dele.** São **quatro camadas**, e a ordem importa —
+  cada uma pega o que a anterior deixou passar:
 
   | # | Camada | Onde | Pega o quê |
   |---|---|---|---|
@@ -443,6 +443,22 @@ Central nunca commita em nome de ninguém.
   o vocabulário proibido está lá em **hash**, e as mensagens de falha devolvem
   hash, não palavra. Os testes de histórico existem porque um `git revert`
   traria de volta o commit que o teste do topo deveria ter barrado.
+
+  **São dois casos, e só o primeiro é regra.** *Nome em código vivo* — chave de
+  frontmatter que o app grava, caminho de arquivo, rótulo de métrica, nome de
+  pasta — é o que as quatro camadas barram, e é de onde a regra nasceu: o
+  vocabulário estava aí, e tirar a palavra sem mover a coisa para configuração
+  teria quebrado a leitura da estação de origem. *Nome em prosa* — comentário,
+  docstring, `.md` — não é questão de sigilo: é documentação ruim, porque quem
+  clona não conhece a instalação de ninguém e um exemplo nominal não lhe ensina
+  nada. Vale trocar por descrição genérica pelo mesmo motivo por que se trocaria
+  num repositório privado.
+
+  A distinção está escrita porque a falta dela já custou: em 2026-09-20 a frase
+  larga fez frear um substantivo comum num docstring, ler o verde do teste como
+  falha de cobertura e abrir pendência sobre um buraco inexistente. Regra de
+  segurança aplicada larga demais vira atrito, e atrito é como ela acaba
+  afrouxada inteira — inclusive na parte que protegia de verdade.
 
   **Reescrever história não é camada** — é o conserto de emergência de quando as
   quatro falharam, e ele não desfaz o que já foi publicado: `push --force` só
