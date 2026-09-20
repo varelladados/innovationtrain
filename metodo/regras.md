@@ -36,6 +36,13 @@ Se o mesmo grão volta a se mover sem mudar de estágio, a linha nova usa o
 **mesmo identificador com sufixo `-1`, `-2`…** — nunca repete a string igual,
 porque aí vira duplicata e o `verificar` acusa.
 
+É assim que se **fecha** a linhagem de um item que já tinha linha: acrescenta-se
+a continuação com o `→destino` na coluna `Etapa/Tipo`, em vez de voltar na linha
+original. O `gerar-sem-destino` lê a **última** linha de cada grão, então quem
+manda é o acréscimo mais recente — e uma continuação **sem** seta depois de uma
+com seta **reabre** o item, que volta para o `_sem-destino.md`. Reabrir é gesto
+legítimo: o destino que não vingou merece a fila de volta, não um grão novo.
+
 **Por quê:** o registro é a única coisa que diz *de onde veio*. Um histórico
 que pode ser reescrito não é histórico.
 

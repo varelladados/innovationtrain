@@ -1,5 +1,31 @@
 # Changelog — Central
 
+## 0.14.3 — 2026-09-20
+
+**Fechar a linhagem de um item passa a funcionar sem reescrever o registro.**
+O `gerar-sem-destino` lia a **primeira** linha de cada identificador. Como a
+regra 2 proíbe editar linha existente, o único jeito de dizer para onde um item
+foi era a continuação `<id>-N` com o `→destino` — e ela não valia nada: o item
+seguia na lista de sem destino para sempre, ou alguém violava o append-only
+para calar o gerador. Medido numa estação real: dois grãos consumidos por
+skills continuavam listados depois da continuação gravada.
+
+- **A última linha de cada grão é que decide.** Base e continuações (`<id>-1`,
+  `<id>-2`…) são agrupadas pelo mesmo `SUFIXO_CONTINUACAO_RE` que o módulo já
+  usava; a mais recente do arquivo manda.
+- **Reabrir é legítimo.** Uma continuação **sem** seta depois de uma **com**
+  seta traz o item de volta ao `_sem-destino.md` — o caso do destino que não
+  vingou. A alternativa ("uma vez fechado, sempre fechado") obrigaria a abrir
+  grão novo para retomar trabalho antigo, quebrando a linhagem no ponto em que
+  ela interessa.
+- **O jeito antigo continua valendo**: o `→destino` na própria linha original
+  fecha como sempre fechou — há dezenas de itens assim no acervo.
+- Documentação: um parágrafo na regra 2 de `metodo/regras.md`.
+- 4 testes novos em `tests/test_sem_destino_continuacao.py` (326 no total): a
+  continuação com seta tira o grão da lista; o grão sem seta nenhuma fica; o
+  fechado na linha original segue fora; o reaberto volta. O primeiro e o último
+  falham no código de antes.
+
 ## 0.14.2 — 2026-09-19
 
 **Uma captura que falha no meio do `aplicar` não faz a rodada seguinte repetir

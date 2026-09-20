@@ -263,12 +263,18 @@ def cmd_gerar_sem_destino(args):
         sys.exit(f"ERRO: {p.arquivo.name} não declara arquivos.sem_destino")
 
     linhas = p.linhas_do_registro(p.ler_registro())
-    sem_destino, vistos = [], set()
+    # Quem decide é a **última** linha de cada grão, não a primeira. O registro
+    # é append-only: fechar linhagem é acrescentar uma continuação (`<id>-N`)
+    # com o `→destino`, nunca reescrever a linha original. Lendo só a primeira,
+    # essa continuação não valeria de nada — e fechar um item passaria a exigir
+    # editar história, que a doutrina proíbe.
+    # Base e continuação são identificadores diferentes (`-7f1c` × `-7f1c-1`),
+    # por isso o agrupamento é pelo grão, não pela string do identificador.
+    ultima = {}
     for l in linhas:
-        if "→" in l["etapa_tipo"] or l["id"] in vistos:
-            continue
-        vistos.add(l["id"])
-        sem_destino.append(l)
+        m = SUFIXO_CONTINUACAO_RE.match(l["id"])
+        ultima[m.group(1) if m else l["id"]] = l
+    sem_destino = [l for l in ultima.values() if "→" not in l["etapa_tipo"]]
 
     def bloco(chave, itens):
         cab = ["| ID | Data | Etapa/Tipo | Local | Resumo | Link |",
