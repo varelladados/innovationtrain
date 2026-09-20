@@ -213,7 +213,10 @@ def mascarar(texto):
 
 def build_html(full=False, sem_dado_pessoal=False):
     tpl = TEMPLATE_PATH.read_text(encoding="utf-8")
-    title = re.search(r"<title>(.*?)</title>", tpl).group(1)
+    # O título carrega a estação: o snapshot vira um arquivo publicado, e dois
+    # deles (estações diferentes, ou mascarado e completo) com o mesmo nome são
+    # indistinguíveis na galeria de quem publica.
+    title = f"{re.search(r'<title>(.*?)</title>', tpl).group(1)} · {config.atual().nome}"
     links = "\n".join(re.findall(r"<link [^>]*>", tpl))
     style = re.search(r"<style>.*?</style>", tpl, re.S).group(0)
     body = re.search(r"<body>(.*)</body>", tpl, re.S).group(1)
