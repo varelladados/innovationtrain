@@ -196,8 +196,7 @@ silêncio — antes dependiam de repositórios irmãos que um clone não trazia.
 
 ## Convenção de nomes que o indexer pressupõe (fonte de verdade: `indexer.py`)
 
-O classificador é escrito em cima desta convenção — não invente exceção sem
-atualizar os dois juntos:
+O classificador é escrito em cima desta convenção:
 
 | Padrão de nome | Tipo | Observação |
 |---|---|---|
@@ -294,8 +293,7 @@ com a estação inteira já naquele estado; avançar copia essa pasta por cima. 
 lógica destrutiva mora num lugar só — `metodo/estacao.py reiniciar`, chamado
 por subprocess, o mesmo caminho de `novo-id`.
 
-A fronteira é deliberada e vale a pena entender antes de propor mudá-la: numa
-estação de verdade, a passagem entre estágios é **decisão** (os critérios de
+A fronteira é deliberada: numa estação de verdade, a passagem entre estágios é **decisão** (os critérios de
 `metodo/classificar.md`) e **escrita** (o texto do estágio novo). Um botão não faz
 nenhuma das duas. Automatizar a mecânica sem elas produziria notas que são cópia
 da captura — ruído com identificador. A trilha mostra **como fica**; quem faz
@@ -450,14 +448,18 @@ embutido, e uma CSP que o permita não protege do que importa aqui.
 
 ## Convenções
 
+As regras gerais são as nove de [`metodo/regras.md`](metodo/regras.md), inclusive
+"salvar é automático; publicar é decisão". Aqui fica só o que é próprio do
+produto — cada item quebra quem clona, a página ou a publicação se for ignorado,
+e quase todos têm teste que cobra:
+
 - Zero build step, zero dependência de terceiros no lado Python (stdlib puro). Do
   lado do frontend, `marked.js` (markdown) e `mermaid.min.js` (diagramas) são as
   duas exceções — vendorizadas (arquivo copiado, não CDN), decisão deliberada
   priorizando cobertura correta de markdown e diagrama sobre a pureza
-  "zero terceiro".
-- Antes de considerar uma mudança pronta: `python -m py_compile app/*.py`;
-  `python -m unittest discover tests`; se mexer no `<script>` de `index.html`,
-  `node --check` no trecho extraído.
+  "zero terceiro". O CI não instala nada, então um import de terceiro derruba o
+  build; a sintaxe do `<script>` da página é conferida por
+  `tests/test_js_sintaxe.py`.
 - **Nenhum valor literal de cor fora do bloco de tokens** do `index.html`. É
   cobrado por `tests/test_design_tokens.py` e explicado em
   `docs/design-system.md`. Cor escrita numa regra não troca no modo escuro.
@@ -492,40 +494,14 @@ embutido, e uma CSP que o permita não protege do que importa aqui.
   hash, não palavra. Os testes de histórico existem porque um `git revert`
   traria de volta o commit que o teste do topo deveria ter barrado.
 
-  **São dois casos, e só o primeiro é regra.** *Nome em código vivo* — chave de
-  frontmatter que o app grava, caminho de arquivo, rótulo de métrica, nome de
-  pasta — é o que as quatro camadas barram, e é de onde a regra nasceu: o
-  vocabulário estava aí, e tirar a palavra sem mover a coisa para configuração
-  teria quebrado a leitura da estação de origem. *Nome em prosa* — comentário,
-  docstring, `.md` — não é questão de sigilo: é documentação ruim, porque quem
-  clona não conhece a instalação de ninguém e um exemplo nominal não lhe ensina
-  nada. Vale trocar por descrição genérica pelo mesmo motivo por que se trocaria
-  num repositório privado.
-
-  A distinção está escrita porque a falta dela já custou: em 2026-09-20 a frase
-  larga fez frear um substantivo comum num docstring, ler o verde do teste como
-  falha de cobertura e abrir pendência sobre um buraco inexistente. Regra de
-  segurança aplicada larga demais vira atrito, e atrito é como ela acaba
-  afrouxada inteira — inclusive na parte que protegia de verdade.
+  As quatro camadas só pegam o que já conhecem (a forma, os radicais em hash):
+  por isso o push deste repositório é publicação, um por vez, **com o diff lido
+  antes**.
 
   **Reescrever história não é camada** — é o conserto de emergência de quando as
   quatro falharam, e ele não desfaz o que já foi publicado: `push --force` só
   desreferencia o objeto no GitHub. Para remover de verdade, apagar e recriar o
   repositório.
-- **Aba nova exige três pontos**, e esquecer o segundo é silencioso: o botão
-  dentro de `<nav id="nav-abas">`, com o ícone em `<span class="ic">`; a chamada
-  `marcarAba("<id-do-botão>")` na função que abre a aba — sem ela a aba abre e o
-  botão não acende; e o listener no bloco final de `addEventListener`. O estilo
-  vem de `#nav-abas button`, sem id nenhum no CSS. Ver `docs/design-system.md`.
-- **Salvar é automático; publicar é decisão** — `metodo/regras.md`, regra 7,
-  definida depois de perda real de trabalho. A sessão commita local **sem pedir
-  autorização** ao terminar um artefato e ao encerrar a sessão; ela **avisa** o
-  que entrou, não pergunta. `git add` **nominal**, nunca `git add .` nem
-  `git add -A`. Mudança de outra origem é listada no aviso e fica de fora.
-  **Push só com autorização explícita e separada**, uma por vez. A regra que
-  vigorava antes era o oposto ("só commitar depois que o usuário confirmar que
-  testou") e foi ela que custou o trabalho perdido — testar antes de commitar
-  continua valendo; esperar autorização para **salvar** não.
 
 ## Links
 

@@ -582,6 +582,9 @@ th{background:var(--surface-2)}
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="estacao-aviso" hidden></div>
+    <!-- Aba nova pede três pontos: o botão aqui (ícone em <span class="ic">), a chamada
+         marcarAba("<id-do-botão>") na função que abre a aba (sem ela o botão não acende)
+         e o listener no bloco final de addEventListener. O estilo vem de #nav-abas button. -->
     <nav id="nav-abas">
       <button id="workflow-nav-btn" title="Os estágios da estação e as decisões abertas, numa view só"><span class="ic" aria-hidden="true">🔀</span>Workflow</button>
       <button id="dashboard-nav-btn" title="Os números da estação, recalculados do registro e do disco"><span class="ic" aria-hidden="true">📊</span>Dashboard</button>
