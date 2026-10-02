@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revisão de UX — navegação, ação e consequência (mockup de aprovação)</title>
+<style>
+/* Mockup de aprovação: nada aqui está no app. Os tokens são os do index.html (tema padrão), copiados,
+   para a proposta ser julgada com a cara real do produto. Cor só neste bloco, como no app. */
+:root{
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px;
+  --r-1:4px; --r-2:8px; --r-pill:999px;
+  --fs-1:12px; --fs-2:13px; --fs-3:14px; --fs-4:17px; --fs-lg:20px; --fs-num:28px;
+  --bg:#F3F5F7; --surface:#FFFFFF; --surface-2:#E7ECF1; --border:rgba(16,24,40,0.13);
+  --text:#101828; --text-2:#5A6478; --accent:#1F6F6B; --accent-bg:#D8EAE8; --on-accent:#FFFFFF;
+  --danger:#8C2F3A; --danger-bg:#F5DEE1; --success:#2F6B45; --success-bg:#DDEDE3;
+  --warn:#7A5A1F; --warn-bg:#F2E8D2; --stub:#9AA4B2;
+  --shadow:0 1px 2px rgba(16,24,40,0.06), 0 8px 24px -12px rgba(16,24,40,0.20);
+  --estagio-1:#A3B0B2; --estagio-2:#7FA6A2; --estagio-3:#5C978F; --estagio-4:#3E827C; --estagio-5:#1F6F6B;
+  --veu:rgba(16,24,40,0.32);
+}
+:root[data-theme="dark"]{
+  --bg:#0F1317; --surface:#161B21; --surface-2:#1F262E; --border:rgba(230,237,243,0.14);
+  --text:#E6EDF3; --text-2:#98A6B3; --accent:#5FB8B0; --accent-bg:#15302E; --on-accent:#0F1317;
+  --danger:#D98A96; --danger-bg:#322226; --success:#8FC5A3; --success-bg:#1B2A21;
+  --warn:#E0BE7E; --warn-bg:#2C2519; --stub:#6B7684;
+  --shadow:0 1px 2px rgba(0,0,0,0.35), 0 12px 28px -14px rgba(0,0,0,0.65);
+  --estagio-1:#55686B; --estagio-2:#6E918D; --estagio-3:#46A197; --estagio-4:#5ABBB1; --estagio-5:#6ECFC6;
+  --veu:rgba(0,0,0,0.55);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Public Sans",-apple-system,"Segoe UI",Roboto,sans-serif;font-size:var(--fs-3);line-height:1.5;
+  background:var(--bg);color:var(--text)}
+h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:600;margin:0}
+code,.mono{font-family:"IBM Plex Mono",Consolas,monospace;font-size:var(--fs-1)}
+button{font:inherit;color:inherit;cursor:pointer}
+[hidden]{display:none !important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- a moldura da proposta (fora do app) ---- */
+.proposta{max-width:1180px;margin:0 auto;padding:var(--sp-6) var(--sp-6) var(--sp-4)}
+.proposta h1{font-size:var(--fs-lg)}
+.proposta p{color:var(--text-2);max-width:86ch;margin:var(--sp-2) 0 0}
+.tres{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-top:var(--sp-4)}
+.tres div{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-3) var(--sp-4)}
+.tres b{display:block;font-size:var(--fs-2)}
+.tres span{color:var(--text-2);font-size:var(--fs-2)}
+.barra-mock{display:flex;gap:var(--sp-3);align-items:center;margin-top:var(--sp-4);font-size:var(--fs-2);color:var(--text-2)}
+.barra-mock button{border:1px solid var(--border);background:var(--surface);border-radius:var(--r-pill);padding:4px 12px}
+.barra-mock button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+/* ---- o app proposto ---- */
+.app{max-width:1180px;height:720px;margin:0 auto var(--sp-6);display:grid;grid-template-columns:176px 1fr;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);overflow:hidden;position:relative}
+.trilho{background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:var(--sp-3) var(--sp-2);gap:2px}
+.marca{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:var(--fs-4);padding:var(--sp-1) var(--sp-2) var(--sp-3)}
+.trilho button{display:flex;align-items:center;gap:var(--sp-2);width:100%;border:0;background:transparent;border-radius:var(--r-2);
+  padding:7px var(--sp-2);text-align:left;color:var(--text-2);font-size:var(--fs-3)}
+.trilho button:hover{background:var(--surface-2);color:var(--text)}
+.trilho button.on{background:var(--accent-bg);color:var(--text);font-weight:600}
+.trilho .n{margin-left:auto;font-size:var(--fs-1);background:var(--accent);color:var(--on-accent);border-radius:var(--r-pill);padding:0 7px}
+.trilho .fim{margin-top:auto;display:flex;flex-direction:column;gap:2px;position:relative}
+.ic{width:16px;text-align:center;flex:none}
+.mais{position:absolute;bottom:38px;left:0;width:210px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);
+  box-shadow:var(--shadow);padding:var(--sp-1);z-index:5}
+.mais small{display:block;color:var(--text-2);padding:var(--sp-1) var(--sp-2);font-size:var(--fs-1)}
+
+.palco{display:flex;flex-direction:column;min-width:0}
+.topo{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-4);border-bottom:1px solid var(--border)}
+.topo select{font:inherit;color:inherit;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);padding:5px 8px}
+.busca{flex:1;max-width:460px;display:flex;align-items:center;gap:var(--sp-2);border:1px solid var(--border);border-radius:var(--r-2);
+  padding:5px 10px;color:var(--text-2);background:var(--surface);text-align:left}
+.busca kbd{margin-left:auto;font:inherit;font-size:var(--fs-1);border:1px solid var(--border);border-radius:var(--r-1);padding:0 5px}
+.vista{flex:1;overflow:auto;padding:var(--sp-6)}
+.vista h2{font-size:var(--fs-lg)}
+.sub{color:var(--text-2);margin:2px 0 var(--sp-4)}
+h3{font-size:var(--fs-3);margin:var(--sp-6) 0 var(--sp-2);font-family:inherit;font-weight:600}
+
+.esteira{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--sp-2)}
+.esteira button{border:1px solid var(--border);background:var(--surface);border-radius:var(--r-2);padding:var(--sp-3);text-align:left;border-top:3px solid var(--estagio-1)}
+.esteira button:nth-child(2){border-top-color:var(--estagio-2)} .esteira button:nth-child(3){border-top-color:var(--estagio-3)}
+.esteira button:nth-child(4){border-top-color:var(--estagio-4)} .esteira button:nth-child(5){border-top-color:var(--estagio-5)}
+.esteira b{display:block;font-size:var(--fs-num);font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.esteira span{color:var(--text-2);font-size:var(--fs-2)}
+.esteira button.piscou{background:var(--success-bg)}
+
+.cartao{border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-2);background:var(--surface)}
+.cartao .q{font-weight:600}
+.cartao .de{color:var(--text-2);font-size:var(--fs-1)}
+.opcoes{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-2)}
+.opcoes button{border:1px solid var(--border);background:var(--surface);border-radius:var(--r-2);padding:6px 10px;font-size:var(--fs-2);text-align:left}
+.opcoes button:hover{border-color:var(--accent)}
+.opcoes button.rec{border-color:var(--accent)}
+.cartao.feita{background:var(--success-bg);border-color:transparent;display:flex;gap:var(--sp-3);align-items:center}
+.link{border:0;background:transparent;color:var(--accent);padding:0;text-decoration:underline}
+
+.passo{display:flex;align-items:center;gap:var(--sp-3);border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-3) var(--sp-4)}
+.primario{background:var(--accent);color:var(--on-accent);border:0;border-radius:var(--r-2);padding:7px 14px;font-weight:600}
+.mudou{margin:var(--sp-2) 0 0;padding:var(--sp-3) var(--sp-4);border-left:3px solid var(--success);background:var(--success-bg);border-radius:0 var(--r-2) var(--r-2) 0;font-size:var(--fs-2)}
+.mudou li{margin:2px 0}
+
+.segs{display:inline-flex;background:var(--surface-2);border-radius:var(--r-2);padding:2px;gap:2px}
+.segs button{border:0;background:transparent;border-radius:6px;padding:5px 10px;font-size:var(--fs-2);color:var(--text-2)}
+.segs button.on{background:var(--surface);color:var(--text);font-weight:600;box-shadow:var(--shadow)}
+.duas{display:grid;grid-template-columns:330px 1fr;gap:var(--sp-4);margin-top:var(--sp-4);height:520px}
+.lista{border:1px solid var(--border);border-radius:var(--r-2);overflow:auto}
+.lista button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);background:transparent;padding:var(--sp-2) var(--sp-3)}
+.lista button.on{background:var(--accent-bg)}
+.lista small{display:block;color:var(--text-2)}
+.leitor{border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-4) var(--sp-6);overflow:auto}
+.leitor h2{font-size:var(--fs-4)}
+
+textarea{width:100%;min-height:150px;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);padding:var(--sp-3)}
+.veredito{display:flex;gap:var(--sp-3);align-items:center;margin-top:var(--sp-2);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-2);background:var(--surface-2);font-size:var(--fs-2)}
+.ponto{width:8px;height:8px;border-radius:50%;background:var(--success);flex:none}
+
+.veu{position:absolute;inset:0;background:var(--veu);display:grid;place-items:start center;padding-top:110px;z-index:9}
+.paleta{width:520px;background:var(--surface);border-radius:var(--r-2);box-shadow:var(--shadow);overflow:hidden}
+.paleta input{width:100%;border:0;border-bottom:1px solid var(--border);padding:var(--sp-3) var(--sp-4);font:inherit;font-size:var(--fs-4);background:transparent;color:inherit;outline:none}
+.paleta div{padding:var(--sp-2) var(--sp-4);display:flex;gap:var(--sp-3)}
+.paleta div.on{background:var(--accent-bg)}
+.paleta small{margin-left:auto;color:var(--text-2)}
+
+.medidas{max-width:1180px;margin:0 auto var(--sp-8);padding:0 var(--sp-6)}
+table{border-collapse:collapse;width:100%;font-size:var(--fs-2);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2)}
+th,td{text-align:left;padding:var(--sp-2) var(--sp-3);border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--text-2);font-weight:600}
+.medidas h2{font-size:var(--fs-4);margin:var(--sp-6) 0 var(--sp-2)}
+.medidas ol{color:var(--text-2);max-width:92ch}
+@media (prefers-reduced-motion:no-preference){.esteira button,.cartao{transition:background .25s}}
+</style>
+</head>
+<body>
+
+<section class="proposta">
+  <h1>Revisão de UX — navegação, ação e consequência</h1>
+  <p><b>Mockup de aprovação.</b> Nada daqui está no app: é uma proposta para a sessão dedicada de UX, desenhada com os tokens e as fontes reais e com a estação de exemplo (cozinha e fotografia). Clique no trilho, responda uma decisão, avance a trilha, abra a busca: o que importa é ver <i>onde</i> a consequência aparece.</p>
+  <div class="tres">
+    <div><b>1. Ação longe da consequência</b><span>Cada ação mostra o efeito no mesmo lugar: a decisão respondida vira a resposta, o passo da trilha lista o que mudou, a nota capturada aparece embaixo da caixa.</span></div>
+    <div><b>2. Barra lateral cheia</b><span>O trilho fica com cinco destinos de todo dia. Estação, busca e tema sobem para o topo; cinco abas de uso raro vão para "Mais".</span></div>
+    <div><b>3. Rolagem em menu</b><span>A árvore sai do menu e vira a página Arquivos, com um estágio por vez. Menu não tem mais o que rolar — por construção, não por medida.</span></div>
+  </div>
+  <div class="barra-mock">
+    <span>Ver em:</span>
+    <button id="claro" class="on">claro</button><button id="escuro">escuro</button>
+  </div>
+</section>
+
+<div class="app" id="app">
+  <nav class="trilho" aria-label="Destinos">
+    <div class="marca">Central</div>
+    <button data-v="hoje" class="on"><span class="ic">◉</span>Hoje<span class="n" id="n-dec">3</span></button>
+    <button data-v="capturar"><span class="ic">✎</span>Capturar</button>
+    <button data-v="arquivos"><span class="ic">▤</span>Arquivos</button>
+    <button data-v="portfolio"><span class="ic">▦</span>Portfólio</button>
+    <button data-v="painel"><span class="ic">◔</span>Painel</button>
+    <div class="fim">
+      <div class="mais" id="mais" hidden>
+        <small>De vez em quando</small>
+        <button><span class="ic">⇄</span>Fluxo do método</button>
+        <button><span class="ic">⧖</span>Triagem<span class="n">2</span></button>
+        <button><span class="ic">⎇</span>Versões</button>
+        <button><span class="ic">➤</span>Tour</button>
+        <button><span class="ic">＋</span>Embarque</button>
+      </div>
+      <button id="btn-mais" aria-expanded="false"><span class="ic">⋯</span>Mais</button>
+    </div>
+  </nav>
+
+  <div class="palco">
+    <header class="topo">
+      <select aria-label="Estação"><option>Estação de exemplo</option><option>Preços e lojas</option></select>
+      <button class="busca" id="abrir-paleta"><span>⌕</span> Buscar arquivo, projeto ou comando <kbd>Ctrl K</kbd></button>
+    </header>
+
+    <!-- HOJE -->
+    <section class="vista" id="v-hoje">
+      <h2>Hoje</h2>
+      <p class="sub">O que espera por você, e o que mudou desde a última vez.</p>
+
+      <div class="esteira" id="esteira">
+        <button data-e="0"><b>4</b><span>Capturas</span></button>
+        <button data-e="1"><b>2</b><span>Notas</span></button>
+        <button data-e="2"><b>1</b><span>Ideias</span></button>
+        <button data-e="3"><b>0</b><span>Funcionalidades</span></button>
+        <button data-e="4"><b>1</b><span>Projetos</span></button>
+      </div>
+
+      <h3>Decisões abertas</h3>
+      <div id="decisoes">
+        <div class="cartao" data-d="1">
+          <div class="q">A receita de pão vira nota própria ou entra na nota de fermentação?</div>
+          <div class="de">estação de exemplo · aberta há 3 dias</div>
+          <div class="opcoes"><button class="rec">A · nota própria (recomendada)</button><button>B · juntar à nota de fermentação</button><button>Outra resposta…</button></div>
+        </div>
+        <div class="cartao" data-d="2">
+          <div class="q">O tripé entra como funcionalidade do projeto Estúdio ou é projeto novo?</div>
+          <div class="de">projeto Estúdio · aberta há 1 dia</div>
+          <div class="opcoes"><button class="rec">A · acoplar ao Estúdio (recomendada)</button><button>B · projeto novo</button><button>Outra resposta…</button></div>
+        </div>
+        <div class="cartao" data-d="3">
+          <div class="q">Publicar o ponto salvo de ontem?</div>
+          <div class="de">Versões · 2 pontos salvos sem publicar</div>
+          <div class="opcoes"><button>A · gerar o texto para publicar</button><button class="rec">B · deixar para depois (recomendada)</button></div>
+        </div>
+      </div>
+
+      <h3>Trilha do exemplo</h3>
+      <div class="passo">
+        <div><b>Passo <span id="passo-n">2</span> de 7</b><div class="de" id="passo-t">A captura do pão virou nota.</div></div>
+        <button class="primario" id="avancar" style="margin-left:auto">Avançar um passo</button>
+        <button class="link" id="voltar">voltar ao início</button>
+      </div>
+      <ul class="mudou" id="mudou" hidden></ul>
+    </section>
+
+    <!-- CAPTURAR -->
+    <section class="vista" id="v-capturar" hidden>
+      <h2>Capturar</h2>
+      <p class="sub">Escreva ou cole. A triagem confere antes de gravar, e a nota aparece aqui embaixo.</p>
+      <textarea id="nota" placeholder="O que você quer guardar?"></textarea>
+      <div class="veredito"><i class="ponto"></i><span id="veredito-t">Vai para <b>Capturas</b> desta estação. Nenhum dado de terceiro encontrado.</span>
+        <button class="primario" id="gravar" style="margin-left:auto">Guardar</button></div>
+      <h3>Entrou agora</h3>
+      <div id="entrou"><div class="cartao"><span class="mono">CAP-004</span> · testar hidratação de 75% no pão de domingo <div class="de">há 2 horas · Capturas</div></div></div>
+    </section>
+
+    <!-- ARQUIVOS -->
+    <section class="vista" id="v-arquivos" hidden>
+      <h2>Arquivos</h2>
+      <p class="sub">Um estágio por vez. A lista é conteúdo — rola como qualquer página; o menu, não.</p>
+      <div class="segs" id="segs">
+        <button class="on">Capturas · 4</button><button>Notas · 2</button><button>Ideias · 1</button><button>Funcionalidades · 0</button><button>Projetos · 1</button><button>Estação</button>
+      </div>
+      <div class="duas">
+        <div class="lista" id="lista"></div>
+        <article class="leitor"><h2 id="leitor-t">Pão de fermentação lenta</h2><p class="de mono" id="leitor-c">1-capturas/CAP-001-pao-de-fermentacao-lenta.md</p>
+          <p>A massa descansa a noite inteira. Quatro dobras, uma a cada meia hora. Forno bem quente, com vapor.</p>
+          <p><button class="primario">Gerar briefing para a IA</button> <button class="link">abrir no editor</button></p></article>
+      </div>
+    </section>
+
+    <section class="vista" id="v-portfolio" hidden><h2>Portfólio</h2><p class="sub">Como hoje: um cartão por projeto, com maturidade, backlog e o que roda. Não muda nesta proposta.</p></section>
+    <section class="vista" id="v-painel" hidden><h2>Painel</h2><p class="sub">O Dashboard de hoje, com outro nome no trilho. Não muda nesta proposta.</p></section>
+  </div>
+
+  <div class="veu" id="veu" hidden>
+    <div class="paleta" role="dialog" aria-label="Buscar">
+      <input id="paleta-in" placeholder="Buscar arquivo, projeto ou comando">
+      <div class="on"><span>▤</span>Pão de fermentação lenta<small>Capturas</small></div>
+      <div><span>▦</span>Estúdio<small>Projeto</small></div>
+      <div><span>⧖</span>Ir para Triagem<small>comando</small></div>
+      <div><span>✎</span>Nova captura<small>comando</small></div>
+    </div>
+  </div>
+</div>
+
+<section class="medidas">
+  <h2>O que muda, medido</h2>
+  <table>
+    <tr><th></th><th>Hoje (1280 × 800)</th><th>Proposta</th></tr>
+    <tr><td>Itens na barra lateral</td><td>título, seletor de estação, busca, <b>9</b> abas, cabeçalho da árvore, árvore, seletor de tema</td><td><b>5</b> destinos e "Mais"</td></tr>
+    <tr><td>Altura que sobra para a árvore</td><td>o que restar da barra (em estação grande, rola dentro do menu)</td><td>a página inteira, um estágio por vez</td></tr>
+    <tr><td>Achar um arquivo em centenas</td><td>abrir pastas na árvore</td><td>busca primeiro (<code>Ctrl K</code>); a lista por estágio é o segundo caminho</td></tr>
+    <tr><td>Responder uma decisão</td><td>aba Workflow, lista longa; a resposta some na lista</td><td>em Hoje; o cartão vira a resposta, com desfazer, e o contador do trilho cai</td></tr>
+    <tr><td>Avançar a trilha do exemplo</td><td>clicar e ir conferir em outra aba</td><td>a lista "o que mudou" aparece embaixo do botão, e a esteira acende o estágio que recebeu</td></tr>
+  </table>
+
+  <h2>O que precisa de decisão</h2>
+  <ol>
+    <li><b>Estrutura:</b> trilho de cinco destinos com Arquivos como página (esta proposta) · manter a barra de hoje e só reordenar · adiar.</li>
+    <li><b>Quais são os cinco:</b> Hoje, Capturar, Arquivos, Portfólio, Painel — ou Triagem sobe para o trilho no lugar do Painel.</li>
+    <li><b>"Hoje" como página inicial</b> no lugar da tela de boas-vindas vazia.</li>
+    <li><b>Arquivos de maquinário</b> (os que começam por <code>_</code>) ficam só no segmento "Estação", fora dos estágios.</li>
+    <li><b>A trilha suja o <code>git status</code></b> do exemplo: avisar ao lado do botão, ou restaurar sozinha ao sair.</li>
+  </ol>
+</section>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+function ver(v) {
+  $$(".vista").forEach((s) => (s.hidden = s.id !== "v-" + v));
+  $$(".trilho > button[data-v]").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+  $("#mais").hidden = true;
+}
+$$(".trilho > button[data-v]").forEach((b) => (b.onclick = () => ver(b.dataset.v)));
+$("#btn-mais").onclick = () => { const m = $("#mais"); m.hidden = !m.hidden; $("#btn-mais").setAttribute("aria-expanded", String(!m.hidden)); };
+$("#claro").onclick = () => { document.documentElement.dataset.theme = "light"; $("#claro").classList.add("on"); $("#escuro").classList.remove("on"); };
+$("#escuro").onclick = () => { document.documentElement.dataset.theme = "dark"; $("#escuro").classList.add("on"); $("#claro").classList.remove("on"); };
+
+// decisao: a resposta aparece onde a pergunta estava
+function ligarDecisoes() {
+  $$("#decisoes .cartao:not(.feita)").forEach((c) => {
+    const original = c.innerHTML;
+    $$(".opcoes button", c).forEach((b) => (b.onclick = () => {
+      const q = $(".q", c).textContent;
+      c.classList.add("feita");
+      c.innerHTML = `<span>✓</span><span><b>${b.textContent.replace(" (recomendada)", "")}</b><div class="de">${q} — gravado no arquivo da pendência; a próxima rodada encaminha.</div></span><button class="link" style="margin-left:auto">desfazer</button>`;
+      $(".link", c).onclick = () => { c.classList.remove("feita"); c.innerHTML = original; ligarDecisoes(); contar(); };
+      contar();
+    }));
+  });
+}
+function contar() { const n = $$("#decisoes .cartao:not(.feita)").length; $("#n-dec").textContent = n; $("#n-dec").hidden = !n; }
+ligarDecisoes();
+
+// trilha: o que mudou aparece embaixo do botao, e a esteira acende
+const PASSOS = [
+  ["A captura do pão virou nota.", 1, ["+ 2-notas/NOT-001-pao-de-fermentacao-lenta.md", "→ 1-capturas/_historico/CAP-001-…", "registro: +1 linha (CAP →NOT)"]],
+  ["A nota virou ideia: oficina de pão em casa.", 2, ["+ 3-ideias/IDE-001-oficina-de-pao/", "→ 2-notas/_historico/NOT-001-…", "registro: +1 linha (NOT →IDE)"]],
+  ["A ideia virou funcionalidade: apostila da oficina.", 3, ["+ 4-funcionalidades/FUN-001-apostila-da-oficina.md", "registro: +1 linha (IDE →FUN)"]],
+  ["A funcionalidade ganhou corpo: projeto Oficina.", 4, ["+ 5-projetos/Oficina/ (CLAUDE.md, backlog)", "→ 4-funcionalidades/_historico/FUN-001-…", "registro: +2 linhas"]],
+];
+let passo = 2;
+$("#avancar").onclick = () => {
+  if (passo >= 6) return;
+  const [t, e, m] = PASSOS[(passo - 2) % PASSOS.length]; passo++;
+  $("#passo-n").textContent = passo; $("#passo-t").textContent = t;
+  $("#mudou").hidden = false; $("#mudou").innerHTML = "<b>O que mudou neste passo</b>" + m.map((x) => `<li class="mono">${x}</li>`).join("");
+  const b = $$("#esteira button")[e]; $("b", b).textContent = +$("b", b).textContent + 1; b.classList.add("piscou"); setTimeout(() => b.classList.remove("piscou"), 1400);
+};
+$("#voltar").onclick = () => { passo = 2; $("#passo-n").textContent = 2; $("#passo-t").textContent = "A captura do pão virou nota."; $("#mudou").hidden = true; };
+$$("#esteira button").forEach((b) => (b.onclick = () => { ver("arquivos"); $$("#segs button")[+b.dataset.e].click(); }));
+
+// arquivos: um estagio por vez
+const ARQ = [
+  [["Pão de fermentação lenta", "CAP-001 · há 5 dias"], ["Luz de janela para retrato", "CAP-002 · há 4 dias"], ["Fundo infinito com cartolina", "CAP-003 · há 2 dias"], ["Hidratação de 75% no pão de domingo", "CAP-004 · há 2 horas"]],
+  [["Fermentação: o que aprendi", "NOT-001"], ["Retrato com uma luz só", "NOT-002"]],
+  [["Oficina de pão em casa", "IDE-001 · v1"]],
+  [],
+  [["Estúdio", "PRJ-001 · ativo · 3 itens abertos"]],
+  [["_registro.md", "o registro central"], ["_sem-destino.md", "gerado"], ["estacao.json", "o contrato da estação"]],
+];
+function listar(i) {
+  $$("#segs button").forEach((b, k) => b.classList.toggle("on", k === i));
+  $("#lista").innerHTML = ARQ[i].map(([t, s], k) => `<button class="${k ? "" : "on"}">${t}<small>${s}</small></button>`).join("") || `<p class="sub" style="padding:16px">Nenhuma funcionalidade ainda. Uma ideia vira funcionalidade quando tem destino e critério de pronto.</p>`;
+  $$("#lista button").forEach((b) => (b.onclick = () => { $$("#lista button").forEach((x) => x.classList.remove("on")); b.classList.add("on"); $("#leitor-t").textContent = b.firstChild.textContent; }));
+}
+$$("#segs button").forEach((b, i) => (b.onclick = () => listar(i))); listar(0);
+
+// capturar: a nota aparece embaixo da caixa
+$("#gravar").onclick = () => {
+  const t = $("#nota").value.trim(); if (!t) { $("#nota").focus(); return; }
+  const d = document.createElement("div"); d.className = "cartao"; d.style.background = "var(--success-bg)";
+  d.innerHTML = `<span class="mono">CAP-005</span> · <span></span><div class="de">agora · Capturas · <button class="link">abrir</button></div>`; d.children[1].textContent = t.slice(0, 90);
+  $("#entrou").prepend(d); $("#nota").value = "";
+  const b = $$("#esteira button")[0]; $("b", b).textContent = +$("b", b).textContent + 1;
+};
+
+// busca: a paleta substitui o menu fundo
+const paleta = (abre) => { $("#veu").hidden = !abre; if (abre) $("#paleta-in").focus(); };
+$("#abrir-paleta").onclick = () => paleta(true);
+$("#veu").onclick = (e) => { if (e.target.id === "veu") paleta(false); };
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); paleta(true); }
+  if (e.key === "Escape") { paleta(false); $("#mais").hidden = true; }
+});
+</script>
+</body>
+</html>
