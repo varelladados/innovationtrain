@@ -1,5 +1,29 @@
 # Changelog — Central
 
+## 0.17.0 — 2026-10-02
+
+**A triagem leva o trecho direto à estação do assunto, e não só diz a esfera.**
+Até aqui ela entregava em três estações de entrada — profissional, pessoal,
+administrativa — e parava. Uma Central que opera mais estações (a da saúde, a da
+casa, a do emprego) não tinha rota até elas: o que era da saúde caía na pessoal
+e ficava lá, e as estações temáticas nunca recebiam nada.
+
+- **`triagem.estacoes`**, o de-para das estações de destino: caminho, esfera e as
+  palavras pelas quais o assunto aparece. O levantamento diz quais o texto cita
+  ("provável — estação Casa") e mostra na coluna de citados; a leitura escreve o
+  nome dela como `destino` no `decisoes.json`, e `aplicar` cria a captura lá.
+- **Esfera `emprego`**: o trabalho para outra organização, sigiloso dela. Ele
+  "parece trabalho", e o erro caro era mandá-lo para a estação profissional, que
+  é versionada. Agora a sugestão de emprego passa na frente das outras, e
+  `aplicar` recusa — antes de ler o texto — qualquer destino que não seja uma
+  estação declarada com essa esfera.
+- **Dado de terceiro** fica em qualquer estação que o próprio `estacao.json`
+  declare `privada`, não só na pessoal; nas outras, segue entrando só reescrito.
+- Método: `triagem.md` (regra 11, a matriz com a linha do emprego, a chave nova),
+  `regras.md` (regra 9: "de quem é o assunto") e `taxonomia.md`.
+- Testes: `tests/test_triagem.py`, classe `TriagemPorEstacao` (6 casos). Nada muda
+  para quem não declara `estacoes`.
+
 ## 0.16.2 — 2026-10-02
 
 **A Central fecha a porta que qualquer página aberta no navegador podia abrir.**

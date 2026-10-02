@@ -197,7 +197,7 @@ class Levantamento(unittest.TestCase):
                                            str(Path(d) / "r.md")]), 0)
 
 
-def _estacao(raiz, triagem=None):
+def _estacao(raiz, triagem=None, privada=None):
     raiz.mkdir(parents=True, exist_ok=True)
     cfg = {"nome": raiz.name,
            "estagios": [{"n": 1, "pasta": "1-capturas", "nome": "Captura", "plural": "Capturas", "sigla": "CAP"}],
@@ -205,6 +205,8 @@ def _estacao(raiz, triagem=None):
            "entrada": "1-capturas"}
     if triagem is not None:
         cfg["triagem"] = triagem
+    if privada is not None:
+        cfg["privada"] = privada
     (raiz / "estacao.json").write_text(json.dumps(cfg), encoding="utf-8")
     (raiz / "_indice.md").write_text("# teste\n", encoding="utf-8")
     (raiz / "_registro.md").write_text("# Registro\n\n## Pendente\n\nnada\n", encoding="utf-8")
@@ -415,6 +417,100 @@ class DecidirEAplicar(unittest.TestCase):
     def test_opcao_inexistente(self):
         with self.assertRaises(triagem.TriagemErro):
             triagem.planejar(triagem.ler_decisoes(self.lote), {"P1": "Z"})
+
+
+#: O de-para das estações de destino: a de casa e a do emprego são privadas, a do
+#: escritório é versionada. Nomes inventados, como o resto deste arquivo.
+ESTACOES = {
+    "Casa": {"caminho": "../casa", "esfera": "pessoal", "apelidos": ["conta de luz", "reforma"]},
+    "Oficio": {"caminho": "../oficio", "esfera": "emprego", "apelidos": ["turno da fabrica"]},
+    "Escritorio": {"caminho": "../escritorio", "esfera": "administrativo", "apelidos": ["nota fiscal"]},
+}
+
+
+class TriagemPorEstacao(unittest.TestCase):
+    """A triagem leva o trecho direto à estação do assunto — e o do emprego, só à dele."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        base = Path(self.tmp.name)
+        self.prof = base / "plataforma"
+        _estacao(self.prof, {"pessoal": "../privada", "estacoes": ESTACOES})
+        _estacao(base / "privada", privada=True)
+        _estacao(base / "casa", privada=True)
+        _estacao(base / "oficio", privada=True)
+        _estacao(base / "escritorio")
+        self.base = base
+        self.lote = base / "privada" / "_triagem" / "2099-01-02-por-estacao"
+        d = {"lote": "2099-01-02-por-estacao", "versao": 1, "perguntas": [], "seguiu": [], "trechos": [
+            {"id": "C", "esfera": "pessoal", "saidas": [{"destino": "Casa", "texto": "t/c.md", "slug": "conta de luz"}]},
+            {"id": "E", "esfera": "emprego", "saidas": [{"destino": "Oficio", "texto": "t/e.md", "slug": "turno"}]},
+            {"id": "F", "esfera": "emprego", "saidas": [{"destino": "profissional", "texto": "t/e.md", "slug": "turno"}]},
+            {"id": "G", "esfera": "administrativo",
+             "saidas": [{"destino": "Escritorio", "texto": "t/g.md", "slug": "nota"}]},
+        ]}
+        (self.lote / "t").mkdir(parents=True)
+        (self.lote / "t" / "c.md").write_text("Pagar a conta de luz; o eletricista, (99) 99999-7777, vem sexta.",
+                                              encoding="utf-8")
+        (self.lote / "t" / "e.md").write_text("O turno da fábrica muda na segunda.", encoding="utf-8")
+        (self.lote / "t" / "g.md").write_text("Pedir a nota fiscal a Fulano, (99) 99999-6666.", encoding="utf-8")
+        (self.lote / "decisoes.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def aplicar(self):
+        self.erro = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(self.erro):
+            return triagem.cmd_aplicar(self.lote, self.prof, {}, confirmar=True)
+
+    def capturas(self, estacao):
+        pasta = self.base / estacao / "1-capturas"
+        return list(pasta.glob("*.md")) if pasta.exists() else []
+
+    def test_leva_direto_a_estacao_do_assunto(self):
+        self.assertEqual(self.aplicar(), 1)          # F e G são recusados; C e E seguem
+        self.assertEqual(len(self.capturas("casa")), 1)
+        self.assertEqual(len(self.capturas("oficio")), 1)
+        seguiu = {s["trecho"]: s for s in json.loads((self.lote / "decisoes.json").read_text(encoding="utf-8"))["seguiu"]}
+        self.assertEqual(sorted(seguiu), ["C", "E"])
+        self.assertEqual((seguiu["C"]["onde"], seguiu["C"]["virou"]), ("estação Casa (privada)", "captura privada"))
+
+    def test_estacao_privada_aceita_o_dado_de_terceiro(self):
+        self.aplicar()
+        self.assertIn("99999-7777", self.capturas("casa")[0].read_text(encoding="utf-8"))
+
+    def test_o_emprego_nunca_vai_para_a_profissional(self):
+        self.aplicar()
+        self.assertEqual(self.capturas("plataforma"), [])
+        self.assertIn("trecho F → profissional: o assunto é do emprego", self.erro.getvalue())
+
+    def test_estacao_versionada_recusa_o_dado_de_terceiro(self):
+        self.aplicar()
+        self.assertEqual(self.capturas("escritorio"), [])
+        self.assertIn("trecho G → Escritorio", self.erro.getvalue())
+
+    def test_destino_que_ninguem_declarou(self):
+        d = triagem.ler_decisoes(self.lote)
+        d["trechos"][0]["saidas"][0]["destino"] = "Lua"
+        with self.assertRaises(triagem.TriagemErro):
+            triagem.planejar(d, {}, ESTACOES.keys())
+        # sem o de-para, um nome de estação também não é destino
+        with self.assertRaises(triagem.TriagemErro):
+            triagem.planejar(triagem.ler_decisoes(self.lote), {})
+
+    def test_levantamento_sugere_a_estacao_e_poe_o_emprego_na_frente(self):
+        lote = self.base / "bruto"
+        lote.mkdir()
+        (lote / "casa.md").write_text("A conta de luz vence dia 10.", encoding="utf-8")
+        (lote / "turno.md").write_text("Revisar o commit e o turno da fábrica de amanhã.", encoding="utf-8")
+        r = triagem.levantar([lote], triagem.carregar_config(self.prof))
+        por_nome = {it["nome"]: it for it in r["itens"]}
+        self.assertIn("Casa", por_nome["casa.md"]["estacoes"])
+        self.assertIn("estação Casa", por_nome["casa.md"]["sugestao"])
+        # "commit" é palavra de trabalho, mas o assunto do emprego ganha: o erro caro é a estação versionada
+        self.assertTrue(por_nome["turno.md"]["sugestao"].startswith("provável emprego — estação Oficio"))
+        self.assertIn("estação Oficio", triagem.markdown(r, "teste"))
 
 
 if __name__ == "__main__":

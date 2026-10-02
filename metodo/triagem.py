@@ -13,7 +13,10 @@ que chegou carrega dado pessoal de outra pessoa ou um segredo. O método está e
   segredo (por palavra-chave e por forma), participantes de conversa, e o
   vocabulário que costuma indicar vida pessoal ou dado sensível;
 - **apelidos**: quais projetos da estação o texto cita — com tolerância a erro
-  de transcrição ("foto e livro" acha o projeto "Fotolivro").
+  de transcrição ("foto e livro" acha o projeto "Fotolivro");
+- **estações**: para qual das estações declaradas em `triagem.estacoes` o texto
+  aponta (a de casa, a de saúde, a do emprego) — é o que deixa a triagem levar
+  um trecho direto à estação do assunto, e não só dizer a esfera.
 
 **O script não decide a esfera.** Um detector de telefone não sabe se o número é
 de um fornecedor ou da mãe de alguém. A sugestão de cada item é rotulada como
@@ -511,14 +514,23 @@ def sugerir(item):
     cats = {s["categoria"] for s in item["sinais"]}
     voc = item.get("vocabulario") or {}
     esferas = {p.get("esfera") for p in (item.get("projetos") or {}).values()}
+    estacoes = item.get("estacoes") or {}
+    # a estação que o texto cita vai junto da sugestão: é ela que a leitura confirma
+    onde = (" — estação " + ", ".join(estacoes)) if estacoes else ""
     if "segredo" in cats:
         return "alerta: possível segredo — não gravar em lugar versionado; trocar se for real"
     if item["midia"] in ("audio", "video", "imagem", "documento", "pacote", "outro") and not item.get("texto_lido"):
         return "ler antes: precisa de extração"
+    # o assunto do emprego vem antes de tudo o que sobra: ele "parece trabalho", e o
+    # erro caro é mandá-lo para a estação profissional, que é versionada
+    emprego = [k for k, v in estacoes.items() if v.get("esfera") == "emprego"]
+    if emprego:
+        return ("provável emprego — estação " + ", ".join(emprego)
+                + ": só para ela, nunca para estação versionada")
     if cats & CATEGORIAS_TERCEIRO or item.get("conversa"):
-        return "espera: dado de terceiro — reescrever sem ele antes de qualquer captura profissional"
+        return "espera: dado de terceiro — reescrever sem ele antes de qualquer captura profissional" + onde
     if "saude" in voc:
-        return "provável pessoal (dado sensível de saúde)"
+        return "provável pessoal (dado sensível de saúde)" + onde
     if "misto" in esferas:
         return "projeto de esfera mista: decidir na leitura"
     pessoal = "pessoal" in voc or "pessoal" in esferas
@@ -526,15 +538,18 @@ def sugerir(item):
     if pessoal and profissional:
         return "misto: fatiar em trechos"
     if pessoal:
-        return "provável pessoal"
+        return "provável pessoal" + onde
     if "profissional" in esferas:
         return "provável profissional"
+    if estacoes:
+        return "provável" + onde
     return "decidir na leitura"
 
 
 def levantar(alvos, config=None):
     config = config or {}
     projetos = config.get("projetos") or {}
+    estacoes = config.get("estacoes") or {}
     extra_p = config.get("palavras_pessoais") or ()
     extra_t = config.get("palavras_profissionais") or ()
     itens = []
@@ -553,6 +568,10 @@ def levantar(alvos, config=None):
             achados = apelidos_em(texto, projetos)
             item["projetos"] = {k: dict(v, esfera=(projetos.get(k) or {}).get("esfera"))
                                 for k, v in achados.items()}
+            if estacoes:
+                achadas = apelidos_em(texto, estacoes)
+                item["estacoes"] = {k: dict(v, esfera=(estacoes.get(k) or {}).get("esfera"))
+                                    for k, v in achadas.items()}
             conversa = ler_conversa(texto)
             if conversa:
                 item["conversa"] = conversa
@@ -616,7 +635,9 @@ def markdown(resultado, lote="", mostrar=False):
     L += ["", "## Itens", "", "| # | Item | Mídia | Extração | Sinais | Projetos citados | Sugestão |",
           "|---|---|---|---|---|---|---|"]
     for i, it in enumerate(itens):
-        projs = ", ".join(f"{k} ({v['modo']})" for k, v in (it.get("projetos") or {}).items()) or "—"
+        citados = list((it.get("projetos") or {}).items()) + [
+            (f"estação {k}", v) for k, v in (it.get("estacoes") or {}).items()]
+        projs = ", ".join(f"{k} ({v['modo']})" for k, v in citados) or "—"
         L.append(f"| {i} | `{nome(it)}` | {it['midia']} | {it['extracao']} | "
                  f"{_resumo_sinais(it, mostrar)} | {projs} | {it['sugestao']} |")
     conversas = [it for it in itens if it.get("conversa")]
@@ -652,7 +673,11 @@ def markdown(resultado, lote="", mostrar=False):
 # "texto": "rascunhos/mercado-{P3}.md"}]}. `{P3}` vira a letra respondida na P3,
 # em minúscula — é assim que uma pergunta escolhe a variante da outra.
 
-ESFERAS = ("profissional", "pessoal", "administrativo", "duvida", "encerrado")
+#: `emprego` é o trabalho para outra organização: o assunto é sigiloso do
+#: empregador, então só vai para uma estação declarada com essa esfera — nunca para
+#: a profissional, que é versionada, nem reescrito para fora (`triagem.md`, regra 11).
+ESFERAS = ("profissional", "pessoal", "administrativo", "emprego", "duvida", "encerrado")
+#: Os destinos fixos; os nomes de `triagem.estacoes` também são destino.
 DESTINOS = ("profissional", "pessoal", "administrativo", "encerrar")
 
 
@@ -786,11 +811,25 @@ def _json_estacao(raiz):
 def _raiz_destino(raiz, destino, cfg_triagem):
     if destino == "profissional":
         return Path(raiz).resolve()
+    estacoes = cfg_triagem.get("estacoes") or {}
+    if destino in estacoes:
+        rel = (estacoes[destino] or {}).get("caminho")
+        if not rel:
+            raise TriagemErro(f"triagem.estacoes.{destino} não declara `caminho` — pergunte onde ela mora")
+        return (Path(raiz) / rel).resolve()
     chave = {"pessoal": "pessoal", "administrativo": "administrativo"}[destino]
     rel = cfg_triagem.get(chave)
     if not rel:
         raise TriagemErro(f"a estação não declara triagem.{chave} — pergunte para onde vai")
     return (Path(raiz) / rel).resolve()
+
+
+def _esfera_do_destino(destino, cfg_triagem):
+    """A esfera de quem recebe: a declarada em `triagem.estacoes`, ou a do destino fixo."""
+    estacoes = cfg_triagem.get("estacoes") or {}
+    if destino in estacoes:
+        return (estacoes[destino] or {}).get("esfera")
+    return destino
 
 
 def _resumo(texto, limite=160):
@@ -898,8 +937,12 @@ def _capturar(raiz, est, registro, texto, slug, lote, trecho, removido, origem):
     return novo, str(arquivo)
 
 
-def planejar(d, respostas):
-    """O que as respostas fazem: aplica os efeitos e lista as saídas prontas."""
+def planejar(d, respostas, estacoes=()):
+    """O que as respostas fazem: aplica os efeitos e lista as saídas prontas.
+
+    `estacoes` são os nomes de `triagem.estacoes`: além dos destinos fixos, uma
+    saída pode ir direto para a estação do assunto."""
+    validos = set(DESTINOS) | set(estacoes or ())
     perguntas = {p["id"]: p for p in d["perguntas"]}
     for pid, op in respostas.items():
         if pid not in perguntas:
@@ -926,8 +969,9 @@ def planejar(d, respostas):
         if any(p not in letras for p in t.get("depende_de") or []):
             continue
         for s in t.get("saidas") or []:
-            if s["destino"] not in DESTINOS:
-                raise TriagemErro(f"trecho {t['id']}: destino '{s['destino']}' desconhecido")
+            if s["destino"] not in validos:
+                raise TriagemErro(f"trecho {t['id']}: destino '{s['destino']}' desconhecido "
+                                  "(nem fixo, nem declarado em triagem.estacoes)")
             if (t["id"], s["destino"]) in ja:
                 continue
             # a dependência também pode ser da saída: numa resposta em que a
@@ -946,7 +990,7 @@ def cmd_aplicar(lote, raiz, respostas, confirmar=False):
     lote = Path(lote)
     d = ler_decisoes(lote)
     cfg = carregar_config(raiz)
-    prontas = planejar(d, respostas)
+    prontas = planejar(d, respostas, (cfg.get("estacoes") or {}).keys())
     if not prontas:
         print("nada pronto para seguir: faltam respostas ou efeitos nas opções respondidas.")
     erros = []
@@ -954,21 +998,30 @@ def cmd_aplicar(lote, raiz, respostas, confirmar=False):
         if p["destino"] == "encerrar":
             print(f"  trecho {p['trecho']['id']}: encerrar (sem captura)")
             continue
+        # o assunto do emprego só entra numa estação de emprego: a recusa vem antes de
+        # ler o texto, porque nenhuma reescrita o torna apto para outro lugar
+        if p["trecho"].get("esfera") == "emprego" and _esfera_do_destino(p["destino"], cfg) != "emprego":
+            erros.append(f"trecho {p['trecho']['id']} → {p['destino']}: o assunto é do emprego e só vai "
+                         "para estação declarada com esfera `emprego` — recusado")
+            continue
         arq = lote / p["texto"] if p["texto"] else None
         if not arq or not arq.exists():
             erros.append(f"trecho {p['trecho']['id']}: texto {p['texto']} não existe no lote")
             continue
         texto = ler_texto(arq)
-        if p["destino"] != "pessoal":
+        destino_raiz = _raiz_destino(raiz, p["destino"], cfg)
+        # dado de terceiro só fica em estação privada — a pessoal, ou outra que o
+        # `estacao.json` dela declare `privada`; nas versionadas, só reescrito
+        privada = p["destino"] == "pessoal" or _json_estacao(destino_raiz).get("privada") is True
+        if not privada:
             vazam = sinais_que_vazam(texto)
             if vazam:
                 erros.append(f"trecho {p['trecho']['id']} → {p['destino']}: o texto ainda tem "
                              + ", ".join(sorted({s['rotulo'] for s in vazam})) + " — recusado")
                 continue
-        destino_raiz = _raiz_destino(raiz, p["destino"], cfg)
         print(f"  trecho {p['trecho']['id']}: {p['destino']} → captura em {destino_raiz} "
               f"({len(texto)} caracteres de {p['texto']})")
-        p["pronto"] = (destino_raiz, texto)
+        p["pronto"] = (destino_raiz, texto, privada)
     for e in erros:
         print(f"  ERRO: {e}", file=sys.stderr)
     if not confirmar:
@@ -982,11 +1035,18 @@ def cmd_aplicar(lote, raiz, respostas, confirmar=False):
                 t["esfera"] = "encerrado"
                 d["seguiu"].append({"trecho": t["id"], "destino": "encerrar", "virou": "encerrado", "onde": "—"})
             elif "pronto" in p:
-                destino_raiz, texto = p["pronto"]
+                destino_raiz, texto, privada = p["pronto"]
                 novo, caminho = capturar(destino_raiz, texto, p["slug"], d["lote"], t["id"], t.get("removido") or ())
-                onde = "estação pessoal" if p["destino"] == "pessoal" else f"{Path(caminho).parent.name}/"
+                if p["destino"] == "pessoal":
+                    onde = "estação pessoal"
+                elif privada:
+                    onde = f"estação {p['destino']} (privada)"
+                elif p["destino"] in (cfg.get("estacoes") or {}):
+                    onde = f"{p['destino']}: {Path(caminho).parent.name}/"
+                else:
+                    onde = f"{Path(caminho).parent.name}/"
                 d["seguiu"].append({"trecho": t["id"], "destino": p["destino"],
-                                    "virou": novo if p["destino"] != "pessoal" else "captura privada",
+                                    "virou": novo if not privada else "captura privada",
                                     "onde": onde})
                 print(f"  ✓ {t['id']} → {novo}")
     except BaseException:

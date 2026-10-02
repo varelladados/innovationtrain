@@ -33,7 +33,8 @@ histórico não desfaz barato.
 2. **A unidade é o trecho, não o arquivo.** Arquivo misto é fatiado; cada
    trecho segue o seu destino.
 3. **Três perguntas por trecho:**
-   - **esfera** — profissional, pessoal ou administrativa (da empresa);
+   - **esfera** — profissional, pessoal, administrativa (da empresa) ou
+     **emprego** (o trabalho para outra organização, que é sigiloso dela);
    - **dado pessoal de terceiro** — nome, telefone, e-mail, documento, endereço,
      rosto, placa, saúde, religião, família de alguém;
    - **segredo** — senha, chave, token.
@@ -58,18 +59,30 @@ histórico não desfaz barato.
     a pessoa em qualquer DDD; e um exemplo que nasce de um caso real vai parar
     em lugar versionado sem passar por triagem nenhuma. Já aconteceu: foi a
     própria varredura desta triagem que pegou.
+11. **O destino é a estação do assunto, não só a esfera.** Uma Central pode ter
+    mais estações que as três de entrada — uma para a saúde, outra para a casa,
+    outra para o emprego. A triagem leva cada trecho direto a ela, pelo de-para
+    `triagem.estacoes`; a esfera continua dizendo o que o trecho pode carregar.
+    O que não tem estação própria segue para a de entrada da esfera. **O assunto
+    do emprego só entra numa estação declarada com essa esfera**: nunca na
+    profissional, que é versionada, e nunca reescrito para fora — `aplicar`
+    recusa antes de ler o texto.
 
 ## Matriz de destino
 
 | Esfera \ o que carrega | nada de terceiro | dado de terceiro | segredo |
 |---|---|---|---|
 | **profissional** | `1-capturas/` da Plataforma | reescrever sem o dado → `1-capturas/`; original fica na espera | alerta; o resto segue a coluna ao lado |
-| **administrativa** | `1-capturas/` da Admin_empresa | idem, reescrito | alerta |
-| **pessoal** | `1-capturas/` da Vida_Pessoal | Vida_Pessoal (é privada; o dado pode ficar) | alerta; mascarar antes de gravar |
+| **administrativa** | `1-capturas/` da Admin_empresa, ou da estação do assunto | idem, reescrito | alerta |
+| **pessoal** | `1-capturas/` da Vida_Pessoal, ou da estação do assunto | se a estação é privada, o dado pode ficar | alerta; mascarar antes de gravar |
+| **emprego** | só a estação declarada com esfera `emprego` | idem (ela é privada) | alerta |
 | **dúvida** | espera + pergunta | espera + pergunta | espera + alerta + pergunta |
 
-A Admin_empresa é versionada. Quem ainda não tem a estação de administração
-decide, na primeira vez, se o administrativo vai para a Vida_Pessoal ou espera.
+"Estação do assunto" é uma das declaradas em `triagem.estacoes` (abaixo). Dado de
+terceiro só fica em estação que o próprio `estacao.json` declara `privada`; nas
+outras, entra reescrito. A Admin_empresa é versionada. Quem ainda não tem a estação
+de administração decide, na primeira vez, se o administrativo vai para a
+Vida_Pessoal ou espera.
 
 ## Especialização por tipo de entrada
 
@@ -100,16 +113,27 @@ Cada mídia tem uma extração antes da pergunta, e riscos que só ela tem.
     "Fotolivro": {"esfera": "profissional", "apelidos": ["foto livro", "album de fotos"]},
     "Horta":     {"esfera": "pessoal",      "apelidos": ["hortinha"]}
   },
+  "estacoes": {
+    "Casa":    {"caminho": "../casa",    "esfera": "pessoal", "apelidos": ["conta de luz", "condominio"]},
+    "Emprego": {"caminho": "../emprego", "esfera": "emprego", "apelidos": ["turno", "gerencia"]}
+  },
   "palavras_pessoais": [],
   "palavras_profissionais": []
 }
 ```
 
+- **`estacoes`** é o de-para das **estações de destino**: cada uma com o caminho
+  (relativo a esta estação), a esfera e as palavras pelas quais o assunto dela
+  aparece. O levantamento diz quais o texto cita ("provável — estação Casa"), e a
+  leitura escreve o nome dela como `destino` da saída no `decisoes.json`. Uma
+  estação de esfera `emprego` passa na frente das outras sugestões: o assunto dela
+  costuma parecer trabalho, e o erro caro é mandá-lo para a estação versionada.
+
 - **`projetos`** é o **de-para** da estação: cada projeto com a esfera a que
   pertence e os nomes pelos quais ele aparece na fala e na escrita. Um projeto
   de família dentro de uma estação profissional aparece aqui como `pessoal` — e
   é o sinal de que ele está no lugar errado.
-- `esfera` aceita `profissional`, `pessoal`, `administrativo` e `misto`.
+- `esfera` aceita `profissional`, `pessoal`, `administrativo`, `emprego` e `misto`.
 - Os caminhos são relativos à raiz da estação.
 - **O Embarque já escreve esta chave** nas estações que cria juntas, com os
   caminhos vistos da raiz de cada uma — `.` é a própria estação: a Vida_Pessoal
@@ -177,7 +201,9 @@ O formato, no essencial:
 }
 ```
 
-`destino` é `profissional`, `pessoal`, `administrativo` ou `encerrar`. `{P2}`
+`destino` é `profissional`, `pessoal`, `administrativo`, `encerrar` ou o nome de
+uma estação de `triagem.estacoes`. Um trecho de esfera `emprego` só segue para uma
+estação dessa esfera; qualquer outro destino é recusado. `{P2}`
 no caminho do texto vira a letra respondida na P2 — é como uma pergunta escolhe
 a variante preparada para a resposta da outra. Um trecho só segue quando todas
 as perguntas de `depende_de` estão respondidas. Uma **saída** também pode ter
@@ -212,7 +238,9 @@ estágio. Desde a 0.13.0:
 3. **Extração** — o que o levantamento marcou como "ler antes": transcrever,
    olhar a imagem, ver o quadro.
 4. **Leitura** — fatiar e responder as três perguntas de cada trecho.
-5. **Destino** — pela matriz. O que é certo, segue; o que é dúvida, fica.
+5. **Destino** — pela matriz e pelo de-para das estações: a do assunto, se ela
+   existe; a de entrada da esfera, se não. O que é certo, segue; o que é dúvida,
+   fica.
 6. **Relatório** — do [modelo](templates/relatorio-triagem.md), com as
    perguntas.
 7. **Respostas** — cada resposta fecha uma dúvida; o relatório é refeito com o

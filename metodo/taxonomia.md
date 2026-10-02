@@ -70,14 +70,16 @@ O critério de quando uma ideia serve a outras pessoas está em
 
 A passagem acima leva uma ideia pessoal para o trabalho, reescrita. A
 **triagem** impede o caminho inverso sem querer: toda entrada bruta espera em
-`_triagem/`, **dentro da Vida_Pessoal**, até responder se é trabalho ou vida
-pessoal e se carrega dado de outra pessoa ou segredo. Só então ganha
-identificador — na estação certa. Não é estágio: não tem sigla, identificador
-nem linha no registro.
+`_triagem/`, **dentro da Vida_Pessoal**, até responder de quem é o assunto e se
+carrega dado de outra pessoa ou segredo. Só então ganha identificador — direto na
+estação do assunto, que pode ser uma das três de entrada ou outra que a Central
+opere (a da saúde, a da casa, a do emprego). Não é estágio: não tem sigla,
+identificador nem linha no registro.
 
-Cada estação declara na chave `triagem` do `estacao.json` onde fica a espera e
-o **de-para** dos seus projetos (esfera e apelidos); as que o Embarque cria já
-nascem com a espera declarada. O método inteiro está em
+Cada estação declara na chave `triagem` do `estacao.json` onde fica a espera, o
+**de-para** dos seus projetos (esfera e apelidos) e o das **estações de destino**
+(caminho, esfera e apelidos); as que o Embarque cria já nascem com a espera
+declarada. O método inteiro está em
 [`triagem.md`](triagem.md).
 
 ---

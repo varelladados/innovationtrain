@@ -126,11 +126,15 @@ rodada seguinte, mais no topo.
 ## 9. Triagem antes da captura
 
 Nenhuma entrada ganha identificador numa estação antes de responder três
-perguntas: **é trabalho ou vida pessoal?**, **carrega dado pessoal de outra
-pessoa?**, **carrega segredo?** O bruto espera na área privada enquanto isso.
+perguntas: **de quem é o assunto** (trabalho seu, vida pessoal, a empresa, ou o
+emprego em outra organização)?, **carrega dado pessoal de outra pessoa?**,
+**carrega segredo?** O bruto espera na área privada enquanto isso, e sai direto
+para a estação do assunto.
 
 - Dado pessoal de terceiro **nunca** entra literal numa estação profissional —
   entra reescrito sem ele, e a captura diz o que saiu.
+- O assunto do emprego é sigiloso de outra organização: só entra na estação
+  declarada para ele, nunca na profissional, nem reescrito.
 - Segredo não entra em lugar nenhum; vira alerta.
 - Na dúvida, fica na espera e vira pergunta — a regra 8 vale aqui também.
 
