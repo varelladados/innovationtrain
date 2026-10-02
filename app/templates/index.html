@@ -847,7 +847,7 @@ async function trocarEstacao(caminho){
 
 async function reindex(){
   toast("Reindexando…");
-  await fetch("/api/reindex", {method: "POST"});
+  await fetch("/api/reindex", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
   await loadIndex();
   toast("Índice atualizado");
 }
@@ -960,11 +960,70 @@ function renderTreeNode(node, container, isRoot){
   });
 }
 
+// Escapa o suficiente para texto **e** para valor de atributo entre aspas
+// (`title="..."`, `data-open="..."`) — por isso as aspas entram. Sem DOM, de
+// propósito: o teste do markdown seguro a executa no node.
 function escapeHtml(s){
-  const d = document.createElement("div");
-  d.textContent = s || "";
-  return d.innerHTML;
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 }
+
+// >>> markdown-seguro
+// O corpus recebe captura de terceiros e o marked v15 não sanitiza nada: HTML
+// cru dentro do markdown ia direto para o innerHTML, na origem do app, que
+// consegue chamar todos os POST. Aqui o marked passa a (1) mostrar HTML cru
+// como texto e (2) neutralizar endereço que executa código. Link relativo,
+// âncora, http(s), mailto e esquemas de aplicativo (onenote:, vscode:...) seguem
+// como estavam; tabela, código e bloco mermaid não passam por aqui.
+//
+// Comentário HTML inerte some em vez de aparecer: o acervo tem dezenas deles, e
+// hoje ninguém os vê. `<br>` continua quebrando linha. (Na expressão abaixo o
+// `\!` evita escrever abre-comentário dentro de um <script>, que o parser de
+// HTML trata como estado especial.)
+function mdEnderecoPerigoso(href, imagem){
+  // o navegador ignora tab, quebra de linha e controle dentro do esquema
+  const s = String(href || "").replace(/[\u0000- \u007f-\u009f]/g, "");
+  if (!/^(?:javascript|vbscript|data):/i.test(s)) return false;
+  // imagem de dados raster é inerte; o resto de `data:` (html, svg) não é
+  return !(imagem && /^data:image\/(?:png|jpe?g|gif|webp|avif|bmp)[;,]/i.test(s));
+}
+// O marked não escapa o `&` do endereço de um link `[x](...)`, e o navegador
+// decodifica entidade em atributo: `javascript&colon;alert(1)` viraria
+// `javascript:alert(1)` DEPOIS de qualquer checagem do texto cru. Então todo `&`
+// que não seja uma das cinco entidades que o próprio marked produz vira `&amp;`
+// — o endereço chega ao navegador literal.
+function mdEnderecoLiteral(href){
+  return String(href).replace(/&(?!(?:amp|lt|gt|quot|#39);)/g, "&amp;");
+}
+function configurarMarkedSeguro(){
+  marked.use({renderer: {
+    html(token){
+      const t = String(token.text);
+      if (/^\s*(?:<\!--(?:(?!-->)[\s\S])*-->\s*)+$/.test(t)) return "";
+      if (!token.block && /^<br\s*\/?>$/i.test(t)) return "<br>";
+      return token.block ? "<pre><code>" + escapeHtml(t.replace(/\s+$/, "")) + "</code></pre>\n"
+                         : escapeHtml(t);
+    },
+    link(token){
+      if (mdEnderecoPerigoso(token.href, false)) return this.parser.parseInline(token.tokens);
+      token.href = mdEnderecoLiteral(token.href);
+      return false;                       // o resto é o renderer padrão
+    },
+    image(token){
+      if (mdEnderecoPerigoso(token.href, true)) return escapeHtml(token.text);
+      token.href = mdEnderecoLiteral(token.href);
+      // o marked v15 põe o texto alternativo CRU em alt="...": uma aspa nele
+      // fecha o atributo e abre outro (`![a" onerror="..."](x.png)`). O padrão
+      // prefere `tokens` a `text`, então o alt sai de `tokens` aqui, escapado.
+      token.text = escapeHtml(token.tokens
+        ? this.parser.parseInline(token.tokens, this.parser.textRenderer) : token.text);
+      token.tokens = null;
+      return false;
+    },
+  }});
+}
+if (typeof marked !== "undefined") configurarMarkedSeguro();
+// <<< markdown-seguro
 
 // ============================================================
 // Main pane — abrir arquivo
@@ -2296,11 +2355,22 @@ let EB = {caminho: "", estacoes: {}, tem_conteudo: "vazia", destino: "claude-cod
 // Nome, pasta e propósito de cada estação padrão vêm do servidor
 // (config.MODELOS) — nada disso é escrito aqui.
 let EB_MODELOS = [];
+// As estações que o texto gerado manda a sessão de IA criar e que ainda não
+// foram registradas. Ficam no localStorage (mesmo cuidado do resto): a sessão de
+// IA pode demorar mais do que a página fica aberta.
+const EB_PEND_KEY = "central.embarque.a-registrar.v1";
+let EB_A_REGISTRAR = [];
+function ebPendentes(lista){
+  if (lista) EB_A_REGISTRAR = lista;
+  try { localStorage.setItem(EB_PEND_KEY, JSON.stringify(EB_A_REGISTRAR)); } catch(e){}
+}
 
 function ebCarregar(){
   try {
     const cru = localStorage.getItem(EB_KEY);
     if (cru) EB = Object.assign(EB, JSON.parse(cru));
+    const pend = JSON.parse(localStorage.getItem(EB_PEND_KEY) || "[]");
+    if (Array.isArray(pend)) EB_A_REGISTRAR = pend.filter(e => e && typeof e.caminho === "string");
   } catch(e){}
   if (!EB.estacoes || typeof EB.estacoes !== "object") EB.estacoes = {};
 }
@@ -2468,6 +2538,26 @@ function ebDesenhar(){
   };
   acoes.appendChild(seguir);
   content.appendChild(acoes);
+
+  if (EB_A_REGISTRAR.length){
+    const reg = document.createElement("div");
+    reg.className = "eb-parada";
+    reg.style.marginTop = "var(--sp-4)";
+    reg.innerHTML = `<h3>Quando a sessão terminar</h3>
+      <p>A Central só registra estação que já existe — com a pasta e o <code>estacao.json</code> no lugar. Quando a sessão de IA avisar que acabou, registre aqui para ${EB_A_REGISTRAR.length > 1 ? "elas aparecerem" : "ela aparecer"} no seletor.</p>`;
+    const botao = document.createElement("button");
+    botao.className = "brf-btn prim";
+    botao.textContent = "A sessão terminou — registrar na Central";
+    botao.onclick = async () => {
+      const r = await ebRegistrar(EB_A_REGISTRAR);
+      if (r.ok){ ebPendentes([]); toast("Estações registradas"); ebDesenhar(); return; }
+      let e = reg.querySelector(".eb-erro");
+      if (!e){ e = document.createElement("p"); e.className = "eb-erro"; reg.appendChild(e); }
+      e.textContent = r.erro;
+    };
+    reg.appendChild(botao);
+    content.appendChild(reg);
+  }
 }
 
 async function ebGerar(){
@@ -2484,16 +2574,34 @@ async function ebGerar(){
     sub: `Cole numa sessão de IA <strong>com a pasta aberta</strong>. Este texto não criou nada — quem cria é a sessão, com você olhando.`,
   });
 
-  // registra no central.json para que a estação já apareça no seletor assim
-  // que a estrutura existir. Falhar aqui não pode atrapalhar: o texto, que é o
-  // que importa, já está na tela.
+  // O servidor só registra estação que EXISTE (pasta + estacao.json): o
+  // central.json diz à Central o que abrir, e não aceita caminho que ninguém
+  // conferiu. Então as que a pessoa já tinha entram agora; as que a sessão de IA
+  // vai criar esperam o botão de ebDesenhar(), apertado quando ela terminar.
+  // Falhar aqui não pode atrapalhar: o texto, que é o que importa, já está na tela.
+  const lista = (data.estacoes || []).map(e => ({caminho: e.caminho, nome: e.nome, criar: !!e.criar}));
+  ebPendentes(lista.filter(e => e.criar));
+  const jaExistem = lista.filter(e => !e.criar);
+  if (jaExistem.length){
+    const r = await ebRegistrar(jaExistem);
+    if (!r.ok) toast(r.erro);
+  }
+  ebDesenhar();
+}
+
+// Registra no central.json. Devolve {ok, erro}: quem chama decide onde mostrar.
+async function ebRegistrar(estacoes){
   try {
     const r = await fetch("/api/embarque/registrar", {
       method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({estacoes: (data.estacoes || []).map(e => ({caminho: e.caminho, nome: e.nome}))})});
+      body: JSON.stringify({estacoes: estacoes.map(e => ({caminho: e.caminho, nome: e.nome}))})});
     const reg = await r.json();
-    if (reg.ok) await carregarEstacoes();
-  } catch(e){}
+    if (!reg.ok) return {ok: false, erro: reg.error || "não consegui registrar"};
+    await carregarEstacoes();
+    return {ok: true};
+  } catch(e){
+    return {ok: false, erro: "Falha ao registrar: " + e};
+  }
 }
 
 // ============================================================

@@ -379,13 +379,20 @@ class TestTriagemFunciona(unittest.TestCase):
 
 
 class TestRegistrar(unittest.TestCase):
-    """Escreve só no config do hub — nunca dentro de estação nenhuma."""
+    """Escreve só no config do hub — nunca dentro de estação nenhuma.
+
+    Desde a 0.16.2 só registra o que **existe**: pasta, com o marcador da
+    estação dentro. O `central.json` diz à Central o que abrir e servir; um
+    caminho que ninguém conferiu era a porta para a pasta errada."""
 
     def setUp(self):
         import os
         self.tmp = Path(tempfile.mkdtemp(prefix="embarque-reg-"))
         self._hub = os.environ.get("CENTRAL_DIR")
-        os.environ["CENTRAL_DIR"] = str(self.tmp)
+        os.environ["CENTRAL_DIR"] = str(self.tmp / "hub")
+        self.minha = self.tmp / "minha"
+        self.minha.mkdir()
+        (self.minha / "estacao.json").write_text("{}\n", encoding="utf-8")
 
     def tearDown(self):
         import os
@@ -396,33 +403,100 @@ class TestRegistrar(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_registra_e_aparece(self):
-        embarque.registrar(r"C:\x\minha", "Minha")
+        embarque.registrar(str(self.minha), "Minha")
         nomes = [p["nome"] for p in config.estacoes()]
         self.assertEqual(nomes, ["Minha"])
 
     def test_registrar_de_novo_nao_duplica(self):
-        embarque.registrar(r"C:\x\minha", "Minha")
-        embarque.registrar(r"C:\x\minha", "Renomeada")
+        embarque.registrar(str(self.minha), "Minha")
+        embarque.registrar(str(self.minha), "Renomeada")
         regs = config.estacoes()
         self.assertEqual(len(regs), 1)
         self.assertEqual(regs[0]["nome"], "Renomeada")
 
     def test_nao_nasce_ativa(self):
-        """A pasta pode nem existir ainda — ativar sem estrutura só daria erro."""
-        embarque.registrar(r"C:\x\minha", "Minha")
+        embarque.registrar(str(self.minha), "Minha")
         self.assertFalse(config.estacoes()[0]["ativa"])
 
+    def test_sem_nome_vale_o_da_pasta(self):
+        embarque.registrar(str(self.minha), None)
+        self.assertEqual(config.estacoes()[0]["nome"], "minha")
+
+    def test_nao_escreve_dentro_da_estacao(self):
+        embarque.registrar(str(self.minha), "Minha")
+        self.assertEqual(sorted(p.name for p in self.minha.iterdir()), ["estacao.json"])
+
     def test_caminho_invalido(self):
+        for ruim in ("", "  ", "ab", None, 123, ["x"]):
+            with self.assertRaises(ValueError, msg=repr(ruim)):
+                embarque.registrar(ruim, "X")
+
+    def test_pasta_que_nao_existe_e_recusada_com_erro_claro(self):
+        with self.assertRaises(ValueError) as c:
+            embarque.registrar(str(self.tmp / "ainda-nao"), "X")
+        self.assertIn("não existe", str(c.exception))
+        self.assertEqual(config.estacoes(), [])
+
+    def test_arquivo_nao_e_pasta(self):
+        arquivo = self.tmp / "solto.txt"
+        arquivo.write_text("x", encoding="utf-8")
+        with self.assertRaises(ValueError) as c:
+            embarque.registrar(str(arquivo), "X")
+        self.assertIn("não é uma pasta", str(c.exception))
+
+    def test_pasta_sem_marcador_nao_e_estacao(self):
+        vazia = self.tmp / "vazia"
+        vazia.mkdir()
+        with self.assertRaises(ValueError) as c:
+            embarque.registrar(str(vazia), "X")
+        self.assertIn("não parece uma estação", str(c.exception))
+        self.assertEqual(config.estacoes(), [])
+
+    def test_o_nome_antigo_do_marcador_tambem_vale(self):
+        antiga = self.tmp / "antiga"
+        antiga.mkdir()
+        (antiga / "plataforma.json").write_text("{}\n", encoding="utf-8")
+        embarque.registrar(str(antiga), "Antiga")
+        self.assertEqual([p["nome"] for p in config.estacoes()], ["Antiga"])
+
+    def test_marcador_que_e_pasta_nao_vale(self):
+        falsa = self.tmp / "falsa"
+        (falsa / "estacao.json").mkdir(parents=True)
         with self.assertRaises(ValueError):
-            embarque.registrar("", "X")
+            embarque.registrar(str(falsa), "X")
+
+    def test_caminho_relativo_e_recusado(self):
+        with self.assertRaises(ValueError) as c:
+            embarque.registrar("minha", "X")
+        self.assertIn("completo", str(c.exception))
+
+    def test_nome_que_nao_e_texto(self):
+        with self.assertRaises(ValueError):
+            embarque.registrar(str(self.minha), {"x": 1})
 
     def test_as_do_embarque_de_uma_vez(self):
-        r = gerar(r"C:\x\y", estacoes=so("admin_empresa", "vida_pessoal",
-                                         plataforma=r"C:\x\minha"))
+        base = self.tmp / "criadas"
+        r = gerar(base, estacoes=so("plataforma", "admin_empresa", "vida_pessoal"))
+        executar(r["texto"], base)      # o que a sessão de IA faz depois do texto
         embarque.registrar_varias(r["estacoes"])
         self.assertEqual(sorted(e["nome"] for e in config.estacoes()),
                          sorted(m["nome"] for m in config.MODELOS.values()))
         self.assertFalse(any(e["ativa"] for e in config.estacoes()))
+
+    def test_varias_e_tudo_ou_nada(self):
+        """Uma que não existe barra a lista inteira, e o erro diz qual."""
+        lista = [{"caminho": str(self.minha), "nome": "Boa"},
+                 {"caminho": str(self.tmp / "nao-criada"), "nome": "Faltou"}]
+        with self.assertRaises(ValueError) as c:
+            embarque.registrar_varias(lista)
+        self.assertIn("Faltou", str(c.exception))
+        self.assertNotIn("Boa:", str(c.exception))
+        self.assertEqual(config.estacoes(), [], "nada pode ter sido registrado")
+
+    def test_varias_lista_vazia_ou_malformada(self):
+        for ruim in ([], None, "x", [1], [{"caminho": str(self.minha)}, "y"]):
+            with self.assertRaises(ValueError, msg=repr(ruim)):
+                embarque.registrar_varias(ruim)
 
 
 if __name__ == "__main__":

@@ -472,16 +472,47 @@ def _fim(L, destino, base, lista, taxs=None):
     }
 
 
+#: O que faz uma pasta ser uma estação para quem vai registrá-la: o nome de hoje e
+#: o de até a 0.9, os mesmos que `config.carregar` lê.
+MARCADORES_DE_ESTACAO = (config.ESTACAO_JSON, config.ESTACAO_JSON_ANTIGO)
+
+
+def _caminho_de_estacao(caminho):
+    """O caminho de uma estação que pode ir para o `central.json`, ou `ValueError`
+    em português dizendo o que falta.
+
+    Antes da 0.16.2 qualquer texto de 3 letras entrava. O `central.json` é o que
+    diz à Central quais pastas ela abre, indexa e serve em `/files/`: gravar nele
+    um caminho que ninguém conferiu é abrir a porta para a pasta errada. Então o
+    caminho tem de ser completo, existir, ser pasta e ter o marcador da estação."""
+    if not isinstance(caminho, str) or len(caminho.strip()) < 3:
+        raise ValueError("caminho inválido")
+    p = Path(caminho.strip())
+    if not p.is_absolute():
+        raise ValueError(f"o caminho tem de ser completo, com a letra do disco ou a raiz: {p}")
+    if not p.exists():
+        raise ValueError(f"a pasta não existe: {p} — a estação precisa existir antes de ser "
+                         "registrada (cole o texto do Embarque numa sessão de IA e registre depois)")
+    if not p.is_dir():
+        raise ValueError(f"não é uma pasta: {p}")
+    if not any((p / m).is_file() for m in MARCADORES_DE_ESTACAO):
+        raise ValueError(f"{p} não parece uma estação: falta o `{config.ESTACAO_JSON}` dentro dela "
+                         f"(ou o `{config.ESTACAO_JSON_ANTIGO}`, o nome até a 0.9)")
+    return str(p)
+
+
 def registrar(caminho, nome):
     """Acrescenta estação ao `central.json` do hub. **Não** a torna ativa.
 
     Escreve **só no config do hub** — nunca dentro de estação nenhuma. É a
-    mesma disciplina do `/api/estacao/ativar`. A pasta pode não existir ainda
-    (o normal, logo depois do wizard): o seletor mostra isso e não deixa ativar.
+    mesma disciplina do `/api/estacao/ativar`. A pasta **tem de existir** e ter o
+    marcador da estação (ver `_caminho_de_estacao`): o Embarque registra as que a
+    pessoa já tinha na hora, e as que a sessão de IA acabou de criar quando ela
+    avisa que terminou.
     """
-    caminho = str(Path((caminho or "").strip()))
-    if len(caminho) < 3:
-        raise ValueError("caminho inválido")
+    if nome is not None and not isinstance(nome, str):
+        raise ValueError("nome inválido")
+    caminho = _caminho_de_estacao(caminho)
     dados = config.ler_central()
     regs = dados.setdefault("estacoes", [])
     for r in regs:
@@ -496,7 +527,21 @@ def registrar(caminho, nome):
 
 
 def registrar_varias(lista):
-    """As estações do Embarque de uma vez, com a mesma disciplina de `registrar`."""
-    if not lista:
+    """As estações do Embarque de uma vez, com a mesma disciplina de `registrar`.
+
+    Tudo ou nada: confere **todas** antes de gravar a primeira, e o erro diz de
+    qual é cada recusa — registrar duas e largar a terceira deixaria a pessoa
+    com um seletor pela metade e sem saber por quê."""
+    if not isinstance(lista, list) or not lista:
         raise ValueError("nenhuma estação para registrar")
+    if not all(isinstance(e, dict) for e in lista):
+        raise ValueError("cada estação precisa de caminho e nome")
+    recusas = []
+    for e in lista:
+        try:
+            _caminho_de_estacao(e.get("caminho"))
+        except ValueError as err:
+            recusas.append(f"{e.get('nome') or e.get('caminho')}: {err}")
+    if recusas:
+        raise ValueError("nada foi registrado — " + " | ".join(recusas))
     return [registrar(e.get("caminho"), e.get("nome")) for e in lista]

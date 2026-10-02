@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.16.1 · atualizado em 2026-09-20
+> **Documento** · v0.16.2 · atualizado em 2026-10-02
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -141,7 +141,7 @@ aqui — e há um teste que compara os dois.
 ```
 central/                  ← a raiz do repositório É o hub
 ├── app/
-│   ├── server.py         servidor HTTP + roteamento + endpoints de efeito colateral + /files
+│   ├── server.py         servidor HTTP + a guarda (Host, Origin, JSON, cabeçalhos) + roteamento + endpoints de efeito colateral + /files
 │   ├── config.py         taxonomia + resolução da raiz. TODO módulo lê daqui, na hora da chamada
 │   ├── indexer.py        varredura do corpus, classificação, índice JSON
 │   ├── search.py         busca em memória sobre o índice
@@ -328,9 +328,15 @@ silêncio — `tests/test_trilha.py` cobra isso.
 
 `POST /api/estacao/ativar` e `POST /api/embarque/registrar` escrevem **só no
 `central.json` do hub** — que é config de quem usa, não corpus de estação. Por
-isso não passam pela disciplina acima; a trava deles é outra: caminho tem que
-estar registrado (ou ser acrescentado por eles), e nada é tocado dentro de
-estação nenhuma.
+isso não passam pela disciplina acima; a trava deles é outra: `ativar` só marca
+caminho já registrado, `registrar` só aceita caminho **completo, que existe, é
+pasta e tem o marcador de estação** (`estacao.json`, ou o `plataforma.json` de
+até a 0.9) — o `central.json` diz à Central o que abrir, indexar e servir, e
+não pode receber caminho que ninguém conferiu. Nada é tocado dentro de estação
+nenhuma. Consequência para o Embarque: a estação que a sessão de IA vai criar
+**ainda não existe** quando o texto é gerado, então só as que a pessoa já tinha
+são registradas na hora; as criadas ganham o botão "A sessão terminou —
+registrar na Central" (`embarque.registrar_varias`, tudo ou nada).
 
 ### Endpoints que **não escrevem em disco** — e é de propósito
 
@@ -359,8 +365,13 @@ própria. Regras (`server.py::_handle_launch`): só aceita path que `portfolio.p
 já classificou como launcher/binário/servidor (nunca caminho arbitrário vindo do
 navegador); cwd na pasta do arquivo; a UI pede confirmação; o snapshot estático
 responde "somente leitura". **`GET /files/<path>`** serve qualquer arquivo da
-raiz só pra leitura (nunca `.git`/`node_modules`, sem sair da raiz) — é o que faz
-protótipos HTML abrirem renderizados.
+raiz só pra leitura (sem sair da raiz) — é o que faz protótipos HTML abrirem
+renderizados. Nunca serve `.git`, `node_modules`, `__pycache__` nem a pasta
+`cofre`, nem nome de segredo: `.env*`, `central.json*`, `*.pem`, `*.key` e as
+chaves do SSH (`id_rsa*`, `id_ed25519*`, `id_ecdsa*`, `id_dsa*`). A lista está em
+`server.py` (`nome_sensivel`), compara sem diferenciar maiúsculas e confere o
+nome pedido **e** o que o caminho resolve (um link simbólico para o `.env` não
+passa). O que sobra de falso positivo (`.env.example`) é o preço.
 
 **`POST /api/nota/nova`** cria um item do primeiro estágio a partir de texto
 solto, sem sessão de IA. Regras (`app/notas.py`): o utilitário da estação é
@@ -411,6 +422,32 @@ Como cada projeto pode ter git próprio, marcar um checkbox lá aparece como
 alteração não commitada naquele repositório — revisão e commit são de quem usa; a
 Central nunca commita em nome de ninguém.
 
+## Quem pode falar com o servidor
+
+O servidor escuta só em loopback, mas isso não basta: **qualquer página aberta
+no navegador consegue mandar pedido para `127.0.0.1`**, e um POST "simples"
+(`text/plain`) nem dispara o pré-voo do CORS; com DNS rebinding a página também
+**lê** as respostas. A `Handler` (`server.py`) confere, em todo pedido:
+
+| o quê | regra | recusa |
+|---|---|---|
+| `Host` (todo método, GET inclusive) | só `127.0.0.1:<porta>`, `localhost:<porta>`, `[::1]:<porta>` — a porta em que o servidor de fato escuta; sem `Host` (HTTP/1.0 de script) passa | 403, texto puro |
+| `Origin` (POST, PUT, PATCH, DELETE) | exatamente uma das três origens acima; `null` e qualquer outra, não | 403 |
+| `Sec-Fetch-Site` (sem `Origin`) | `cross-site` e `same-site` não; sem nenhum dos dois (curl, script local) passa | 403 |
+| `Content-Type` (todo POST) | `application/json`, com ou sem `; charset=` — todos os endpoints leem JSON | 415 |
+| tamanho do corpo | até 8 MB | 413 |
+
+E em toda resposta: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: same-origin`; as de API (JSON) levam também `Cache-Control:
+no-store`. **Erro 500 é sempre `{"error": "erro interno"}`**: o detalhe vai para
+o console de quem roda o servidor (`_erro_interno`), nunca para o corpo — e uma
+exceção que escapava de um endpoint (que derrubava a conexão sem resposta) agora
+também cai nele. Quem chama a API de um script precisa mandar
+`Content-Type: application/json` (`curl -H "Content-Type: application/json"`).
+Quem cobra tudo isto é `tests/test_servidor_local.py`, contra um servidor de
+verdade numa porta efêmera. **Não há CSP** de propósito: a página tem script
+embutido, e uma CSP que o permita não protege do que importa aqui.
+
 ## Convenções
 
 - Zero build step, zero dependência de terceiros no lado Python (stdlib puro). Do
@@ -424,6 +461,17 @@ Central nunca commita em nome de ninguém.
 - **Nenhum valor literal de cor fora do bloco de tokens** do `index.html`. É
   cobrado por `tests/test_design_tokens.py` e explicado em
   `docs/design-system.md`. Cor escrita numa regra não troca no modo escuro.
+- **Markdown só entra na página pelo `marked` configurado.** O corpus recebe
+  captura de terceiros, e o `marked` v15 não sanitiza: o bloco `markdown-seguro`
+  do `index.html` faz o HTML cru aparecer como texto (comentário HTML inerte some;
+  `<br>` continua valendo), neutraliza `javascript:`, `vbscript:` e `data:` em
+  link e imagem (imagem de dados raster passa), escapa o `&` do endereço — o
+  navegador decodifica entidade em atributo — e escapa o `alt` da imagem, que o
+  `marked` põe cru no atributo. Todo `marked.parse(...)` novo herda isso sozinho;
+  **não** crie outra instância (`new marked.Marked()`) nem escreva `innerHTML`
+  com markdown que não passou por ele. `escapeHtml` serve a texto e a atributo
+  entre aspas. `tests/test_servidor_local.py` executa o bloco no node contra o
+  `marked` vendorizado (e pula se não houver node).
 - **A porta tem uma fonte só:** `config.PORTA`. O `.bat` pergunta ao Python; o
   `.claude/launch.json` é o único lugar que repete o número, porque é JSON lido
   pelo harness — e um teste cobra que os dois concordem.

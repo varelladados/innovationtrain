@@ -1,5 +1,65 @@
 # Changelog — Central
 
+## 0.16.2 — 2026-10-02
+
+**A Central fecha a porta que qualquer página aberta no navegador podia abrir.**
+O servidor escuta só em loopback, e isso parecia bastar. Não basta: uma página
+qualquer manda pedido para `127.0.0.1`, e um POST "simples" (`text/plain`) nem
+dispara o pré-voo do CORS — grava nota, responde pendência, registra caminho no
+`central.json`; com DNS rebinding a página também **lê** o que o servidor
+responde. A avaliação de maturidade de 2026-10-02 achou isso e mais dois furos
+no mesmo servidor; os três estão fechados aqui, mais um ganho rápido.
+
+- **Quem pode falar com o servidor.** Todo pedido (GET inclusive) tem de trazer
+  `Host` de loopback na porta em que o servidor escuta — é o que barra o DNS
+  rebinding. Todo método que muda estado confere também `Origin` (só a própria
+  página) e, sem ele, `Sec-Fetch-Site` (`cross-site` e `same-site` não); curl e
+  script local, que não mandam nenhum dos dois, seguem passando. Todo POST
+  exige `Content-Type: application/json`, que é o que um formulário de outra
+  página não consegue mandar sem pré-voo. **A interface não quebra por isso:**
+  só o `reindex` mandava POST sem o cabeçalho, e foi corrigido junto. Quem
+  chamar a API de um script agora precisa do cabeçalho.
+- **Cabeçalhos e erro.** `X-Content-Type-Options: nosniff`, `X-Frame-Options:
+  DENY` e `Referrer-Policy: same-origin` em toda resposta, inclusive as de erro
+  que o `http.server` monta sozinho; `Cache-Control: no-store` nas de API. O 500
+  passou a ser sempre `{"error": "erro interno"}` — o detalhe (e o traceback)
+  vai para o console de quem roda o servidor. Doze das treze respostas 500
+  devolviam `NomeDaExceção: texto`, que inclui caminho de disco; e uma exceção que
+  escapasse de um endpoint derrubava a conexão sem resposta, agora cai no mesmo
+  500. Sem CSP, de propósito: a página tem script embutido.
+- **XSS por markdown cru.** O corpus recebe captura de terceiros e o `marked`
+  v15 não sanitiza: HTML dentro do markdown ia direto para o `innerHTML`, na
+  origem do app, que consegue chamar todos os POST. O `marked` agora mostra HTML
+  cru como texto (comentário HTML inerte some, `<br>` continua valendo),
+  neutraliza `javascript:`, `vbscript:` e `data:` em link e em imagem (imagem de
+  dados raster passa), e fecha duas brechas que só apareceram testando: o
+  navegador decodifica entidade em atributo, então `[x](javascript&colon;…)`
+  passava por qualquer checagem do texto cru — o `&` do endereço agora sai
+  escapado —, e o `marked` põe o **texto alternativo da imagem cru** no
+  atributo, de modo que `![a" onerror="…](x.png)` virava `<img onerror>`.
+  Tabela, código, bloco `mermaid`, checkbox de backlog e os links relativos que
+  abrem arquivo do corpus não mudam. `escapeHtml` perdeu a dependência do DOM e
+  passou a escapar aspas, porque é usado em valor de atributo.
+- **`/files/`** recusa nome de segredo: `.env*`, `central.json*`, a pasta
+  `cofre`, `*.pem`, `*.key` e as chaves do SSH, sem diferenciar maiúsculas e
+  conferindo também o caminho resolvido (um link simbólico para o `.env` não
+  passa). A comparação de `.git`/`node_modules` também deixou de diferenciar
+  maiúsculas — no NTFS `.GIT` abre o `.git`.
+- **`embarque.registrar` só registra estação que existe**: caminho completo,
+  pasta, com `estacao.json` (ou o `plataforma.json` de até a 0.9) dentro; senão,
+  erro em português dizendo o que falta. `registrar_varias` confere todas antes
+  de gravar a primeira. **Muda o Embarque:** a estação que a sessão de IA vai
+  criar ainda não existe quando o texto é gerado, então só as que a pessoa já
+  tinha são registradas na hora; as criadas ganham o botão "A sessão terminou —
+  registrar na Central" (os pendentes sobrevivem a recarregar a página).
+- `server_version` lê o `VERSION` em vez de dizer `Central/0.14` desde a 0.14.
+- Testes: `tests/test_servidor_local.py` sobe um servidor de verdade numa porta
+  efêmera e cobre Host, Origin, `Sec-Fetch-Site`, `Content-Type`, cabeçalhos,
+  500 genérico e `/files/`; e executa o bloco do markdown **no node contra o
+  `marked` vendorizado** (pula sem node), com um checador estrutural do HTML
+  que sai — não uma lista de strings. `tests/test_versao.py` cobra que `VERSION`,
+  o cabeçalho do `CENTRAL.md` e o topo deste arquivo digam a mesma coisa.
+
 ## 0.16.1 — 2026-09-20
 
 **"Orquestra" sai da tela.** `metodo/taxonomia.md` fixa cinco termos — Central,

@@ -14,9 +14,24 @@ concorrência otimista, backup antes de gravar, preserva LF/CRLF):
 | POST /api/pendencia/responder | opção/“Outra resposta” de pendência | pendencias.py |
 
 POST /api/launch abre executável local (efeito colateral, não escreve arquivo).
+
+**Quem pode falar com este servidor.** Ele escuta só em loopback, mas isso não
+basta: qualquer página aberta no navegador consegue mandar pedido para
+`127.0.0.1`, e um POST "simples" (`text/plain`) nem dispara o pré-voo do CORS.
+Por isso a `Handler` confere, em todo pedido:
+
+- `Host` — só `127.0.0.1:<porta>`, `localhost:<porta>` e `[::1]:<porta>`. É o que
+  barra o DNS rebinding (uma página de fora que resolve o nome dela para
+  127.0.0.1 e passaria a poder **ler** as respostas);
+- `Origin` / `Sec-Fetch-Site`, nos métodos que mudam estado — vindo de outra
+  origem, é recusado; sem nenhum dos dois (curl, script local) passa;
+- `Content-Type: application/json` em todo POST — todos os endpoints leem JSON.
+
+Detalhe de erro interno nunca vai para o corpo da resposta: vai para o console.
 """
 import json
 import re
+import traceback
 import webbrowser
 import shutil
 import threading
@@ -189,23 +204,53 @@ def estacoes_registradas():
 
 
 FILES_PREFIX = "/files/"
-FILES_FORBIDDEN_PARTS = {".git", "node_modules", "__pycache__"}
+#: Pastas que nunca saem por /files/, em qualquer ponto do caminho.
+FILES_FORBIDDEN_PARTS = {".git", "node_modules", "__pycache__", "cofre"}
+#: Nomes que denunciam segredo: o `.env` e suas variantes, o `central.json` (que
+#: tem os caminhos do usuário) e as chaves privadas do SSH. Por prefixo, para
+#: pegar `.env.local`, `central.json.bak`, `id_rsa.pub`... — o que sobra de
+#: falso positivo (`.env.example`) é preço baixo perto de servir um segredo.
+FILES_FORBIDDEN_PREFIXES = (".env", "central.json",
+                            "id_rsa", "id_ed25519", "id_ecdsa", "id_dsa")
+FILES_FORBIDDEN_SUFFIXES = (".pem", ".key")
+
+
+def nome_sensivel(parte: str) -> bool:
+    """Este pedaço de caminho é de um tipo que /files/ nunca serve?
+
+    Compara sem diferenciar maiúsculas (NTFS não diferencia: `.ENV` abre o
+    `.env`) e ignora ponto e espaço no fim, que o Windows descarta ao abrir
+    (`central.json.` é o `central.json`). `:` também barra, porque é como se
+    chega a um fluxo alternativo (`.env::$DATA`) e nenhum caminho relativo
+    legítimo tem dois-pontos."""
+    p = parte.strip().lower().rstrip(". ")
+    if ":" in p:
+        return True
+    return (p in FILES_FORBIDDEN_PARTS
+            or p.startswith(FILES_FORBIDDEN_PREFIXES)
+            or p.endswith(FILES_FORBIDDEN_SUFFIXES))
 
 
 def resolver_arquivo_seguro(rel: str):
     """Resolve um caminho relativo à raiz da estação pra servir em
-    /files/<path>. Só leitura, só dentro da raiz, nunca .git/node_modules.
-    Devolve Path ou None."""
+    /files/<path>. Só leitura, só dentro da raiz, nunca .git/node_modules nem
+    nome de segredo (ver `nome_sensivel`). Devolve Path ou None.
+
+    O nome é conferido duas vezes: no que o navegador pediu e no que o caminho
+    **resolve** — senão um link simbólico chamado `leia.txt` que aponta para o
+    `.env` passaria."""
     root = raiz()
     if root is None:
         return None
     rel = rel.replace("\\", "/").lstrip("/")
-    if not rel or any(p in FILES_FORBIDDEN_PARTS for p in rel.split("/")):
+    if not rel or any(nome_sensivel(p) for p in rel.split("/")):
         return None
     try:
         full = (root / rel).resolve()
-        full.relative_to(root.resolve())
+        dentro = full.relative_to(root.resolve())
     except (ValueError, OSError):
+        return None
+    if any(nome_sensivel(p) for p in dentro.parts):
         return None
     if not full.is_file():
         return None
@@ -217,17 +262,140 @@ def get_state():
         return STATE["entries"], STATE["text_cache"]
 
 
+def versao() -> str:
+    """O conteúdo do `VERSION`, a fonte única. Sem o arquivo, "0" — o header HTTP
+    é conveniência e não pode derrubar o servidor."""
+    try:
+        v = (PROJECT_DIR / "VERSION").read_text(encoding="utf-8").strip()
+    except OSError:
+        v = ""
+    return re.sub(r"[^0-9A-Za-z.+-]", "", v) or "0"
+
+
+#: Quem fala com este servidor é o navegador da própria pessoa, em loopback. Os
+#: três nomes de loopback valem; a porta é a em que o servidor de fato escuta.
+HOSTS_LOCAIS = ("127.0.0.1", "localhost", "[::1]")
+#: Métodos em que o `Origin` / `Sec-Fetch-Site` é cobrado.
+METODOS_QUE_MUDAM = ("POST", "PUT", "PATCH", "DELETE")
+#: Teto do corpo de um POST. Folga larga para uma nota colada; o que passa disso
+#: não é uso normal e não vale ler para a memória.
+LIMITE_CORPO = 8 * 1024 * 1024
+#: Em toda resposta, inclusive as de erro que o `http.server` monta sozinho.
+CABECALHOS_SEGURANCA = (
+    ("X-Content-Type-Options", "nosniff"),
+    ("X-Frame-Options", "DENY"),
+    ("Referrer-Policy", "same-origin"),
+)
+
+
 class Handler(BaseHTTPRequestHandler):
-    server_version = "Central/0.14"  # header HTTP: sem acento, e acompanha o VERSION
+    server_version = f"Central/{versao()}"  # header HTTP: sem acento, e lido do VERSION
 
     def log_message(self, fmt, *args):
         pass  # silencioso — evitar poluir o terminal do usuário
+
+    def end_headers(self):
+        # um lugar só: send_error (404/501 do http.server) também passa por aqui
+        for nome, valor in CABECALHOS_SEGURANCA:
+            self.send_header(nome, valor)
+        super().end_headers()
+
+    # ---- quem pode falar com o servidor ----
+
+    def _porta(self):
+        return self.server.server_address[1]
+
+    def _host_permitido(self):
+        """`Host` de loopback na porta em que escutamos. Sem `Host` (HTTP/1.0 de
+        script) passa; mais de um `Host`, todos têm de valer."""
+        hosts = self.headers.get_all("Host") or []
+        porta = self._porta()
+        aceitos = {f"{h}:{porta}" for h in HOSTS_LOCAIS}
+        if porta == 80:
+            aceitos |= set(HOSTS_LOCAIS)
+        return all(h.strip().lower() in aceitos for h in hosts)
+
+    def _origem_permitida(self):
+        """Para método que muda estado. Com `Origin`, só a própria página; sem
+        ele, o `Sec-Fetch-Site` do navegador não pode ser de fora; sem nenhum
+        dos dois (curl, script local, app nativo) passa."""
+        origens = self.headers.get_all("Origin")
+        if origens:
+            porta = self._porta()
+            aceitas = {f"http://{h}:{porta}" for h in HOSTS_LOCAIS}
+            if porta == 80:
+                aceitas |= {f"http://{h}" for h in HOSTS_LOCAIS}
+            return all(o.strip().lower() in aceitas for o in origens)
+        site = (self.headers.get("Sec-Fetch-Site") or "").strip().lower()
+        return site not in ("cross-site", "same-site")
+
+    def _guardar(self, muda_estado):
+        """True se o pedido pode seguir; senão já respondeu 403."""
+        if not self._host_permitido():
+            self._send_text("Host não aceito: a Central só atende 127.0.0.1, localhost e [::1].",
+                            "text/plain; charset=utf-8", status=403)
+            return False
+        if muda_estado and not self._origem_permitida():
+            self._send_text("Origem não aceita: pedido que muda dados só vale se vier da própria Central.",
+                            "text/plain; charset=utf-8", status=403)
+            return False
+        return True
+
+    def _ler_corpo(self):
+        """O corpo cru do pedido (`b""` se não veio), ou None se já respondeu.
+
+        Lido **antes** de qualquer recusa: responder 403/415 com o corpo ainda
+        no socket faz o Windows fechar com RST e o cliente perder a resposta."""
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            n = -1
+        if n < 0:
+            self._send_json({"error": "Content-Length inválido"}, status=400)
+            return None
+        if n > LIMITE_CORPO:
+            self.close_connection = True
+            self._send_json({"error": "corpo grande demais"}, status=413)
+            return None
+        return self.rfile.read(n) if n else b""
+
+    def _erro_interno(self, e):
+        """500 sem detalhe. O que deu errado vai para o console de quem roda o
+        servidor, nunca para o navegador: o corpo da resposta é de quem pediu, e
+        quem pediu pode ser uma página de fora."""
+        print(f"[Central] erro interno em {self.command} {urlparse(self.path).path!r}",
+              file=sys.stderr)
+        traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+        try:
+            self._send_json({"error": "erro interno"}, status=500)
+        except OSError:
+            self.close_connection = True  # a resposta já tinha começado
+
+    def _com_rede_de_erro(self, fn):
+        try:
+            fn()
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            self.close_connection = True  # o cliente foi embora: não há a quem responder
+        except Exception as e:
+            self._erro_interno(e)
+
+    def _outro_metodo(self):
+        """PUT, PATCH, DELETE, OPTIONS: não há nada para fazer neles, mas passam
+        pela mesma guarda — e a recusa é 405, não o HTML do http.server."""
+        if self._ler_corpo() is None:
+            return
+        if not self._guardar(self.command in METODOS_QUE_MUDAM):
+            return
+        self._send_json({"error": "método não suportado"}, status=405)
+
+    do_PUT = do_PATCH = do_DELETE = do_OPTIONS = _outro_metodo
 
     def _send_json(self, obj, status=200):
         body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")   # resposta de API: nada de cópia em cache
         self.end_headers()
         self.wfile.write(body)
 
@@ -254,6 +422,10 @@ class Handler(BaseHTTPRequestHandler):
     # ---- GET ----
 
     def do_GET(self):
+        if self._guardar(False):
+            self._com_rede_de_erro(self._get)
+
+    def _get(self):
         parsed = urlparse(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
@@ -405,7 +577,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 self._send_json(triagem_mod.estado())
             except Exception as e:
-                self._send_json({"error": f"{type(e).__name__}: {e}"}, status=500)
+                self._erro_interno(e)
             return
 
         if path == "/api/briefing":
@@ -444,8 +616,8 @@ class Handler(BaseHTTPRequestHandler):
                 ctype += "; charset=utf-8"
             try:
                 data = full.read_bytes()
-            except OSError:
-                self._send_json({"error": "falha lendo arquivo"}, status=500)
+            except OSError as e:
+                self._erro_interno(e)
                 return
             self.send_response(200)
             self.send_header("Content-Type", ctype)
@@ -460,16 +632,27 @@ class Handler(BaseHTTPRequestHandler):
     # ---- POST ----
 
     def do_POST(self):
-        parsed = urlparse(self.path)
-        path = parsed.path
-        length = int(self.headers.get("Content-Length", 0))
-        raw_body = self.rfile.read(length) if length else b"{}"
+        corpo = self._ler_corpo()
+        if corpo is None or not self._guardar(True):
+            return
+        # Todo endpoint de POST lê JSON, então todo POST tem de dizer que é JSON.
+        # `text/plain` é o que uma página de fora manda sem disparar o pré-voo.
+        tipo = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        if tipo != "application/json":
+            self._send_json({"error": "o corpo tem de ser JSON (Content-Type: application/json)"},
+                            status=415)
+            return
         try:
-            payload = json.loads(raw_body.decode("utf-8"))
+            payload = json.loads((corpo or b"{}").decode("utf-8"))
         except Exception:
             self._send_json({"error": "invalid json"}, status=400)
             return
+        if not isinstance(payload, dict):
+            self._send_json({"error": "o corpo JSON tem de ser um objeto"}, status=400)
+            return
+        self._com_rede_de_erro(lambda: self._post(urlparse(self.path).path, payload))
 
+    def _post(self, path, payload):
         if path == "/api/reindex":
             entries = reindex()
             self._send_json({"count": len(entries)})
@@ -528,7 +711,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except Exception as e:
-            self._send_json({"error": f"falha ao gerar: {type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
         self._send_json(resultado)
 
@@ -545,7 +728,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except OSError as e:
-            self._send_json({"error": f"não consegui escrever o central.json: {e}"}, status=500)
+            self._erro_interno(e)
             return
         self._send_json({"ok": True, "estacao": reg,
                          "estacoes": estacoes_registradas()})
@@ -571,7 +754,7 @@ class Handler(BaseHTTPRequestHandler):
             config.ativar(caminho)
             config.aplicar(config.carregar(caminho, registro.get("taxonomia")))
         except Exception as e:
-            self._send_json({"error": f"falha ao ativar: {type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
         entries = reindex()
         with STATE_LOCK:
@@ -604,7 +787,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except Exception as e:
-            self._send_json({"error": f"{type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
         reindex()
         self._send_json({"ok": True, **resultado, "estado": trilha_mod.estado()})
@@ -632,7 +815,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except Exception as e:
-            self._send_json({"error": f"falha inesperada: {type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
 
         # reindexação incremental: só este arquivo, sem varrer o corpus inteiro
@@ -671,7 +854,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except Exception as e:
-            self._send_json({"error": f"falha inesperada: {type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
         self._send_json(resultado)
 
@@ -699,7 +882,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             conferido = triagem_mod.conferir(texto)
         except Exception as e:
-            self._send_json({"error": f"triagem falhou: {type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
 
         if destino == "auto" and conferido["veredito"] != "limpo":
@@ -718,7 +901,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(e)}, status=400)
                 return
             except Exception as e:
-                self._send_json({"error": f"falha inesperada: {type(e).__name__}: {e}"}, status=500)
+                self._erro_interno(e)
                 return
             self._send_json({"ok": True, "destino": destino, "triagem": conferido, **resultado})
             return
@@ -729,7 +912,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=400)
             return
         except Exception as e:
-            self._send_json({"error": f"falha inesperada: {type(e).__name__}: {e}"}, status=500)
+            self._erro_interno(e)
             return
         self._send_json({"ok": True, "destino": "profissional", "triagem": conferido, **resultado})
 
@@ -766,7 +949,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             subprocess.Popen(cmd, cwd=str(full.parent), creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
         except Exception as e:
-            self._send_json({"error": f"falha ao iniciar: {e}"}, status=500)
+            self._erro_interno(e)
             return
         self._send_json({"ok": True, "iniciado": rel})
 
@@ -800,7 +983,7 @@ class Handler(BaseHTTPRequestHandler):
             with full_path.open(encoding="utf-8", newline="") as f:
                 lines = f.read().splitlines(keepends=True)
         except Exception as e:
-            self._send_json({"error": f"falha lendo arquivo: {e}"}, status=500)
+            self._erro_interno(e)
             return
 
         if line_number is None or not (0 <= line_number < len(lines)):
