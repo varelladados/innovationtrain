@@ -77,7 +77,7 @@ construir junto.
    | Nenhuma promoção automática | princípio 6 | os três critérios de [`promocao.md`](../metodo/promocao.md), decisão sempre humana |
    | A voz de uma estação não vaza para o genérico | princípio 5 | nomes declarados no `estacao.json`, nunca no código; guarda-corpo de publicação |
    | Toda etapa pode terminar em "matar" | princípio 4 | histórico em cada estágio; apagar é sempre lógico |
-   | Nada entra sem triagem | regra 9 | o portão da aba Nota e a espera na estação privada |
+   | Nada entra sem triagem | regra 9 | o portão da captura e a espera na estação privada |
 
 4. **Arquitetura** — estações (pastas com a própria configuração) ↔ a Central
    (lê na hora da chamada, escreve só com trava, backup e concorrência

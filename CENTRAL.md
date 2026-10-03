@@ -15,7 +15,7 @@ IA — e de onde ela dispara a sessão quando quiser. Começou como navegador lo
 de um corpus de markdown: índice, árvore, busca, e um único write (toggle de
 checkbox de backlog). Hoje também:
 
-- **captura nota** crua (aba Nota) — a triagem confere o texto antes de gravar:
+- **captura nota** crua (o botão "+ Capturar" da barra, ou `Ctrl+N`, de qualquer tela) — a triagem confere o texto antes de gravar:
   o que é trabalho e não carrega dado de ninguém vira item do primeiro estágio,
   com identificador e linha no registro; o resto vai para a espera ou para a
   estação privada, por escolha de quem está na tela;
@@ -36,8 +36,10 @@ checkbox de backlog). Hoje também:
 - **cria as estações padrão** (aba Embarque) — Plataforma, Admin_empresa e
   Vida_Pessoal; cinco perguntas, um prompt.
 
-São nove abas: Workflow, Dashboard, Portfólio, Fluxo, Nota, Triagem, Versões,
-Tour e Embarque.
+São oito abas: Workflow, Dashboard, Portfólio, Fluxo, Triagem, Versões, Tour e
+Embarque — e a captura, que não é aba: é um gesto (botão ou `Ctrl+N`) que abre
+um véu em cima da vista atual e fecha sem perder o rascunho (`sessionStorage`,
+nunca `localStorage`: rascunho pode ter dado de terceiro).
 
 A taxonomia padrão tem **cinco** estágios desde a 0.9.0 (capturas → notas →
 ideias → funcionalidades → projetos). O quarto é a unidade de trabalho: uma
@@ -161,7 +163,7 @@ central/                  ← a raiz do repositório É o hub
 │   ├── embarque.py       POST /api/embarque/prompt — o texto que cria as estações padrão
 │   ├── versoes.py        GET /api/versoes — leitura do git, allow-list de subcomando, só leitura
 │   ├── trilha.py         a trilha das estações de exemplo — restaura instantâneos, não promove nada
-│   ├── triagem_ui.py     o portão da aba Nota e a aba Triagem — importa metodo/triagem.py, detector é um só
+│   ├── triagem_ui.py     o portão da captura e a aba Triagem — importa metodo/triagem.py, detector é um só
 │   └── templates/
 │       ├── index.html    UI de página única
 │       └── vendor/       marked.min.js + mermaid.min.js e as três fontes .woff2 — sem CDN

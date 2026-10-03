@@ -337,6 +337,21 @@ th{background:var(--surface-2)}
 .wf-raw{font-size:var(--fs-1);background:var(--surface-2);padding:var(--sp-2);border-radius:var(--r-1);max-height:150px;overflow:auto;white-space:pre-wrap;margin:var(--sp-1) 0 0}
 
 /* ---------- briefing pra IA (modal) ---------- */
+#cap-btn{display:flex;align-items:center;gap:var(--sp-1);width:100%;margin:0 0 var(--sp-2);padding:5px var(--sp-2);border:1px solid var(--accent);border-radius:var(--r-1);background:var(--accent-bg);color:var(--accent);font-family:inherit;font-size:var(--fs-1);font-weight:600;cursor:pointer}
+#cap-btn:hover{background:var(--accent);color:var(--bg)}
+#cap-btn .ic{font-size:var(--fs-3);line-height:1}
+#cap-btn kbd,#cap-acoes kbd{margin-left:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;font-weight:400;opacity:.75}
+#cap-acoes kbd{margin-left:var(--sp-1)}
+#cap-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:var(--sp-10) var(--sp-6)}
+#cap-overlay.open{display:flex}
+#cap-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);width:min(720px,100%);max-height:86vh;overflow:auto;display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-4)}
+#cap-box h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0}
+#cap-box .sub{font-size:var(--fs-1);color:var(--text-2);margin:0}
+#cap-box #nota-texto{max-width:none}
+#cap-acoes{display:flex;gap:var(--sp-2);align-items:center}
+#cap-acoes #nota-status{font-size:var(--fs-1);color:var(--text-2);margin-right:auto}
+#cap-acoes button{padding:var(--sp-1) var(--sp-3);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);color:var(--text);font-family:inherit;font-size:var(--fs-2);cursor:pointer}
+#cap-acoes button.prim{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
 #brf-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:var(--sp-6)}
 #brf-overlay.open{display:flex}
 #brf-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2);box-shadow:var(--shadow);width:min(820px,100%);max-height:86vh;display:flex;flex-direction:column;padding:var(--sp-4) var(--sp-4)}
@@ -595,6 +610,7 @@ th{background:var(--surface-2)}
     <div id="sidebar-header">
       <h1>Central</h1>
       <select id="estacao-seletor" title="A estação que esta Central está operando"></select>
+      <button id="cap-btn" title="Capturar uma nota crua de qualquer tela (Ctrl+N) — a triagem confere antes de gravar"><span class="ic" aria-hidden="true">+</span>Capturar <kbd>Ctrl N</kbd></button>
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="estacao-aviso" hidden></div>
@@ -606,7 +622,6 @@ th{background:var(--surface-2)}
       <button id="dashboard-nav-btn" title="Os números da estação, recalculados do registro e do disco"><span class="ic" aria-hidden="true">📊</span>Dashboard</button>
       <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto"><span class="ic" aria-hidden="true">🗂</span>Portfólio</button>
       <button id="fluxo-nav-btn" title="O método na tela: as passagens entre estágios e os critérios de promoção"><span class="ic" aria-hidden="true">🧩</span>Fluxo</button>
-      <button id="nota-nav-btn" title="Captura rápida de ideia crua, sem abrir sessão de IA"><span class="ic" aria-hidden="true">📝</span>Nota</button>
       <button id="triagem-nav-btn" title="O que chegou e ainda não entrou: lotes na espera, com o que cada um ainda pergunta"><span class="ic" aria-hidden="true">🧴</span>Triagem</button>
       <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem"><span class="ic" aria-hidden="true">📦</span>Versões</button>
       <button id="tour-nav-btn" title="A leitura guiada desta estação, uma parada por vez"><span class="ic" aria-hidden="true">🧭</span>Tour</button>
@@ -649,6 +664,23 @@ th{background:var(--surface-2)}
   </div>
 </div>
 <div id="toast"></div>
+<!-- Capturar é um gesto, não um lugar: o véu abre em cima da vista atual, de
+     qualquer tela, e fecha sem perder o rascunho (sessionStorage, nunca
+     localStorage — rascunho pode ter dado de terceiro e não sobrevive à sessão). -->
+<div id="cap-overlay">
+  <div id="cap-box">
+    <h2>Capturar</h2>
+    <p class="sub" id="cap-sub"></p>
+    <textarea id="nota-texto" rows="8" placeholder="O que você quer guardar?"></textarea>
+    <div id="cap-acoes">
+      <span id="nota-status"></span>
+      <button type="button" id="cap-fechar">Fechar <kbd>Esc</kbd></button>
+      <button type="button" id="nota-salvar-btn" class="prim">Guardar <kbd>Ctrl ↵</kbd></button>
+    </div>
+    <p class="sub" id="cap-veredito">Antes de gravar, o texto passa pela triagem: trabalho ou vida pessoal, dado de outra pessoa, segredo. Se ela parar, você escolhe o destino aqui mesmo.</p>
+    <div id="nota-portao"></div>
+  </div>
+</div>
 <div id="brf-overlay">
   <div id="brf-box">
     <h2 id="brf-titulo">Briefing pra IA</h2>
@@ -3156,29 +3188,29 @@ function pjBacklog(container, b){
 // passagem seguinte, e ela tem critérios próprios (aba Fluxo).
 let NOTAS_CRIADAS_SESSAO = [];
 
-async function openNotaView(){
-  marcarAba("nota-nav-btn");
-  SELECTED_PATH = null;
-  renderTree();
-  document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = plPrefixo() + "Nova nota";
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">captura</span><span id="meta-path">vira ${escapeHtml(plNome(1))} (${escapeHtml(plSigla(1))}) no primeiro estágio — sem classificação, sem IA</span>`;
-  const content = document.getElementById("content");
-  content.innerHTML = `
-    <h1>Nova nota</h1>
-    <p class="dash-lead">Cole ou escreva o que quiser guardar. Vira ${escapeHtml(plNome(1, false).toLowerCase())} com identificador, arquivo e linha no registro — organizar e promover continua sendo trabalho de uma sessão de IA depois.</p>
-    <textarea id="nota-texto" rows="10" placeholder="Cole aqui o texto cru..."></textarea>
-    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
-      <button id="nota-salvar-btn">Salvar</button>
-      <span id="nota-status" style="font-size:12.5px;color:var(--text-2)"></span>
-    </div>
-    <p class="tri-nota">Antes de gravar, o texto passa pela <strong>triagem</strong>: é trabalho ou vida pessoal, tem dado de outra pessoa, tem segredo. Se ela parar, você escolhe o destino aqui mesmo.</p>
-    <div id="nota-portao" style="margin-top:16px"></div>
-    <div id="nota-recentes" style="margin-top:24px"></div>
-  `;
-  document.getElementById("nota-salvar-btn").onclick = () => salvarNota("auto");
-  renderNotasRecentes();
-  document.getElementById("nota-texto").focus();
+// Capturar é um gesto, não um lugar (ajuste 3 da revisão de UX, 2026-10-03): o
+// véu abre em cima da vista atual, de qualquer tela, por botão ou Ctrl+N; Esc
+// fecha sem perder o texto. O rascunho fica em sessionStorage, nunca em
+// localStorage: pode ter dado de terceiro e não deve sobreviver à sessão.
+const CAP_RASCUNHO = "central.rascunho.v1";
+
+function abrirCaptura(){
+  if (!PLAT){ toast("Nenhuma estação aberta."); return; }
+  const ov = document.getElementById("cap-overlay");
+  document.getElementById("cap-sub").textContent =
+    `Vira ${plNome(1, false).toLowerCase()} (${plSigla(1)}) no primeiro estágio de ${PLAT.nome}, com identificador, arquivo e linha no registro — sem classificação, sem IA.`;
+  const ta = document.getElementById("nota-texto");
+  try { if (!ta.value) ta.value = sessionStorage.getItem(CAP_RASCUNHO) || ""; } catch (e) {}
+  document.getElementById("nota-status").textContent = "";
+  ov.classList.add("open");
+  ta.focus();
+}
+
+function fecharCaptura(){
+  const ov = document.getElementById("cap-overlay");
+  if (!ov.classList.contains("open")) return;
+  try { sessionStorage.setItem(CAP_RASCUNHO, document.getElementById("nota-texto").value); } catch (e) {}
+  ov.classList.remove("open");
 }
 
 async function salvarNota(destino){
@@ -3218,6 +3250,9 @@ async function salvarNota(destino){
     status.textContent = "";
     if (portao) portao.innerHTML = "";
     ta.value = "";
+    try { sessionStorage.removeItem(CAP_RASCUNHO); } catch (e) {}
+    // a consequência no lugar do gesto: o véu fecha e o aviso diz o que entrou e onde
+    document.getElementById("cap-overlay").classList.remove("open");
     if (data.destino === "espera"){
       toast("Guardado na espera: " + data.lote);
     } else if (data.destino === "pessoal"){
@@ -3226,7 +3261,7 @@ async function salvarNota(destino){
       NOTAS_CRIADAS_SESSAO.unshift(data);
       renderNotasRecentes();
       await reindex(); // pra aparecer na árvore/no Workflow sem precisar clicar em "reindexar"
-      toast("Nota salva: " + data.id);
+      toast(`${data.id} guardada em ${plNome(1, true)}`);
     }
   } catch(err){
     status.textContent = "Falha de rede: " + err;
@@ -3542,7 +3577,22 @@ document.getElementById("embarque-nav-btn").addEventListener("click", openEmbarq
 document.getElementById("versoes-nav-btn").addEventListener("click", openVersoesView);
 document.getElementById("portfolio-nav-btn").addEventListener("click", openPortfolioView);
 document.getElementById("workflow-nav-btn").addEventListener("click", openWorkflowView);
-document.getElementById("nota-nav-btn").addEventListener("click", openNotaView);
+document.getElementById("cap-btn").addEventListener("click", abrirCaptura);
+document.getElementById("cap-fechar").addEventListener("click", fecharCaptura);
+document.getElementById("nota-salvar-btn").addEventListener("click", () => salvarNota("auto"));
+document.getElementById("cap-overlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "cap-overlay") fecharCaptura();
+});
+document.getElementById("nota-texto").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)){ ev.preventDefault(); salvarNota("auto"); }
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") fecharCaptura();
+  if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && !ev.altKey && (ev.key === "n" || ev.key === "N")){
+    ev.preventDefault();
+    abrirCaptura();
+  }
+});
 document.getElementById("triagem-nav-btn").addEventListener("click", openTriagemView);
 document.getElementById("fluxo-nav-btn").addEventListener("click", openFluxoView);
 document.getElementById("brf-fechar").addEventListener("click", fecharBriefing);

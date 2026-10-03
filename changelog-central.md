@@ -19,6 +19,14 @@
   (`AbaTriagem`, 5 casos novos) e `tests/test_servidor_local.py`
   (`TestTriagemResponder`).
 
+- **Capturar é um gesto, não um lugar.** A aba Nota saiu da barra; entrou o
+  botão "+ Capturar" no topo da barra e o atalho `Ctrl+N`, que abrem um véu em
+  cima da vista atual, de qualquer tela. `Ctrl+Enter` guarda; `Esc` fecha sem
+  perder o texto (rascunho em `sessionStorage`, nunca `localStorage`: pode ter
+  dado de terceiro e não sobrevive à sessão). O portão da triagem e
+  `POST /api/nota/nova` não mudam; ao guardar, o véu fecha e o aviso diz o que
+  entrou e onde. A barra ficou com oito abas e continua sem rolagem.
+
 ## 0.17.1 — 2026-10-03
 
 **A tela inicial é "Hoje": as decisões mais antigas da estação, respondidas no
