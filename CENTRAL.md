@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.17.0 · atualizado em 2026-10-02
+> **Documento** · v0.17.1 · atualizado em 2026-10-03
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -233,7 +233,8 @@ nenhuma, que é o modo de falha que este app existe para evitar.
 |---|---|---|
 | `estacao` (padrão) | a pasta declarada pela estação ativa + o `_pendencias/` de cada projeto dela | o briefing |
 | `publicavel` | o acima + cada estação **não privada** do `central.json` + a pasta `pendencias/` da própria Central | `export_static.py --pendencias-de-todas` |
-| `todas` | o acima + as privadas | `GET /api/workflow` no servidor local |
+| `todas` | o acima + as privadas | `GET /api/workflow` no servidor local (padrão) |
+| `estacao`, pela URL | `GET /api/workflow?escopo=estacao` | a tela inicial (Hoje): as cinco abertas mais antigas da estação aberta, respondidas no cartão |
 
 Três regras que o código cobra:
 

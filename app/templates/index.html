@@ -158,7 +158,8 @@ th{background:var(--surface-2)}
    oito botões de bloco empurravam a árvore para fora da tela. */
 #sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
 #sidebar-header{padding:var(--sp-2) var(--sp-3)}
-#sidebar-header h1{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-3);margin:0 0 var(--sp-2);letter-spacing:.01em}
+#sidebar-header h1{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-3);margin:0 0 var(--sp-2);letter-spacing:.01em;cursor:pointer}
+#sidebar-header h1:hover{color:var(--accent)}
 #estacao-seletor,#tema-seletor{width:100%;padding:var(--sp-1) var(--sp-2);border:1px solid var(--border);border-radius:var(--r-1);background:var(--surface-2);color:var(--text);font-family:inherit;font-size:var(--fs-1);cursor:pointer}
 #estacao-seletor{margin:0 0 var(--sp-1)}
 #estacao-seletor:focus,#tema-seletor:focus{outline:2px solid var(--accent);outline-offset:-1px}
@@ -416,6 +417,20 @@ th{background:var(--surface-2)}
 #content h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-lg);margin-top:var(--sp-6)}
 #content h3{font-size:var(--fs-4);font-weight:600}
 #welcome{color:var(--text-2);max-width:640px}
+#welcome h1{color:var(--text)}
+#welcome #welcome-lead{font-size:var(--fs-1)}
+/* Hoje: as decisões mais antigas da estação, respondidas no próprio cartão. O
+   cartão é o mesmo da aba Workflow (wfCard); aqui só muda o que o cerca. */
+#hoje h2{font-size:var(--fs-4);margin-top:var(--sp-4);color:var(--text)}
+#hoje .wf-pend{color:var(--text)}
+/* o contexto é longo; em Hoje ele mostra três linhas e abre ao clique, para
+   cinco cartões caberem em pouco mais de uma tela */
+#hoje .wf-pend .ctx{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+#hoje .wf-pend .ctx.aberto{-webkit-line-clamp:unset;display:block}
+#hoje .hoje-feito{font-size:var(--fs-1);color:var(--success);margin:var(--sp-1) 0 0;display:flex;gap:var(--sp-2);align-items:baseline}
+#hoje .hoje-feito a{color:var(--text-2)}
+#hoje .hoje-pe{font-size:var(--fs-1);margin-top:var(--sp-2)}
+#hoje .hoje-vazio{font-size:var(--fs-2)}
 .linkmap-banner{background:var(--warn-bg);color:var(--warn);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-1);font-size:var(--fs-1);margin-bottom:var(--sp-3)}
 
 /* backlog checkboxes */
@@ -618,8 +633,9 @@ th{background:var(--surface-2)}
     <div id="meta-bar"></div>
     <div id="content">
       <div id="welcome">
+        <h1>Hoje</h1>
         <p id="welcome-lead">Carregando…</p>
-        <p>Escolha um arquivo na árvore à esquerda, ou use a busca.</p>
+        <div id="hoje"></div>
         <div id="trilha-painel" hidden>
           <div id="trilha-onde"></div>
           <div id="trilha-botoes">
@@ -755,6 +771,7 @@ async function loadIndex(){
   // `estado_inicial`. Numa estação de verdade o painel nem é renderizado.
   TRILHA = data.trilha || {tem: false};
   renderTrilha();
+  carregarHoje();
 }
 
 // ============================================================
@@ -778,6 +795,115 @@ function renderBoasVindas(data){
   el.innerHTML = `Estação <strong>${escapeHtml(p.nome)}</strong>, em ` +
     `<code>${escapeHtml(p.caminho)}</code> — ${data.count} arquivos indexados` +
     (estagios ? `, em ${(p.estagios || []).length} estágios: ${escapeHtml(estagios)}.` : ".");
+}
+
+// ============================================================
+// Hoje — a tela inicial: as decisões mais antigas da estação, respondidas no cartão
+// ============================================================
+// A primeira coisa na tela é uma decisão do dono, não um texto sobre o
+// sistema. Escopo "estacao": só a estação aberta e os projetos dela; as outras
+// continuam na aba Workflow ("ver todas"). O cartão é o wfCard da aba Workflow —
+// responder grava pelo mesmo endpoint, com a mesma trava — e a consequência
+// aparece no lugar do clique: o cartão vira a resposta, com "desfazer".
+const HOJE_MAX = 5;
+let HOJE_CARDS = [];
+let HOJE_ERRO = null;
+let HOJE_TOTAL = 0;
+
+async function carregarHoje(){
+  const box = document.getElementById("hoje");
+  if (!box) return;
+  if (!PLAT){ box.innerHTML = ""; return; }
+  box.innerHTML = `<p class="hoje-vazio">Carregando decisões…</p>`;
+  try{
+    const r = await fetch("/api/workflow?escopo=estacao");
+    const data = await r.json();
+    HOJE_TOTAL = (data.pendencias && data.pendencias.cards || []).length;
+    HOJE_ERRO = (data.pendencias && data.pendencias.erro) || null;
+    // as abertas mais antigas primeiro: a data do nome do arquivo decide; as
+    // adiadas, que o Workflow põe na frente, aqui contam pela idade como as outras
+    HOJE_CARDS = (data.pendencias && data.pendencias.cards || [])
+      .filter(c => c.estado === "aberta")
+      .sort((a, b) => (a.data || "").localeCompare(b.data || "") || a.ref.localeCompare(b.ref))
+      .slice(0, HOJE_MAX);
+  } catch(err){
+    HOJE_CARDS = []; HOJE_ERRO = String(err);
+  }
+  drawHoje();
+}
+
+function drawHoje(){
+  const box = document.getElementById("hoje");
+  if (!box) return;
+  box.innerHTML = "";
+  const h = document.createElement("h2");
+  h.textContent = HOJE_CARDS.length ? "Decisões abertas, as mais antigas primeiro" : "Decisões abertas";
+  box.appendChild(h);
+  if (HOJE_ERRO){
+    const p = document.createElement("p");
+    p.className = "hoje-vazio";
+    p.textContent = "Decisões indisponíveis: " + HOJE_ERRO;
+    box.appendChild(p);
+  }
+  if (!HOJE_CARDS.length && !HOJE_ERRO){
+    const p = document.createElement("p");
+    p.className = "hoje-vazio";
+    p.textContent = "Nada aberto nesta estação.";
+    box.appendChild(p);
+  }
+  HOJE_CARDS.forEach(c => {
+    const card = wfCard(c);
+    const ctx = card.querySelector(".ctx");
+    if (ctx){ ctx.title = "abrir o contexto inteiro"; ctx.onclick = () => ctx.classList.toggle("aberto"); }
+    if (c.estado !== "aberta"){
+      // respondida aqui mesmo: diz o que aconteceu e oferece o caminho de volta
+      const feito = document.createElement("p");
+      feito.className = "hoje-feito";
+      feito.textContent = c.estado === "respondida"
+        ? "Respondida — a próxima rodada encaminha."
+        : (WF_ESTADO_LABEL[c.estado] || c.estado) + ".";
+      const marcada = (c.perguntas || []).flatMap(p => p.opcoes).find(o => o.marcado && o.kind !== "outra");
+      if (marcada){
+        const a = document.createElement("a");
+        a.href = "#"; a.textContent = "desfazer";
+        a.onclick = (ev) => { ev.preventDefault(); wfResponder(c, marcada, "desmarcar"); };
+        feito.appendChild(a);
+      }
+      card.appendChild(feito);
+    }
+    box.appendChild(card);
+  });
+  const pe = document.createElement("p");
+  pe.className = "hoje-pe";
+  const a = document.createElement("a");
+  a.href = "#";
+  a.textContent = HOJE_TOTAL > HOJE_CARDS.length
+    ? `ver todas as decisões (${HOJE_TOTAL} nesta estação, mais as das outras) →`
+    : "ver o Workflow, com as decisões de todas as estações →";
+  a.onclick = (ev) => { ev.preventDefault(); openWorkflowView(); };
+  pe.appendChild(a);
+  box.appendChild(pe);
+}
+
+// O título da barra leva de volta a Hoje: as outras abas substituem o
+// conteúdo inteiro, e sem isto a tela inicial só existia no primeiro carregamento.
+function openHojeView(){
+  marcarAba(null);
+  SELECTED_PATH = null;
+  renderTree();
+  const content = document.getElementById("content");
+  content.classList.remove("pf-wide");
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Hoje";
+  document.getElementById("meta-bar").innerHTML = "";
+  if (!document.getElementById("welcome")){
+    content.innerHTML = `<div id="welcome"><h1>Hoje</h1><p id="welcome-lead"></p><div id="hoje"></div>` +
+      `<div id="trilha-painel" hidden><div id="trilha-onde"></div><div id="trilha-botoes">` +
+      `<button id="btn-trilha" class="btn-avancar"></button><button id="btn-reiniciar">↺ voltar ao início</button></div></div></div>`;
+    ligarTrilha();
+    renderTrilha();
+  }
+  renderBoasVindas({estacao: PLAT, estacao_ok: !!PLAT, count: ENTRIES.length});
+  carregarHoje();
 }
 
 function renderEstacaoAviso(data){
@@ -2105,9 +2231,14 @@ async function wfResponder(card, op, acao, texto){
       return;
     }
     // ref + origem: duas estações podem ter o mesmo <data>-<slug>
-    const i = WF_CARDS.findIndex(c => c.ref === card.ref && (c.origem || "") === (card.origem || ""));
+    const mesmo = c => c.ref === card.ref && (c.origem || "") === (card.origem || "");
+    const i = WF_CARDS.findIndex(mesmo);
     if (i >= 0) WF_CARDS[i] = data.card;
+    // o mesmo cartão pode estar em Hoje: a consequência aparece onde foi o clique
+    const j = HOJE_CARDS.findIndex(mesmo);
+    if (j >= 0) HOJE_CARDS[j] = data.card;
     drawPendencias();
+    drawHoje();
     toast(data.estado === "respondida" ? "Respondida — o avanço encaminha na próxima rodada" : "Gravado");
   } catch(err){
     toast("Falha de rede: " + err);
@@ -3348,16 +3479,22 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape") fecharBriefing();
 });
 
-document.getElementById("btn-trilha").addEventListener("click", (ev) => {
-  if (TRILHA.passo === null || TRILHA.passo === undefined) return;
-  irParaPasso(TRILHA.passo + 1, ev.currentTarget);
-});
-document.getElementById("btn-reiniciar").addEventListener("click", (ev) => {
-  if (!confirm("Voltar esta estação de exemplo ao início?\n\n"
-               + "Tudo que você mudou aqui some. Isto não toca em nenhuma outra "
-               + "estação.")) return;
-  irParaPasso(0, ev.currentTarget);
-});
+// Os botões da trilha moram na tela inicial, que é recriada quando se volta a
+// Hoje — por isso a ligação é uma função, chamada aqui e lá.
+function ligarTrilha(){
+  document.getElementById("btn-trilha").addEventListener("click", (ev) => {
+    if (TRILHA.passo === null || TRILHA.passo === undefined) return;
+    irParaPasso(TRILHA.passo + 1, ev.currentTarget);
+  });
+  document.getElementById("btn-reiniciar").addEventListener("click", (ev) => {
+    if (!confirm("Voltar esta estação de exemplo ao início?\n\n"
+                 + "Tudo que você mudou aqui some. Isto não toca em nenhuma outra "
+                 + "estação.")) return;
+    irParaPasso(0, ev.currentTarget);
+  });
+}
+ligarTrilha();
+document.querySelector("#sidebar-header h1").addEventListener("click", openHojeView);
 
 document.getElementById("estacao-seletor").addEventListener("change", (ev) => {
   trocarEstacao(ev.target.value);

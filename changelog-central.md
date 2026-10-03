@@ -1,5 +1,27 @@
 # Changelog — Central
 
+## 0.17.1 — 2026-10-03
+
+**A tela inicial é "Hoje": as decisões mais antigas da estação, respondidas no
+cartão.** Até aqui a primeira tela era um parágrafo sobre a estação ("2.243
+arquivos indexados…") e o convite para escolher um arquivo; a decisão parada
+morava na aba Workflow, misturada às de todas as estações. Agora a primeira
+coisa na tela é uma decisão do dono: até cinco pendências abertas da estação
+aberta (e dos projetos dela), as mais antigas primeiro, no mesmo cartão da aba
+Workflow — responder grava pelo mesmo endpoint, com a mesma trava, e a
+consequência aparece onde foi o clique: o cartão vira a resposta, com
+"desfazer". Embaixo, "ver todas" leva ao Workflow como ele é.
+
+- `GET /api/workflow?escopo=estacao|todas` (padrão `todas`, como antes); outro
+  valor é 400. O snapshot estático não muda.
+- O título "Central" da barra volta a Hoje — as outras abas substituem o
+  conteúdo inteiro, e sem isso a tela inicial só existia no primeiro
+  carregamento.
+- O contexto de cada cartão mostra três linhas em Hoje e abre ao clique.
+- É o primeiro dos cinco ajustes de UX detalhados em 2026-10-03 (trem de
+  design); o trilho de cinco destinos continua pendente da decisão do dono.
+- Teste: `tests/test_servidor_local.py`, classe `TestEscopoDoWorkflow`.
+
 ## 0.17.0 — 2026-10-02
 
 **A triagem leva o trecho direto à estação do assunto, e não só diz a esfera.**

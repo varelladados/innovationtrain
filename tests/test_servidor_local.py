@@ -227,6 +227,31 @@ class TestOrigem(ServidorDeVerdade):
             self.assertEqual(json.loads(corpo)["error"], "método não suportado")
 
 
+class TestEscopoDoWorkflow(ServidorDeVerdade):
+    """`GET /api/workflow?escopo=`: a tela inicial (Hoje) pede só a estação aberta."""
+
+    def test_sem_parametro_vale_todas(self):
+        st, _, corpo = self.pedir("GET", "/api/workflow")
+        self.assertEqual(st, 200)
+        self.assertIn("pendencias", json.loads(corpo))
+
+    def test_escopo_estacao_passa(self):
+        st, _, corpo = self.pedir("GET", "/api/workflow?escopo=estacao")
+        self.assertEqual(st, 200)
+        dados = json.loads(corpo)
+        self.assertIn("cards", dados["pendencias"])
+        # só a estação aberta: nenhum card de outra origem
+        for card in dados["pendencias"]["cards"]:
+            self.assertEqual(card["origem"], dados["pendencias"]["cards"][0]["origem"])
+
+    def test_escopo_desconhecido_e_400(self):
+        # (`?escopo=` vazio cai no padrão: parse_qs descarta valor vazio)
+        for escopo in ("publicavel", "privadas", "x"):
+            st, _, corpo = self.pedir("GET", f"/api/workflow?escopo={escopo}")
+            self.assertEqual(st, 400, escopo)
+            self.assertIn("escopo", json.loads(corpo)["error"])
+
+
 class TestCorpoJson(ServidorDeVerdade):
     ALVO = "/api/embarque/prompt"
 

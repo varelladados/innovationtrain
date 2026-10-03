@@ -561,9 +561,15 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/workflow":
             entries, _ = get_state()
-            # "todas": o servidor local mostra as pendências de todas as estações
-            # registradas. O snapshot estático continua chamando sem isso.
-            self._send_json(workflow_mod.build_workflow(entries, escopo_pendencias="todas"))
+            # "todas" (padrão): o servidor local mostra as pendências de todas as
+            # estações registradas. "estacao" é o que a tela inicial (Hoje) pede: só
+            # as da estação aberta e dos projetos dela. O snapshot estático continua
+            # chamando sem isso. Qualquer outro valor é 400, não um escopo adivinhado.
+            escopo = qs.get("escopo", ["todas"])[0]
+            if escopo not in ("todas", "estacao"):
+                self._send_json({"error": "escopo desconhecido: use 'todas' ou 'estacao'"}, status=400)
+                return
+            self._send_json(workflow_mod.build_workflow(entries, escopo_pendencias=escopo))
             return
 
         if path == "/api/avanco":
