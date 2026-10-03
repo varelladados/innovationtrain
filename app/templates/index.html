@@ -173,6 +173,8 @@ th{background:var(--surface-2)}
 #nav-abas button{display:flex;align-items:center;gap:var(--sp-1);padding:5px var(--sp-1);border:0;border-radius:var(--r-1);background:none;color:var(--text-2);font-family:inherit;font-size:var(--fs-1);cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #nav-abas button:hover{background:var(--surface-2);color:var(--text)}
 #nav-abas button.ativa{background:var(--accent-bg);color:var(--accent);font-weight:600}
+#nav-abas button .n{margin-left:auto;min-width:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--bg);font-size:10px;font-weight:600;line-height:16px;text-align:center;font-variant-numeric:tabular-nums}
+#nav-abas button.ativa .n{background:var(--accent);color:var(--bg)}
 #nav-abas button .ic{width:14px;height:14px;flex-shrink:0;opacity:.8}
 #nav-abas button.ativa .ic{opacity:1}
 
@@ -494,6 +496,7 @@ th{background:var(--surface-2)}
   border-radius:var(--r-1);background:var(--surface-2);max-width:34rem}
 #trilha-onde{font-size:var(--fs-2);color:var(--text-2);margin-bottom:var(--sp-2);line-height:1.4}
 #trilha-botoes{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+#trilha-aviso{font-size:var(--fs-1);color:var(--text-2);margin:var(--sp-2) 0 0;line-height:1.4}
 #trilha-painel .btn-avancar{padding:var(--sp-1) var(--sp-3)}
 #btn-reiniciar{margin:0;padding:var(--sp-1) var(--sp-3);
   border:1px dashed var(--border);border-radius:var(--r-1);background:transparent;
@@ -781,6 +784,17 @@ function renderTrilha(){
     btn.title = "Restaura o próximo estado desta estação de exemplo";
   }
   rei.hidden = (atual === 0);
+  // O aviso ao lado do botão (decisão do dono, 2026-10-03): avançar ou voltar
+  // troca arquivos versionados da estação de exemplo, e o `git status` dela
+  // muda de verdade. Antes isso só se descobria olhando o git depois.
+  let aviso = document.getElementById("trilha-aviso");
+  if (!aviso){
+    aviso = document.createElement("p");
+    aviso.id = "trilha-aviso";
+    painel.appendChild(aviso);
+  }
+  aviso.hidden = btn.hidden && rei.hidden;
+  aviso.textContent = "Avançar ou voltar troca arquivos desta estação de exemplo: o git status dela muda de verdade. Nenhuma outra estação é tocada.";
 }
 
 async function irParaPasso(n, botao){
@@ -826,6 +840,32 @@ async function loadIndex(){
   TRILHA = data.trilha || {tem: false};
   renderTrilha();
   carregarHoje();
+  carregarContadorTriagem();
+}
+
+// O contador da Triagem na barra: quantas perguntas da espera ainda não têm
+// resposta. É o que faz a Triagem ser "de todo dia" só enquanto há lote aberto
+// (decisão do dono em 2026-10-03). Sem espera, ou no snapshot estático, o
+// contador simplesmente não aparece.
+async function carregarContadorTriagem(){
+  let abertas = 0;
+  try{
+    const r = await fetch("/api/triagem");
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    abertas = (d.lotes || []).reduce((n, l) => n + (l.perguntas || []).filter(p => !p.resposta).length, 0);
+  } catch(e){ abertas = 0; }
+  mostrarContadorTriagem(abertas);
+}
+
+function mostrarContadorTriagem(abertas){
+  const btn = document.getElementById("triagem-nav-btn");
+  if (!btn) return;
+  let n = btn.querySelector(".n");
+  if (!abertas){ if (n) n.remove(); btn.title = btn.title.replace(/ · \d+ pergunta.*$/, ""); return; }
+  if (!n){ n = document.createElement("span"); n.className = "n"; btn.appendChild(n); }
+  n.textContent = abertas;
+  btn.title = btn.title.replace(/ · \d+ pergunta.*$/, "") + ` · ${abertas} pergunta${abertas > 1 ? "s" : ""} sem resposta`;
 }
 
 // ============================================================
@@ -3495,6 +3535,7 @@ async function triResponder(l, p, resposta, cb){
     p.pode_desfazer = data.pode_desfazer;
     p.respondida_por = data.resposta ? "tela" : null;
     drawTriagem();
+    mostrarContadorTriagem(TRI_ESTADO.lotes.reduce((n, l) => n + (l.perguntas || []).filter(q => !q.resposta).length, 0));
     toast(data.resposta ? `${p.id} respondida: ${data.resposta} · ${data.abertas} ainda sem resposta` : `${p.id} voltou a aberta`);
   } catch(err){
     toast("Falha de rede: " + err);

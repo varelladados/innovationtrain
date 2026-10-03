@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.17.2 · atualizado em 2026-10-03
+> **Documento** · v0.17.3 · atualizado em 2026-10-03
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.

@@ -1,5 +1,18 @@
 # Changelog — Central
 
+## 0.17.3 — 2026-10-03
+
+**Duas escolhas menores da revisão de UX, decididas pelo dono em 2026-10-03.**
+
+- **A Triagem mostra quantas perguntas esperam resposta**, num contador na
+  própria aba — é o que a faz ser "de todo dia" só enquanto há lote aberto. O
+  número vem de `GET /api/triagem` no carregamento e cai na hora ao responder
+  pela tela; sem espera, ou no snapshot estático, ele não aparece.
+- **A trilha de exemplo avisa, ao lado do botão, que mexe em arquivo
+  versionado**: avançar ou voltar troca arquivos da estação de exemplo e o
+  `git status` dela muda de verdade. Antes isso só se descobria olhando o git
+  depois (`plano-revisao-ux-2026-09-09.md` já apontava).
+
 ## 0.17.2 — 2026-10-03
 
 **Os ajustes 2, 3 e 5 da revisão de UX de 2026-10-03.**
