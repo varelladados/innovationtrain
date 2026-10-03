@@ -424,7 +424,7 @@ class DecidirEAplicar(unittest.TestCase):
 ESTACOES = {
     "Casa": {"caminho": "../casa", "esfera": "pessoal", "apelidos": ["conta de luz", "reforma"]},
     "Oficio": {"caminho": "../oficio", "esfera": "emprego", "apelidos": ["turno da fabrica"]},
-    "Escritorio": {"caminho": "../escritorio", "esfera": "administrativo", "apelidos": ["nota fiscal"]},
+    "Escritorio": {"caminho": "../escritorio", "esfera": "administrativo", "apelidos": ["nota fiscal", "campanha"]},
 }
 
 
@@ -504,10 +504,13 @@ class TriagemPorEstacao(unittest.TestCase):
         lote.mkdir()
         (lote / "casa.md").write_text("A conta de luz vence dia 10.", encoding="utf-8")
         (lote / "turno.md").write_text("Revisar o commit e o turno da fábrica de amanhã.", encoding="utf-8")
+        (lote / "amanha.md").write_text("Ligo amanhã sem falta.", encoding="utf-8")
         r = triagem.levantar([lote], triagem.carregar_config(self.prof))
         por_nome = {it["nome"]: it for it in r["itens"]}
         self.assertIn("Casa", por_nome["casa.md"]["estacoes"])
         self.assertIn("estação Casa", por_nome["casa.md"]["sugestao"])
+        # estação só por palavra exata: "amanhã" parece "campanha", e não é
+        self.assertEqual(por_nome["amanha.md"].get("estacoes"), {})
         # "commit" é palavra de trabalho, mas o assunto do emprego ganha: o erro caro é a estação versionada
         self.assertTrue(por_nome["turno.md"]["sugestao"].startswith("provável emprego — estação Oficio"))
         self.assertIn("estação Oficio", triagem.markdown(r, "teste"))

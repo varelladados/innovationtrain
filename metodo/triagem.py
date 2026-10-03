@@ -283,12 +283,14 @@ def vocabulario(texto, extra_pessoais=(), extra_profissionais=()):
 # apelidos de projeto
 # --------------------------------------------------------------------------
 
-def apelidos_em(texto, projetos, limiar=0.85):
+def apelidos_em(texto, projetos, limiar=0.85, aproximado=True):
     """{projeto: {"modo": "exato"|"aproximado", "termo": ...}} para cada projeto citado.
 
     `projetos` é o `triagem.projetos` da config. Exato compara texto normalizado
     palavra a palavra; aproximado compara sem espaços contra janelas de uma a
     três palavras — é o que acha o nome de projeto que a transcrição quebrou.
+    Para as estações (`aproximado=False`) só vale o exato: os apelidos delas são
+    palavras comuns ("exame", "campanha"), e a semelhança acharia "amanhã".
     """
     norm = normalizar(texto)
     palavras = norm.split()
@@ -308,7 +310,7 @@ def apelidos_em(texto, projetos, limiar=0.85):
             if f" {t} " in alvo or (len(t.replace(" ", "")) >= 6 and t.replace(" ", "") in compacto):
                 achados[nome] = {"modo": "exato", "termo": termo}
                 break
-        if nome in achados:
+        if nome in achados or not aproximado:
             continue
         for termo in termos:
             t = normalizar(termo).replace(" ", "")
@@ -533,6 +535,10 @@ def sugerir(item):
         return "provável pessoal (dado sensível de saúde)" + onde
     if "misto" in esferas:
         return "projeto de esfera mista: decidir na leitura"
+    # a estação citada pelo nome vale mais que um projeto só parecido ("anota" não é o Anotaí)
+    proj_exato = any(v.get("modo") == "exato" for v in (item.get("projetos") or {}).values())
+    if estacoes and not proj_exato and "profissional" not in voc:
+        return "provável" + onde
     pessoal = "pessoal" in voc or "pessoal" in esferas
     profissional = "profissional" in esferas or "profissional" in voc
     if pessoal and profissional:
@@ -541,8 +547,6 @@ def sugerir(item):
         return "provável pessoal" + onde
     if "profissional" in esferas:
         return "provável profissional"
-    if estacoes:
-        return "provável" + onde
     return "decidir na leitura"
 
 
@@ -569,7 +573,7 @@ def levantar(alvos, config=None):
             item["projetos"] = {k: dict(v, esfera=(projetos.get(k) or {}).get("esfera"))
                                 for k, v in achados.items()}
             if estacoes:
-                achadas = apelidos_em(texto, estacoes)
+                achadas = apelidos_em(texto, estacoes, aproximado=False)
                 item["estacoes"] = {k: dict(v, esfera=(estacoes.get(k) or {}).get("esfera"))
                                     for k, v in achadas.items()}
             conversa = ler_conversa(texto)
