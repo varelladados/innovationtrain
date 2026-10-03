@@ -252,6 +252,17 @@ class TestEscopoDoWorkflow(ServidorDeVerdade):
             self.assertIn("escopo", json.loads(corpo)["error"])
 
 
+class TestTriagemResponder(ServidorDeVerdade):
+    """`POST /api/triagem/responder`: lote fora da lista é 400, nunca um caminho seguido."""
+
+    def test_lote_desconhecido_e_400(self):
+        for lote in ("x", "../estacao", ""):
+            st, _, corpo = self.post_json("/api/triagem/responder",
+                                          {"lote": lote, "pergunta": "P1", "resposta": "A", "expected_versao": 1})
+            self.assertEqual(st, 400, lote)
+            self.assertIn("lote", json.loads(corpo)["error"])
+
+
 class TestCorpoJson(ServidorDeVerdade):
     ALVO = "/api/embarque/prompt"
 

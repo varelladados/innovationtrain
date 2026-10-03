@@ -692,6 +692,10 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_pendencia_responder(payload)
             return
 
+        if path == "/api/triagem/responder":
+            self._handle_triagem_responder(payload)
+            return
+
         if path == "/api/projeto/anotar":
             self._handle_projeto_anotar(payload)
             return
@@ -857,6 +861,28 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e), "current": e.atual}, status=409)
             return
         except pendencias_mod.PendenciaError as e:
+            self._send_json({"error": str(e)}, status=400)
+            return
+        except Exception as e:
+            self._erro_interno(e)
+            return
+        self._send_json(resultado)
+
+    def _handle_triagem_responder(self, payload):
+        """Grava a resposta de uma pergunta da triagem no `decisoes.json` do
+        lote — e nada mais: aplicar o destino continua sendo o utilitário. A
+        versão do arquivo é a concorrência otimista (409). Ver triagem_ui.py."""
+        try:
+            resultado = triagem_mod.responder_pergunta(
+                lote=payload.get("lote", ""),
+                pergunta=payload.get("pergunta", ""),
+                resposta=payload.get("resposta"),
+                expected_versao=payload.get("expected_versao"),
+            )
+        except triagem_mod.ConflitoTriagem as e:
+            self._send_json({"error": str(e), "current": e.atual}, status=409)
+            return
+        except triagem_mod.TriagemUIError as e:
             self._send_json({"error": str(e)}, status=400)
             return
         except Exception as e:

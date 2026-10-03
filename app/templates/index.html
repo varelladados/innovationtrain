@@ -427,8 +427,9 @@ th{background:var(--surface-2)}
    cinco cartões caberem em pouco mais de uma tela */
 #hoje .wf-pend .ctx{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 #hoje .wf-pend .ctx.aberto{-webkit-line-clamp:unset;display:block}
-#hoje .hoje-feito{font-size:var(--fs-1);color:var(--success);margin:var(--sp-1) 0 0;display:flex;gap:var(--sp-2);align-items:baseline}
-#hoje .hoje-feito a{color:var(--text-2)}
+.hoje-feito{font-size:var(--fs-1);color:var(--success);margin:var(--sp-1) 0 0;display:flex;gap:var(--sp-2);align-items:baseline}
+.hoje-feito a{color:var(--text-2)}
+.tri-card .wf-pend{margin-top:var(--sp-2)}
 #hoje .hoje-pe{font-size:var(--fs-1);margin-top:var(--sp-2)}
 #hoje .hoje-vazio{font-size:var(--fs-2)}
 .linkmap-banner{background:var(--warn-bg);color:var(--warn);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-1);font-size:var(--fs-1);margin-bottom:var(--sp-3)}
@@ -3299,32 +3300,106 @@ async function openTriagemView(){
       <p>O método está em <code>metodo/triagem.md</code>; a chave é <code>triagem</code>, com <code>espera</code>, <code>pessoal</code> e o de-para dos projetos.</p>`;
     return;
   }
+  TRI_ESTADO = d;
+  drawTriagem();
+}
+
+// A pergunta do lote é um cartão como o da pendência: as opções são a ação, e a
+// resposta aparece no próprio cartão. Responder grava no `decisoes.json`
+// (POST /api/triagem/responder, com a versão como concorrência otimista);
+// aplicar o destino continua sendo o utilitário — o cartão respondido diz isso.
+let TRI_ESTADO = null;
+
+function drawTriagem(){
+  const d = TRI_ESTADO;
+  const content = document.getElementById("content");
+  if (!d || !content) return;
   const abertas = d.lotes.reduce((n, l) => n + (l.perguntas || []).filter(p => !p.resposta).length, 0);
-  const cabecalho = `<h1>Triagem</h1>
+  content.innerHTML = `<h1>Triagem</h1>
     <p class="dash-lead">${d.lotes.length} lote(s) na espera, ${abertas} pergunta(s) sem resposta. Espera: <code>${escapeHtml(d.espera)}</code>${d.pessoal ? ` · estação pessoal: <code>${escapeHtml(d.pessoal)}</code>` : ""}</p>`;
   if (!d.lotes.length){
-    content.innerHTML = cabecalho + `<p>Nada esperando — o que chega é triado e segue. Esse é o estado bom.</p>`;
+    content.insertAdjacentHTML("beforeend", `<p>Nada esperando — o que chega é triado e segue. Esse é o estado bom.</p>`);
     return;
   }
-  content.innerHTML = cabecalho + d.lotes.map(l => {
-    const perguntas = (l.perguntas || []).map(p => `
-      <li><strong>${escapeHtml(p.id || "")}</strong> — ${escapeHtml(p.titulo || "")}
-        ${p.resposta ? `<span class="badge">respondida: ${escapeHtml(p.resposta)}</span>`
-                     : `<ul>${(p.opcoes || []).map(o => `<li><code>${escapeHtml(o.id)}</code> — ${escapeHtml((o.texto || "").replace(/\*\*/g, ""))}</li>`).join("")}</ul>`}
-      </li>`).join("");
-    const semDecisoes = !l.tem_decisoes
-      ? `<p class="tri-nota">Ainda sem leitura: só o bruto (${l.itens_brutos} arquivo(s)). Uma sessão de IA com a skill <code>triando-entrada</code> faz o levantamento e escreve o <code>decisoes.json</code>.</p>` : "";
-    const comando = (l.perguntas || []).some(p => !p.resposta)
-      ? `<p class="tri-nota">Para responder: <code>python metodo/triagem.py aplicar "${escapeHtml(l.path)}" --raiz . --responder ${escapeHtml((l.perguntas.find(p => !p.resposta) || {}).id || "P1")}=A --confirmar</code></p>` : "";
-    return `<div class="tri-card">
-      <h2>${escapeHtml(l.lote)} ${l.versao ? `<span class="badge">v${escapeHtml(String(l.versao))}</span>` : ""}</h2>
+  d.lotes.forEach(l => {
+    const card = document.createElement("div");
+    card.className = "tri-card";
+    const perguntas = l.perguntas || [];
+    const respondidas = perguntas.filter(p => p.resposta).length;
+    card.innerHTML = `<h2>${escapeHtml(l.lote)} ${l.versao ? `<span class="badge">v${escapeHtml(String(l.versao))}</span>` : ""}
+        ${perguntas.length ? `<span class="badge">${respondidas} de ${perguntas.length} respondida${perguntas.length > 1 ? "s" : ""}</span>` : ""}</h2>
       ${l.em_uma_frase ? `<p>${escapeHtml(l.em_uma_frase.replace(/\*\*/g, ""))}</p>` : ""}
       <p class="tri-nota">${l.itens_brutos} arquivo(s) no bruto · ${l.trechos} trecho(s) · ${l.seguiu} já seguiu · ${(l.relatorios || []).join(", ") || "sem relatório"}</p>
-      ${semDecisoes}
-      ${perguntas ? `<ul>${perguntas}</ul>` : ""}
-      ${comando}
-    </div>`;
-  }).join("");
+      ${!l.tem_decisoes ? `<p class="tri-nota">Ainda sem leitura: só o bruto (${l.itens_brutos} arquivo(s)). Uma sessão de IA com a skill <code>triando-entrada</code> faz o levantamento e escreve o <code>decisoes.json</code>.</p>` : ""}`;
+    perguntas.forEach(p => card.appendChild(triPergunta(l, p)));
+    if (perguntas.length && !perguntas.some(p => !p.resposta)){
+      card.insertAdjacentHTML("beforeend", `<p class="tri-nota">Tudo respondido. Para levar cada trecho ao destino: <code>python metodo/triagem.py aplicar "${escapeHtml(l.path)}" --raiz . --confirmar</code></p>`);
+    } else if (perguntas.length){
+      card.insertAdjacentHTML("beforeend", `<p class="tri-nota">O que já está respondido segue com <code>python metodo/triagem.py aplicar "${escapeHtml(l.path)}" --raiz . --confirmar</code>; o resto espera a resposta.</p>`);
+    }
+    content.appendChild(card);
+  });
+}
+
+function triPergunta(l, p){
+  const box = document.createElement("div");
+  box.className = "wf-pend " + (p.resposta ? "respondida" : "aberta");
+  const t = document.createElement("p");
+  t.className = "tit";
+  t.textContent = `${p.id || ""} — ${p.titulo || ""}`;
+  box.appendChild(t);
+  (p.opcoes || []).forEach(o => {
+    const el = document.createElement("label");
+    el.className = "wf-opt" + (p.resposta === o.id ? " marcada" : "");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = p.resposta === o.id;
+    // já respondida por outro caminho (utilitário, arquivo): a tela não desmarca
+    cb.disabled = !!p.resposta && !p.pode_desfazer;
+    cb.onchange = () => triResponder(l, p, cb.checked ? o.id : null, cb);
+    el.appendChild(cb);
+    const txt = document.createElement("span");
+    txt.innerHTML = `<span class="lb">${escapeHtml(o.id)}</span> <span class="rz">— ${escapeHtml((o.texto || "").replace(/\*\*/g, ""))}</span>`;
+    el.appendChild(txt);
+    box.appendChild(el);
+  });
+  if (p.resposta){
+    const feito = document.createElement("p");
+    feito.className = "hoje-feito";
+    feito.textContent = `Respondida: ${p.resposta}` + (p.respondida_por === "tela" ? " — aplicar pelo utilitário leva o trecho ao destino." : " — pelo utilitário ou pelo arquivo.");
+    if (p.pode_desfazer){
+      const a = document.createElement("a");
+      a.href = "#"; a.textContent = "desfazer";
+      a.onclick = (ev) => { ev.preventDefault(); triResponder(l, p, null); };
+      feito.appendChild(a);
+    }
+    box.appendChild(feito);
+  }
+  return box;
+}
+
+async function triResponder(l, p, resposta, cb){
+  try{
+    const r = await fetch("/api/triagem/responder", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({lote: l.lote, pergunta: p.id, resposta, expected_versao: l.versao}),
+    });
+    const data = await r.json();
+    if (!r.ok){
+      toast(r.status === 409 ? "O lote mudou por fora — recarregando" : "Erro: " + (data.error || r.status));
+      if (cb) cb.checked = !cb.checked;
+      if (r.status === 409) await openTriagemView();
+      return;
+    }
+    p.resposta = data.resposta;
+    p.pode_desfazer = data.pode_desfazer;
+    p.respondida_por = data.resposta ? "tela" : null;
+    drawTriagem();
+    toast(data.resposta ? `${p.id} respondida: ${data.resposta} · ${data.abertas} ainda sem resposta` : `${p.id} voltou a aberta`);
+  } catch(err){
+    toast("Falha de rede: " + err);
+  }
 }
 
 function renderNotasRecentes(){

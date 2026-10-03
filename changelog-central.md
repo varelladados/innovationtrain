@@ -1,5 +1,24 @@
 # Changelog — Central
 
+## 0.17.2 — 2026-10-03
+
+**Os ajustes 2, 3 e 5 da revisão de UX de 2026-10-03.**
+
+- **A Triagem responde na tela.** Cada pergunta do lote é um cartão como o da
+  pendência: as opções são a ação, e a resposta aparece no próprio cartão, com
+  "desfazer". `POST /api/triagem/responder` grava só `resposta` (mais
+  `respondida_por`, `respondida_em` e `respondida_na_versao`) no `decisoes.json`
+  do lote — a versão **não** sobe, porque ela é do `aplicar`, que continua sendo
+  o utilitário e lê daqui a resposta. A disciplina de escrita: o lote tem de
+  ser um nome que a aba já listou (nunca um caminho do navegador), a pergunta e
+  a opção têm de existir, a versão tem de bater (409), gravação de uma vez e
+  sem backup no `cache/` (o lote mora na estação privada). Desfazer só vale
+  para resposta dada pela tela na versão atual; o que o utilitário respondeu
+  ou já levou adiante aparece travado. O snapshot estático recusa a rota, como
+  já recusava `GET /api/triagem`. Testes: `tests/test_triagem_ui.py`
+  (`AbaTriagem`, 5 casos novos) e `tests/test_servidor_local.py`
+  (`TestTriagemResponder`).
+
 ## 0.17.1 — 2026-10-03
 
 **A tela inicial é "Hoje": as decisões mais antigas da estação, respondidas no

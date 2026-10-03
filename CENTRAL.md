@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.17.1 · atualizado em 2026-10-03
+> **Documento** · v0.17.2 · atualizado em 2026-10-03
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -323,6 +323,7 @@ silêncio — `tests/test_trilha.py` cobra isso.
 | `POST /api/nota/nova` | item novo no estágio de entrada + linha no registro **ou**, conforme `destino`, lote na espera / captura na estação privada | `notas.py`, `triagem_ui.py` | **triagem antes de gravar** (409 com o que ela viu, mascarado; terceiro e segredo nunca viram captura profissional). Por destino: **profissional** — identificador via utilitário (subprocess) + trava do registro (vale entre processos) + arquivo atômico + registro append-only com backup; **pessoal** — o mesmo, com o registro gravado de uma vez e **sem cópia para o cache** (o `cache/` é da estação aberta, e a pessoal é outra); **espera** — pasta nova + linha append-only no `_lotes.md`, nada é sobrescrito |
 | `POST /api/pendencia/responder` | opção / "Outra resposta" de pendência | `pendencias.py` | `ref` validado + resolvido dentro de uma pasta conhecida (ambíguo entre origens é recusado) + linha tem que ser opção + `expected_text` (409) + backup |
 | `POST /api/projeto/anotar` | `- [ ] …` no backlog do projeto | `projetos.py` | allow-list do índice + `expected_sha1` (409) + backup |
+| `POST /api/triagem/responder` | a `resposta` de uma pergunta no `decisoes.json` do lote (e só ela: a versão é do `aplicar`) | `triagem_ui.py` | lote só se a aba o listou (nunca caminho do navegador) + pergunta e opção existentes + `expected_versao` (409) + gravação de uma vez; sem backup no `cache/`, porque o lote mora na estação privada; desfazer só do que a tela respondeu nesta versão |
 | `POST /api/exemplo/passo` | a estação de exemplo inteira, no passo pedido da trilha | `trilha.py` → `metodo/estacao.py reiniciar` | só existe em estação que declara `estado_inicial` (uma sua não declara); cada passo é um instantâneo pronto — nada é calculado, e o de origem continua em `estacoes/_inicial/` |
 
 `POST /api/estacao/ativar` e `POST /api/embarque/registrar` escrevem **só no
@@ -346,7 +347,7 @@ registrar na Central" (`embarque.registrar_varias`, tudo ou nada).
 | `GET /api/embarque/modelos` | nome, pasta e propósito das estações padrão | é leitura de `config.MODELOS` |
 | `GET /api/versoes` | estado do git dos repositórios | allow-list de subcomando, todos de leitura |
 | `GET /api/versoes/prompt` | "salvar um ponto", "mandar pra nuvem", "linha nova" | a Central lê o git e gera o texto; **nunca o executa** |
-| `GET /api/triagem` | os lotes na espera, o que cada um já leu e as perguntas abertas | aplicar um destino é trabalho do utilitário, com o `decisoes.json` respondido; o snapshot estático recusa a rota, porque a espera mora na estação privada |
+| `GET /api/triagem` | os lotes na espera, o que cada um já leu e as perguntas abertas (responder é `POST /api/triagem/responder`, acima) | aplicar um destino é trabalho do utilitário, com o `decisoes.json` respondido; o snapshot estático recusa as duas rotas, porque a espera mora na estação privada |
 
 Sobre `versoes/prompt`: automatismo de commit mora onde a IA está, não numa
 interface web onde um botão um dia é clicado sem querer. Ver

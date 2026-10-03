@@ -196,6 +196,62 @@ class AbaTriagem(unittest.TestCase):
         self.assertFalse(lotes["2099-01-02-cru"]["tem_decisoes"])
         self.assertEqual(lotes["2099-01-02-cru"]["perguntas"], [])
 
+    # ---- responder pela tela (ajuste 2 da revisão de UX, 2026-10-03)
+
+    def _decisoes(self):
+        return json.loads((self.priv / "_triagem" / "2099-01-01-teste" / "decisoes.json").read_text(encoding="utf-8"))
+
+    def test_responder_grava_so_a_resposta(self):
+        antes = self._decisoes()
+        r = triagem_ui.responder_pergunta("2099-01-01-teste", "P1", "A", 1)
+        d = self._decisoes()
+        p1 = d["perguntas"][0]
+        self.assertEqual((p1["resposta"], p1["respondida_por"], p1["respondida_na_versao"]), ("A", "tela", 1))
+        self.assertIn("respondida_em", p1)
+        self.assertEqual((d["versao"], d["trechos"], d["seguiu"]), (antes["versao"], antes["trechos"], antes["seguiu"]))
+        self.assertEqual((r["abertas"], r["total"], r["pode_desfazer"]), (0, 2, True))
+        # o utilitário lê a mesma resposta
+        self.assertEqual(triagem_ui.motor.ler_decisoes(self.priv / "_triagem" / "2099-01-01-teste")["perguntas"][0]["resposta"], "A")
+        # e a aba mostra que dá para desfazer
+        p = triagem_ui.lotes()[0]["perguntas"][0]
+        self.assertTrue(p["pode_desfazer"])
+
+    def test_desfazer_limpa_a_resposta_dada_pela_tela(self):
+        triagem_ui.responder_pergunta("2099-01-01-teste", "P1", "A", 1)
+        r = triagem_ui.responder_pergunta("2099-01-01-teste", "P1", None, 1)
+        p1 = self._decisoes()["perguntas"][0]
+        self.assertIsNone(p1["resposta"])
+        self.assertNotIn("respondida_por", p1)
+        self.assertEqual(r["abertas"], 1)
+
+    def test_desfazer_recusa_resposta_que_nao_e_da_tela_ou_ja_seguiu(self):
+        # P2 foi respondida fora da tela (sem `respondida_por`)
+        with self.assertRaises(triagem_ui.TriagemUIError):
+            triagem_ui.responder_pergunta("2099-01-01-teste", "P2", None, 1)
+        # a tela respondeu, o `aplicar` subiu a versão: a resposta já seguiu
+        triagem_ui.responder_pergunta("2099-01-01-teste", "P1", "A", 1)
+        d = self._decisoes(); d["versao"] = 2
+        (self.priv / "_triagem" / "2099-01-01-teste" / "decisoes.json").write_text(json.dumps(d), encoding="utf-8")
+        self.assertFalse(triagem_ui.lotes()[0]["perguntas"][0]["pode_desfazer"])
+        with self.assertRaises(triagem_ui.TriagemUIError):
+            triagem_ui.responder_pergunta("2099-01-01-teste", "P1", None, 2)
+
+    def test_recusa_lote_pergunta_e_opcao_fora_da_lista(self):
+        for lote in ("", "_historico", "../plataforma", "2099-01-01-teste/../2099-01-01-teste", "nao-existe"):
+            with self.assertRaises(triagem_ui.TriagemUIError, msg=lote):
+                triagem_ui.responder_pergunta(lote, "P1", "A", 1)
+        with self.assertRaises(triagem_ui.TriagemUIError):
+            triagem_ui.responder_pergunta("2099-01-01-teste", "P9", "A", 1)
+        with self.assertRaises(triagem_ui.TriagemUIError):
+            triagem_ui.responder_pergunta("2099-01-01-teste", "P1", "Z", 1)
+        self.assertIsNone(self._decisoes()["perguntas"][0]["resposta"])
+
+    def test_versao_errada_e_conflito(self):
+        with self.assertRaises(triagem_ui.ConflitoTriagem) as cm:
+            triagem_ui.responder_pergunta("2099-01-01-teste", "P1", "A", 7)
+        self.assertEqual(cm.exception.atual, 1)
+        self.assertIsNone(self._decisoes()["perguntas"][0]["resposta"])
+
     def test_decisoes_quebrado_nao_derruba_a_aba(self):
         (self.priv / "_triagem" / "2099-01-01-teste" / "decisoes.json").write_text("{quebrado", encoding="utf-8")
         self.assertFalse(triagem_ui.lotes()[0]["tem_decisoes"])

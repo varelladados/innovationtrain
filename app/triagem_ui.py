@@ -166,6 +166,11 @@ def lotes():
                     "trechos": len(d.get("trechos") or []),
                     "seguiu": len(d.get("seguiu") or []),
                     "perguntas": [{"id": p.get("id"), "titulo": p.get("titulo"), "resposta": p.get("resposta"),
+                                   "respondida_por": p.get("respondida_por"),
+                                   # desfazer só vale enquanto o `aplicar` não levou a resposta adiante:
+                                   # ele sobe a versão quando aplica, e a tela guarda em que versão respondeu
+                                   "pode_desfazer": bool(p.get("resposta")) and p.get("respondida_por") == "tela"
+                                                    and p.get("respondida_na_versao") == d.get("versao"),
                                    "opcoes": [{"id": o.get("id"), "texto": o.get("texto")}
                                               for o in (p.get("opcoes") or [])]}
                                   for p in (d.get("perguntas") or [])],
@@ -174,6 +179,66 @@ def lotes():
         item["itens_brutos"] = sum(1 for _ in (pasta / "bruto").rglob("*")) if (pasta / "bruto").is_dir() else 0
         saida.append(item)
     return saida
+
+
+class ConflitoTriagem(TriagemUIError):
+    """A versão do `decisoes.json` não é a que a tela leu (409)."""
+    def __init__(self, msg, atual):
+        super().__init__(msg)
+        self.atual = atual
+
+
+def responder_pergunta(lote, pergunta, resposta, expected_versao):
+    """Grava a resposta de uma pergunta do lote no `decisoes.json` — e só isso.
+
+    Responder não aplica: aplicar cria capturas em várias estações, com a trava
+    do registro de cada uma, e continua sendo `triagem.py aplicar --confirmar`,
+    que lê daqui a resposta gravada (`planejar` olha `p["resposta"]`). A versão
+    do arquivo **não** sobe: ela é do `aplicar`, que é quem muda o estado dos
+    trechos; a tela só anota em que versão respondeu, para saber até quando
+    desfazer é verdade.
+
+    A disciplina dos endpoints de escrita, no mesmo lugar:
+      - `lote` é um nome que `lotes()` já listou — nunca um caminho do navegador;
+      - `pergunta` existe; `resposta` é o id de uma opção dela, ou None (desfazer);
+      - `expected_versao` bate com a `versao` do arquivo, senão 409;
+      - gravação de uma vez (temporário + replace), sem backup no `cache/` —
+        o lote mora na estação privada, e o `cache/` é da estação aberta.
+    """
+    nomes = {l["lote"] for l in lotes()}
+    if not lote or lote not in nomes:
+        raise TriagemUIError(f"lote desconhecido: {lote!r}")
+    pasta = espera() / lote
+    try:
+        d = motor.ler_decisoes(pasta)
+    except motor.TriagemErro as e:
+        raise TriagemUIError(str(e))
+    if d.get("versao") != expected_versao:
+        raise ConflitoTriagem("o decisoes.json mudou por fora — recarregue a aba", d.get("versao"))
+    p = next((p for p in d["perguntas"] if p.get("id") == pergunta), None)
+    if p is None:
+        raise TriagemUIError(f"pergunta desconhecida: {pergunta!r}")
+    if resposta is None:
+        if p.get("resposta") and not (p.get("respondida_por") == "tela"
+                                      and p.get("respondida_na_versao") == d.get("versao")):
+            raise TriagemUIError("esta resposta não foi dada pela tela nesta versão — "
+                                 "o utilitário já pode tê-la levado adiante; desfazer é pelo arquivo")
+        p["resposta"] = None
+        p.pop("respondida_por", None)
+        p.pop("respondida_em", None)
+        p.pop("respondida_na_versao", None)
+    else:
+        if resposta not in {o.get("id") for o in (p.get("opcoes") or [])}:
+            raise TriagemUIError(f"opção desconhecida para {pergunta}: {resposta!r}")
+        p["resposta"] = resposta
+        p["respondida_por"] = "tela"
+        p["respondida_em"] = datetime.datetime.now().isoformat(timespec="seconds")
+        p["respondida_na_versao"] = d.get("versao")
+    motor._gravar_atomico(pasta / "decisoes.json", json.dumps(d, ensure_ascii=False, indent=2) + "\n", None)
+    abertas = sum(1 for q in d["perguntas"] if not q.get("resposta"))
+    return {"lote": lote, "versao": d.get("versao"), "pergunta": pergunta, "resposta": p.get("resposta"),
+            "pode_desfazer": p.get("resposta") is not None, "abertas": abertas,
+            "total": len(d["perguntas"])}
 
 
 def estado():
