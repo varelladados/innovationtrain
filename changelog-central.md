@@ -27,6 +27,12 @@
   `POST /api/nota/nova` não mudam; ao guardar, o véu fecha e o aviso diz o que
   entrou e onde. A barra ficou com oito abas e continua sem rolagem.
 
+- **Ícones de linha no trilho.** Os emojis das abas viraram `<symbol>` SVG
+  inline (16×16, traço em `currentColor`, sem CDN nem fonte de ícones): em
+  preto e branco o trilho se lê igual, o estado "ativa" é por fundo e peso, e a
+  cor fica reservada ao acento e aos estados. `docs/design-system.md` diz como
+  acrescentar o ícone de uma aba nova.
+
 ## 0.17.1 — 2026-10-03
 
 **A tela inicial é "Hoje": as decisões mais antigas da estação, respondidas no

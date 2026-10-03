@@ -179,11 +179,15 @@ Este era um fato solto que só existia na cabeça de quem já tinha feito. Está
 aqui porque **esquecer o ponto 2 deixa a aba abrindo com o botão apagado**, e
 nada avisa.
 
-1. **O botão**, dentro de `<nav id="nav-abas">`, junto dos outros — o ícone vai
-   num `<span class="ic">`, e o estilo vem de `#nav-abas button`, sem id nenhum
-   no CSS:
+1. **O botão**, dentro de `<nav id="nav-abas">`, junto dos outros — o ícone é
+   um `<symbol>` novo na folha de ícones do topo do `<body>` (linha, 16×16,
+   traço em `currentColor`; **nunca emoji**: emoji tem cor própria e disputa
+   com o conteúdo, e não troca no modo escuro), usado por `<svg class="ic">`;
+   o estilo vem de `#nav-abas button`, sem id nenhum no CSS:
    ```html
-   <button id="minha-nav-btn" title="uma frase do que a aba faz"><span class="ic" aria-hidden="true">🧭</span>Minha aba</button>
+   <symbol id="i-minha" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/></symbol>
+   …
+   <button id="minha-nav-btn" title="uma frase do que a aba faz"><svg class="ic" aria-hidden="true"><use href="#i-minha"/></svg>Minha aba</button>
    ```
 2. **`marcarAba` na função que abre a aba** — é ela que acende o botão da aba
    aberta:

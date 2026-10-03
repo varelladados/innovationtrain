@@ -173,7 +173,8 @@ th{background:var(--surface-2)}
 #nav-abas button{display:flex;align-items:center;gap:var(--sp-1);padding:5px var(--sp-1);border:0;border-radius:var(--r-1);background:none;color:var(--text-2);font-family:inherit;font-size:var(--fs-1);cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #nav-abas button:hover{background:var(--surface-2);color:var(--text)}
 #nav-abas button.ativa{background:var(--accent-bg);color:var(--accent);font-weight:600}
-#nav-abas button .ic{font-size:var(--fs-2);line-height:1;flex-shrink:0}
+#nav-abas button .ic{width:14px;height:14px;flex-shrink:0;opacity:.8}
+#nav-abas button.ativa .ic{opacity:1}
 
 /* a árvore, que é o que importa */
 #tree-painel{flex:1;display:flex;flex-direction:column;min-height:0}
@@ -605,6 +606,17 @@ th{background:var(--surface-2)}
 </style>
 </head>
 <body>
+<!-- Os ícones do trilho: linha, monocromáticos, em currentColor (ajuste 5 da revisão de UX, 2026-10-03). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-workflow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h4l3 8h5"/><path d="M2 12h4l3-8h5"/><path d="M12 2l2 2-2 2"/><path d="M12 10l2 2-2 2"/></symbol>
+  <symbol id="i-dashboard" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14V7"/><path d="M6 14V3"/><path d="M10 14V9"/><path d="M14 14V5"/></symbol>
+  <symbol id="i-portfolio" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="12" height="9" rx="1"/><path d="M6 4V2.5h4V4"/><path d="M2 8h12"/></symbol>
+  <symbol id="i-fluxo" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="3.5" cy="8" r="1.5"/><circle cx="12.5" cy="8" r="1.5"/><path d="M5 8h6"/><path d="M9 6l2 2-2 2"/></symbol>
+  <symbol id="i-triagem" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h12l-4.5 5.5V13l-3 1V8.5z"/></symbol>
+  <symbol id="i-versoes" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="4" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="12" cy="6" r="1.5"/><path d="M4 5.5v5"/><path d="M12 7.5c0 2-8 1-8 3"/></symbol>
+  <symbol id="i-tour" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M10.5 5.5l-1.5 4-4 1.5 1.5-4z"/></symbol>
+  <symbol id="i-embarque" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h10"/><path d="M4 11V5h6l3 3v3"/><circle cx="5.5" cy="13" r="1"/><circle cx="11" cy="13" r="1"/><path d="M4 8h6"/></symbol>
+</svg>
 <div id="layout">
   <div id="sidebar">
     <div id="sidebar-header">
@@ -614,18 +626,19 @@ th{background:var(--surface-2)}
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="estacao-aviso" hidden></div>
-    <!-- Aba nova pede três pontos: o botão aqui (ícone em <span class="ic">), a chamada
+    <!-- Aba nova pede três pontos: o botão aqui (ícone: um <symbol> novo na folha do topo do body e
+         <svg class="ic"><use href="#i-nome"/></svg> — linha, em currentColor, nunca emoji), a chamada
          marcarAba("<id-do-botão>") na função que abre a aba (sem ela o botão não acende)
          e o listener no bloco final de addEventListener. O estilo vem de #nav-abas button. -->
     <nav id="nav-abas">
-      <button id="workflow-nav-btn" title="Os estágios da estação e as decisões abertas, numa view só"><span class="ic" aria-hidden="true">🔀</span>Workflow</button>
-      <button id="dashboard-nav-btn" title="Os números da estação, recalculados do registro e do disco"><span class="ic" aria-hidden="true">📊</span>Dashboard</button>
-      <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto"><span class="ic" aria-hidden="true">🗂</span>Portfólio</button>
-      <button id="fluxo-nav-btn" title="O método na tela: as passagens entre estágios e os critérios de promoção"><span class="ic" aria-hidden="true">🧩</span>Fluxo</button>
-      <button id="triagem-nav-btn" title="O que chegou e ainda não entrou: lotes na espera, com o que cada um ainda pergunta"><span class="ic" aria-hidden="true">🧴</span>Triagem</button>
-      <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem"><span class="ic" aria-hidden="true">📦</span>Versões</button>
-      <button id="tour-nav-btn" title="A leitura guiada desta estação, uma parada por vez"><span class="ic" aria-hidden="true">🧭</span>Tour</button>
-      <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira estação"><span class="ic" aria-hidden="true">🚂</span>Embarque</button>
+      <button id="workflow-nav-btn" title="Os estágios da estação e as decisões abertas, numa view só"><svg class="ic" aria-hidden="true"><use href="#i-workflow"/></svg>Workflow</button>
+      <button id="dashboard-nav-btn" title="Os números da estação, recalculados do registro e do disco"><svg class="ic" aria-hidden="true"><use href="#i-dashboard"/></svg>Dashboard</button>
+      <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto"><svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg>Portfólio</button>
+      <button id="fluxo-nav-btn" title="O método na tela: as passagens entre estágios e os critérios de promoção"><svg class="ic" aria-hidden="true"><use href="#i-fluxo"/></svg>Fluxo</button>
+      <button id="triagem-nav-btn" title="O que chegou e ainda não entrou: lotes na espera, com o que cada um ainda pergunta"><svg class="ic" aria-hidden="true"><use href="#i-triagem"/></svg>Triagem</button>
+      <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem"><svg class="ic" aria-hidden="true"><use href="#i-versoes"/></svg>Versões</button>
+      <button id="tour-nav-btn" title="A leitura guiada desta estação, uma parada por vez"><svg class="ic" aria-hidden="true"><use href="#i-tour"/></svg>Tour</button>
+      <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira estação"><svg class="ic" aria-hidden="true"><use href="#i-embarque"/></svg>Embarque</button>
     </nav>
     <div id="tree-painel">
       <div id="tree-cab">
