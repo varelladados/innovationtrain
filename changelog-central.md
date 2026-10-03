@@ -33,6 +33,23 @@
   cor fica reservada ao acento e aos estados. `docs/design-system.md` diz como
   acrescentar o ícone de uma aba nova.
 
+- **O Dashboard virou Painel, em três números.** Abre com o que orienta ação:
+  **sem destino** (quantos itens pararam fora do último estágio, e "o mais
+  velho há N dias", com a lista a um clique), **decisões abertas** (só desta
+  estação e dos projetos dela, com "responder em Hoje") e **entradas hoje** (o
+  que entrou no primeiro estágio). Os nove cartões, as distribuições e o
+  esforço ficam dobrados em "Todos os números", abertos por padrão só quando os
+  três de cima são zero. `metrics.py` ganhou `sem_destino_total`,
+  `sem_destino_mais_velho` (id, data e dias, pela coluna Data do registro) e
+  `entradas_hoje`. Teste em `tests/test_siglas_legadas.py`
+  (`test_os_tres_numeros_do_painel`, `test_a_continuacao_tira_a_original_do_sem_destino`).
+- **Correção de "sem destino" nas métricas.** O registro é append-only: a linha
+  original de um item promovido nunca ganha a seta — ela vai na continuação
+  `<id>-N`. A métrica contava só a seta e inflava a conta com todo item já
+  promovido (338 contra 196 reais, numa estação de verdade). Agora vale a
+  mesma regra do `gerar-sem-destino`: sem seta em nenhuma linha do
+  identificador e sem continuação; identificador repetido é um item só.
+
 ## 0.17.1 — 2026-10-03
 
 **A tela inicial é "Hoje": as decisões mais antigas da estação, respondidas no

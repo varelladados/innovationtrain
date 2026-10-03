@@ -273,6 +273,14 @@ th{background:var(--surface-2)}
 
 /* ---------- dashboard view ---------- */
 .dash-lead{color:var(--text-2);font-size:var(--fs-2);margin:-var(--sp-2) 0 var(--sp-4)}
+/* Painel: três números sem caixa — a hierarquia é tipografia e espaço */
+.dash-tres{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-6);margin:var(--sp-4) 0 var(--sp-8)}
+.dash-tres-item .num{font-family:"Fraunces",serif;font-size:44px;font-weight:600;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+.dash-tres-item .label{margin-top:var(--sp-1);font-size:var(--fs-3);font-weight:600}
+.dash-tres-item .sub{font-size:var(--fs-1);color:var(--text-2);margin-top:2px}
+.dash-todos{margin-bottom:var(--sp-6)}
+.dash-todos>summary{cursor:pointer;font-size:var(--fs-2);color:var(--text-2);margin-bottom:var(--sp-4)}
+.dash-todos>summary:hover{color:var(--text)}
 .dash-section{margin-bottom:var(--sp-10)}
 .dash-section h2{font-family:"Fraunces",serif;font-weight:600;font-size:var(--fs-4);margin:0 0 var(--sp-4);padding-bottom:var(--sp-2);border-bottom:2px solid var(--accent)}
 .dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-3)}
@@ -632,7 +640,7 @@ th{background:var(--surface-2)}
          e o listener no bloco final de addEventListener. O estilo vem de #nav-abas button. -->
     <nav id="nav-abas">
       <button id="workflow-nav-btn" title="Os estágios da estação e as decisões abertas, numa view só"><svg class="ic" aria-hidden="true"><use href="#i-workflow"/></svg>Workflow</button>
-      <button id="dashboard-nav-btn" title="Os números da estação, recalculados do registro e do disco"><svg class="ic" aria-hidden="true"><use href="#i-dashboard"/></svg>Dashboard</button>
+      <button id="dashboard-nav-btn" title="Três números que orientam ação (sem destino, decisões abertas, o que entrou hoje) e, dobrado, todos os outros"><svg class="ic" aria-hidden="true"><use href="#i-dashboard"/></svg>Painel</button>
       <button id="portfolio-nav-btn" title="Hub de tudo que roda: links no ar, launchers, protótipos, docs — por projeto"><svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg>Portfólio</button>
       <button id="fluxo-nav-btn" title="O método na tela: as passagens entre estágios e os critérios de promoção"><svg class="ic" aria-hidden="true"><use href="#i-fluxo"/></svg>Fluxo</button>
       <button id="triagem-nav-btn" title="O que chegou e ainda não entrou: lotes na espera, com o que cada um ainda pergunta"><svg class="ic" aria-hidden="true"><use href="#i-triagem"/></svg>Triagem</button>
@@ -1837,15 +1845,17 @@ async function openDashboardView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = plPrefixo() + "Dashboard";
-  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">dashboard</span>`;
+  document.getElementById("breadcrumb").textContent = plPrefixo() + "Painel";
+  document.getElementById("meta-bar").innerHTML = `<span class="badge badge-type">painel</span>`;
   const content = document.getElementById("content");
   content.innerHTML = `<p class="dash-lead">Carregando métricas…</p>`;
 
-  let data;
+  let data, wf;
   try{
-    const r = await fetch("/api/metricas");
-    data = await r.json();
+    [data, wf] = await Promise.all([
+      fetch("/api/metricas").then(r => r.json()),
+      fetch("/api/workflow?escopo=estacao").then(r => r.json()).catch(() => null),
+    ]);
   } catch(err){
     content.innerHTML = `<p class="dash-lead">Falha ao carregar métricas: ${escapeHtml(String(err))}</p>`;
     return;
@@ -1855,8 +1865,49 @@ async function openDashboardView(){
   content.innerHTML = "";
 
   const header = document.createElement("div");
-  header.innerHTML = `<h1>Dashboard</h1><p class="dash-lead">${escapeHtml(PLAT ? PLAT.nome : "")} · gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do registro e do disco.</p>`;
+  header.innerHTML = `<h1>Painel</h1><p class="dash-lead">${escapeHtml(PLAT ? PLAT.nome : "")} · gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do registro e do disco.</p>`;
   content.appendChild(header);
+
+  // Três números que orientam ação (ajuste 4 da revisão de UX, 2026-10-03):
+  // o que parou, há quanto tempo, e o que entrou hoje. O resto fica dobrado.
+  const log = data.log || {};
+  const abertas = wf && wf.pendencias ? (wf.pendencias.cards || []).filter(c => c.estado === "aberta").length : null;
+  const velho = log.sem_destino_mais_velho;
+  const semDestinoArq = ENTRIES.find(e => /(^|\/)_sem-destino\.md$/.test(e.path));
+  const tres = document.createElement("div");
+  tres.className = "dash-tres";
+  const numeros = [
+    {num: log.sem_destino_total, label: "sem destino",
+     sub: velho ? `o mais velho há ${velho.dias} dia${velho.dias === 1 ? "" : "s"}` : "nada parado",
+     acao: semDestinoArq ? () => openFile(semDestinoArq.path) : null, acaoTxt: "ver a lista"},
+    {num: abertas, label: abertas === 1 ? "decisão aberta" : "decisões abertas",
+     sub: "só desta estação e dos projetos dela", acao: openHojeView, acaoTxt: "responder em Hoje"},
+    {num: log.entradas_hoje, label: `entrada${log.entradas_hoje === 1 ? "" : "s"} hoje`,
+     sub: `em ${plNome(1, true).toLowerCase()}`, acao: null},
+  ];
+  numeros.forEach(k => {
+    const card = document.createElement("div");
+    card.className = "dash-tres-item";
+    card.innerHTML = `<div class="num">${fmt(k.num)}</div><div class="label">${escapeHtml(k.label)}</div><div class="sub">${escapeHtml(k.sub)}</div>`;
+    if (k.acao){
+      const a = document.createElement("a");
+      a.href = "#"; a.textContent = k.acaoTxt + " →";
+      a.onclick = (ev) => { ev.preventDefault(); k.acao(); };
+      card.querySelector(".sub").appendChild(document.createTextNode(" · "));
+      card.querySelector(".sub").appendChild(a);
+    }
+    tres.appendChild(card);
+  });
+  content.appendChild(tres);
+
+  // Todos os números: dobrados, abertos só quando os três de cima não têm
+  // nada a dizer (estação nova, ou tudo em dia).
+  const todos = document.createElement("details");
+  todos.className = "dash-todos";
+  todos.open = !(log.sem_destino_total || abertas || log.entradas_hoje);
+  todos.innerHTML = `<summary>Todos os números</summary>`;
+  content.appendChild(todos);
+  // daqui para baixo as seções entram no <details>
 
   // KPIs
   const ultimo = plUltimo();
@@ -1896,7 +1947,7 @@ async function openDashboardView(){
     kpiGrid.appendChild(card);
   });
   kpiSection.appendChild(kpiGrid);
-  content.appendChild(kpiSection);
+  todos.appendChild(kpiSection);
 
   // Distribuição por etapa
   const etapaSection = document.createElement("div");
@@ -1912,7 +1963,7 @@ async function openDashboardView(){
     row.innerHTML = `<div class="rotulo">${etapa}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pct}%"></div></div><div class="valor">${fmt(v)}</div>`;
     etapaSection.appendChild(row);
   });
-  content.appendChild(etapaSection);
+  todos.appendChild(etapaSection);
 
   // Distribuição por tipo
   const significados = {DIG: "Digital (app/site/ferramenta)", DAD: "Dados/análise", CON: "Consultoria/processo", ADE: "Aprendizado/educação"};
@@ -1922,7 +1973,7 @@ async function openDashboardView(){
     `<tr><td>${t}</td><td>${significados[t]||"—"}</td><td>${fmt(data.log.por_tipo[t])}</td></tr>`
   ).join("");
   tipoSection.innerHTML = `<h2>Distribuição por tipo de projeto</h2><table><thead><tr><th>Tipo</th><th>Significado</th><th>Contagem</th></tr></thead><tbody>${tipoRows}</tbody></table>`;
-  content.appendChild(tipoSection);
+  todos.appendChild(tipoSection);
 
   // Notas/ideias por dia
   const diaSection = document.createElement("div");
@@ -1941,13 +1992,13 @@ async function openDashboardView(){
     chart.appendChild(col);
   });
   diaSection.appendChild(chart);
-  content.appendChild(diaSection);
+  todos.appendChild(diaSection);
 
   // Esforço
   const esforcoSection = document.createElement("div");
   esforcoSection.className = "dash-section";
   esforcoSection.innerHTML = `<h2>Esforço: hora-homem vs. hora-máquina</h2><div class="dash-esforco"><strong>Sem fonte de dado hoje.</strong> ${escapeHtml(data.esforco.nota)}</div>`;
-  content.appendChild(esforcoSection);
+  todos.appendChild(esforcoSection);
 }
 
 // ============================================================

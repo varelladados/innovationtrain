@@ -36,7 +36,7 @@ checkbox de backlog). Hoje também:
 - **cria as estações padrão** (aba Embarque) — Plataforma, Admin_empresa e
   Vida_Pessoal; cinco perguntas, um prompt.
 
-São oito abas: Workflow, Dashboard, Portfólio, Fluxo, Triagem, Versões, Tour e
+São oito abas: Workflow, Painel (o Dashboard: três números, o resto dobrado), Portfólio, Fluxo, Triagem, Versões, Tour e
 Embarque — e a captura, que não é aba: é um gesto (botão ou `Ctrl+N`) que abre
 um véu em cima da vista atual e fecha sem perder o rascunho (`sessionStorage`,
 nunca `localStorage`: rascunho pode ter dado de terceiro).
@@ -148,7 +148,7 @@ central/                  ← a raiz do repositório É o hub
 │   ├── indexer.py        varredura do corpus, classificação, índice JSON
 │   ├── search.py         busca em memória sobre o índice
 │   ├── log_parser.py     parser dedicado das tabelas do registro central
-│   ├── metrics.py        métricas do Dashboard
+│   ├── metrics.py        métricas do Painel (os três números e todos os outros)
 │   ├── export_static.py  snapshot estático de arquivo único (dist/), pra compartilhar sem servidor; `--sem-dado-pessoal` mascara telefone/e-mail/CPF/CNPJ antes de publicar
 │   ├── portfolio.py      inventário de "tudo que roda" por projeto — curadoria via portfolio.json
 │   ├── export_portfolio.py vitrine pública — só o que pode ser visto de fora

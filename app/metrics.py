@@ -81,6 +81,24 @@ def _metricas_log():
     etapa_re = cfg.etapa_re
     tipo_re = _tipo_re()
     linhas = _linhas_do_registro()
+    # O registro é append-only: a linha original de um item promovido nunca ganha
+    # a seta — ela vai na continuação `<id>-N`. "Sem destino" é, então, a linha
+    # sem seta cujo identificador não tem continuação nenhuma. Contar só a seta
+    # inflava a conta com todo item já promovido (338 contra 196 reais, numa
+    # estação de verdade, 2026-10-03).
+    continuados = {m.group(1) for l in linhas for m in [re.match(r"^(.+)-\d+$", l["id"])] if m}
+    # ...e um identificador repetido (as `duplicatas_historicas` de antes da
+    # convenção `-N`) é um item só: se qualquer linha dele tem seta, ele tem
+    # destino. É a mesma regra do `gerar-sem-destino` do utilitário.
+    com_seta = {l["id"] for l in linhas if "→" in l["etapa_tipo"]}
+    ja_contados = set()
+
+    def parada(l):
+        if l["id"] in com_seta or l["id"] in continuados or l["id"] in ja_contados:
+            return False
+        ja_contados.add(l["id"])
+        return True
+
     por_etapa = Counter()
     por_tipo = Counter()
     sem_destino_por_etapa = Counter()
@@ -96,13 +114,47 @@ def _metricas_log():
         por_etapa[etapa] += 1
         if tipo:
             por_tipo[tipo] += 1
-        if "→" not in campo:
+        if parada(l):
             sem_destino_por_etapa[etapa] += 1
         por_dia[l["data"]] += 1
+    # Os três números que orientam ação (o Painel, ajuste 4 da revisão de UX de
+    # 2026-10-03): quantos itens ainda não avançaram — fora o último estágio, que
+    # não avança para lugar nenhum —, o mais velho deles em dias, e o que entrou
+    # hoje no primeiro estágio. A data vem da coluna Data, nunca de arquivo.
+    siglas = cfg.siglas
+    ultimo, primeiro = siglas[-1], siglas[0]
+    hoje = datetime.date.today()
+    # `parada()` já foi avaliada no laço acima para cada linha, na ordem: aqui
+    # vale o que ela registrou, sem contar de novo.
+    paradas = [l for l in linhas
+               if l["id"] not in com_seta and l["id"] not in continuados
+               and (cfg.sigla_canonica((etapa_re.search(l["etapa_tipo"]) or [None, ""])[1]) or "outro")
+               not in (ultimo, "outro")]
+    vistos, unicas = set(), []
+    for l in paradas:
+        if l["id"] not in vistos:
+            vistos.add(l["id"]); unicas.append(l)
+    paradas = unicas
+    mais_velho = None
+    for l in paradas:
+        try:
+            data = datetime.date.fromisoformat(l["data"])
+        except ValueError:
+            continue
+        if mais_velho is None or data < mais_velho[0]:
+            mais_velho = (data, l["id"])
+    entradas_hoje = sum(1 for l in linhas
+                        if l["data"] == hoje.isoformat() and "→" not in l["etapa_tipo"]
+                        and not re.match(r"^.+-\d+$", l["id"])
+                        and (etapa_re.search(l["etapa_tipo"]) or [None, ""])[1] == primeiro)
     return {
         "por_etapa": dict(por_etapa),
         "por_tipo": dict(por_tipo),
         "sem_destino_por_etapa": dict(sem_destino_por_etapa),
+        "sem_destino_total": len(paradas),
+        "sem_destino_mais_velho": ({"id": mais_velho[1], "data": mais_velho[0].isoformat(),
+                                    "dias": (hoje - mais_velho[0]).days} if mais_velho else None),
+        "entradas_hoje": entradas_hoje,
         "por_dia": dict(sorted(por_dia.items())),
         "total_linhas_log": len(linhas),
     }

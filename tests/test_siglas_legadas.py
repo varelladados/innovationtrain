@@ -216,6 +216,32 @@ class TestMetricas(_ComEstacao):
         self.assertEqual(sd.get("IDE"), None)  # o SBI tem seta
         self.assertEqual(sd.get("NOT"), 1)
 
+    def test_os_tres_numeros_do_painel(self):
+        """Sem destino conta o que parou fora do último estágio (o SBC e a CAP;
+        o SBI tem seta e o SBZ é projeto); o mais velho é o SBC, com a idade
+        pela coluna Data; nada entrou hoje."""
+        import datetime
+        import metrics
+        log = metrics._metricas_log()
+        self.assertEqual(log["sem_destino_total"], 2)
+        velho = log["sem_destino_mais_velho"]
+        self.assertEqual((velho["id"], velho["data"]), ("26.08.31-SBC-001-ideia-antiga-a1b2", "2026-08-31"))
+        self.assertEqual(velho["dias"], (datetime.date.today() - datetime.date(2026, 8, 31)).days)
+        self.assertEqual(log["entradas_hoje"], 0)
+
+    def test_a_continuacao_tira_a_original_do_sem_destino(self):
+        """O registro é append-only: a promoção vai numa linha `<id>-1` com a
+        seta, e a original fica como estava. Ela não é "sem destino"."""
+        import metrics
+        reg = self.tmp / "_registro.md"
+        reg.write_text(reg.read_text(encoding="utf-8") +
+                       "| 26.08.31-SBC-001-ideia-antiga-a1b2-1 | 2026-09-12 | SBC →26.09.12-IDE-DIG-003-x-0000 | `2-notas/_historico/` | promovida | [arquivo](<2-notas/x.md>) |\n",
+                       encoding="utf-8")
+        log = metrics._metricas_log()
+        self.assertEqual(log["sem_destino_total"], 1)             # só a CAP
+        self.assertEqual(log["sem_destino_por_etapa"].get("NOT"), None)
+        self.assertEqual(log["sem_destino_mais_velho"]["id"], "26.09.10-CAP-001-captura-nova-9f8e")
+
     def test_o_tipo_e_lido_de_um_id_legado(self):
         import metrics
         self.assertEqual(metrics._metricas_log()["por_tipo"].get("DIG"), 2)
