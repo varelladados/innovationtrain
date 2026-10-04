@@ -147,6 +147,8 @@ pre{background:var(--surface-2);padding:var(--sp-2);border-radius:var(--r-1);ove
 pre code{background:none;padding:0}
 table{border-collapse:collapse;width:100%;margin:var(--sp-2) 0}
 th,td{border:1px solid var(--border);padding:var(--sp-1) var(--sp-2);text-align:left;font-size:var(--fs-2);vertical-align:top}
+/* um termo que a estação renomeou: o do método está no title */
+.voc{border-bottom:1px dotted var(--border);cursor:help}
 th{background:var(--surface-2)}
 
 #layout{display:grid;grid-template-columns:264px 1fr;height:100vh}
@@ -631,9 +633,9 @@ th{background:var(--surface-2)}
 <div id="layout">
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>Central</h1>
+      <h1 data-voc="central">Central</h1>
       <select id="estacao-seletor" title="A estação que esta Central está operando"></select>
-      <button id="cap-btn" title="Capturar uma nota crua de qualquer tela (Ctrl+N) — a triagem confere antes de gravar"><span class="ic" aria-hidden="true">+</span>Capturar <kbd>Ctrl N</kbd></button>
+      <button id="cap-btn" title="Capturar um item do primeiro estágio, de qualquer tela (Ctrl+N) — a triagem confere antes de gravar"><span class="ic" aria-hidden="true">+</span><span data-voc="capturar">Capturar</span> <kbd>Ctrl N</kbd></button>
       <input id="search-box" type="text" placeholder="Buscar (Enter = busca completa)…">
     </div>
     <div id="estacao-aviso" hidden></div>
@@ -649,7 +651,7 @@ th{background:var(--surface-2)}
       <button id="triagem-nav-btn" title="O que chegou e ainda não entrou: lotes na espera, com o que cada um ainda pergunta"><svg class="ic" aria-hidden="true"><use href="#i-triagem"/></svg>Triagem</button>
       <button id="versoes-nav-btn" title="O que está salvo, o que não está, e o que ainda não subiu pra nuvem"><svg class="ic" aria-hidden="true"><use href="#i-versoes"/></svg>Versões</button>
       <button id="tour-nav-btn" title="A leitura guiada desta estação, uma parada por vez"><svg class="ic" aria-hidden="true"><use href="#i-tour"/></svg>Tour</button>
-      <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira estação"><svg class="ic" aria-hidden="true"><use href="#i-embarque"/></svg>Embarque</button>
+      <button id="embarque-nav-btn" title="Primeiros passos: criar a sua primeira estação"><svg class="ic" aria-hidden="true"><use href="#i-embarque"/></svg><span data-voc="embarque" data-voc-caps>Embarque</span></button>
     </nav>
     <div id="tree-painel">
       <div id="tree-cab">
@@ -734,7 +736,47 @@ const plNome = (n, plural) => { const e = plEstagio(n); return e ? (plural ? (e.
 const plSigla = (n) => { const e = plEstagio(n); return e ? e.sigla : ""; };
 const plUltimo = () => plEstagios().length;
 const plCadeia = () => plEstagios().map(e => e.sigla).join("→");
-const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : "Central") + " / ";
+const plPrefixo = () => (PLAT && PLAT.nome ? PLAT.nome : voc("central")) + " / ";
+// O vocabulário da estação (decisão 8 da taxonomia): PLAT.vocabulario traz, por
+// id, o rótulo que ELA usa e o genérico do método ao lado. Na tela o rótulo
+// substitui e o genérico vai para o title. VOC_PADRAO é só o fallback para
+// antes de /api/index responder, ou sem estação — não é fonte de verdade: a
+// fonte é PADROES["vocabulario"] em app/config.py, e um teste compara os dois.
+const VOC_PADRAO = {
+  central: ["Central", "Central"], estacao: ["estação", "estações"], projeto: ["projeto", "projetos"],
+  trem: ["trem", "trens"], embarque: ["embarque", "embarque"], trilho: ["trilho", "trilho"],
+  linha: ["linha", "linha"], registro: ["registro", "registro"], indice: ["índice", "índices"],
+  sem_destino: ["sem destino", "sem destino"], historico: ["histórico", "histórico"],
+  pendencia: ["pendência", "pendências"], briefing: ["briefing", "briefings"],
+  capturar: ["Capturar", "Capturar"], tipo: ["tipo", "tipos"],
+};
+const vocEntrada = (id) => (PLAT && PLAT.vocabulario && PLAT.vocabulario[id]) || null;
+const vocGen = (id, plural) => { const p = VOC_PADRAO[id]; return p ? p[plural ? 1 : 0] : id; };
+const voc = (id, plural) => { const v = vocEntrada(id); return v ? (plural ? v.plural : v.rotulo) : vocGen(id, plural); };
+const capInicial = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const vocCap = (id, plural) => capInicial(voc(id, plural));
+const vocArtigo = (id) => { const v = vocEntrada(id); return v ? v.artigo : "o"; };
+// o adjetivo que acompanha o termo, no gênero do rótulo que a estação escolheu
+const vocAdj = (id, fem, masc) => vocArtigo(id) === "a" ? fem : masc;
+const vocTitle = (id) => { const v = vocEntrada(id); return v && v.proprio ? `${v.generico} — termo do método` : ""; };
+const vocHtml = (id, opts) => {
+  const o = opts || {};
+  const texto = o.caps ? vocCap(id, o.plural) : voc(id, o.plural);
+  const t = vocTitle(id);
+  return t ? `<span class="voc" title="${escapeHtml(t)}">${escapeHtml(texto)}</span>` : escapeHtml(texto);
+};
+// Texto fixo do HTML marcado com data-voc="id" (data-voc-plural, data-voc-caps
+// opcionais) troca ao carregar a estação e ao trocar de estação.
+function aplicarVocabulario(){
+  document.querySelectorAll("[data-voc]").forEach(el => {
+    const id = el.dataset.voc;
+    const plural = el.hasAttribute("data-voc-plural");
+    el.textContent = el.hasAttribute("data-voc-caps") ? vocCap(id, plural) : voc(id, plural);
+    const t = vocTitle(id);
+    if (t){ el.title = t; el.classList.add("voc"); }
+    else { el.removeAttribute("title"); el.classList.remove("voc"); }
+  });
+}
 let ACTIVE_TYPE_FILTER = null;
 let SELECTED_PATH = null;
 
@@ -827,6 +869,7 @@ async function loadIndex(){
   const data = await r.json();
   ENTRIES = data.entries;
   PLAT = data.estacao || null;
+  aplicarVocabulario();
   renderEstacaoAviso(data);
   renderBoasVindas(data);
   TOUR_PATH = (data.estacao && data.estacao.trilha) || null;
@@ -882,11 +925,11 @@ function renderBoasVindas(data){
   if (!el) return;
   const p = data.estacao;
   if (!p || data.estacao_ok === false){
-    el.textContent = "Nenhuma estação aberta.";
+    el.textContent = `Nenhuma ${voc("estacao")} aberta.`;
     return;
   }
   const estagios = (p.estagios || []).map(e => e.plural || e.nome).join(" · ");
-  el.innerHTML = `Estação <strong>${escapeHtml(p.nome)}</strong>, em ` +
+  el.innerHTML = `${vocHtml("estacao", {caps: true})} <strong>${escapeHtml(p.nome)}</strong>, em ` +
     `<code>${escapeHtml(p.caminho)}</code> — ${data.count} arquivos indexados` +
     (estagios ? `, em ${(p.estagios || []).length} estágios: ${escapeHtml(estagios)}.` : ".");
 }
@@ -1010,7 +1053,7 @@ function renderEstacaoAviso(data){
   }
   if (data.estacao_ok === false){
     const nome = data.estacao ? data.estacao.caminho : "(raiz não resolvida)";
-    box.innerHTML = "<strong>Nenhuma estação aberta</strong>" +
+    box.innerHTML = `<strong>Nenhuma ${escapeHtml(voc("estacao"))} aberta</strong>` +
       "Esta pasta não tem <code>" +
       escapeHtml(data.estacao ? data.estacao.marcador : "_indice.md") +
       "</code>, então não há o que indexar:<br><code>" + escapeHtml(nome) + "</code>";
@@ -1905,7 +1948,7 @@ async function openDashboardView(){
   content.innerHTML = "";
 
   const header = document.createElement("div");
-  header.innerHTML = `<h1>Painel</h1><p class="dash-lead">${escapeHtml(PLAT ? PLAT.nome : "")} · gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do registro e do disco.</p>`;
+  header.innerHTML = `<h1>Painel</h1><p class="dash-lead">${escapeHtml(PLAT ? PLAT.nome : "")} · gerado em ${escapeHtml(data.gerado_em.replace("T"," "))} — recalculado a cada carregamento a partir do ${vocHtml("registro")} e do disco.</p>`;
   content.appendChild(header);
 
   // Três números que orientam ação (ajuste 4 da revisão de UX, 2026-10-03):
@@ -1913,22 +1956,26 @@ async function openDashboardView(){
   const log = data.log || {};
   const abertas = wf && wf.pendencias ? (wf.pendencias.cards || []).filter(c => c.estado === "aberta").length : null;
   const velho = log.sem_destino_mais_velho;
-  const semDestinoArq = ENTRIES.find(e => /(^|\/)_sem-destino\.md$/.test(e.path));
+  // o arquivo do sem-destino é o que a estação declara em `arquivos`, não um nome fixo
+  const semDestinoNome = (PLAT && PLAT.arquivos && PLAT.arquivos.sem_destino) || "_sem-destino.md";
+  const semDestinoArq = ENTRIES.find(e => e.path === semDestinoNome || e.path.endsWith("/" + semDestinoNome));
   const tres = document.createElement("div");
   tres.className = "dash-tres";
   const numeros = [
-    {num: log.sem_destino_total, label: "sem destino",
+    {num: log.sem_destino_total, label: voc("sem_destino"), title: vocTitle("sem_destino"),
      sub: velho ? `o mais velho há ${velho.dias} dia${velho.dias === 1 ? "" : "s"}` : "nada parado",
      acao: semDestinoArq ? () => openFile(semDestinoArq.path) : null, acaoTxt: "ver a lista"},
-    {num: abertas, label: abertas === 1 ? "decisão aberta" : "decisões abertas",
-     sub: "só desta estação e dos projetos dela", acao: openHojeView, acaoTxt: "responder em Hoje"},
+    {num: abertas, title: vocTitle("pendencia"),
+     label: abertas === 1 ? `${voc("pendencia")} ${vocAdj("pendencia", "aberta", "aberto")}`
+                          : `${voc("pendencia", true)} ${vocAdj("pendencia", "abertas", "abertos")}`,
+     sub: `só desta ${voc("estacao")} e dos ${voc("projeto", true)} dela`, acao: openHojeView, acaoTxt: "responder em Hoje"},
     {num: log.entradas_hoje, label: `entrada${log.entradas_hoje === 1 ? "" : "s"} hoje`,
      sub: `em ${plNome(1, true).toLowerCase()}`, acao: null},
   ];
   numeros.forEach(k => {
     const card = document.createElement("div");
     card.className = "dash-tres-item";
-    card.innerHTML = `<div class="num">${fmt(k.num)}</div><div class="label">${escapeHtml(k.label)}</div><div class="sub">${escapeHtml(k.sub)}</div>`;
+    card.innerHTML = `<div class="num">${fmt(k.num)}</div><div class="label"${k.title ? ` title="${escapeHtml(k.title)}"` : ""}>${escapeHtml(k.label)}</div><div class="sub">${escapeHtml(k.sub)}</div>`;
     if (k.acao){
       const a = document.createElement("a");
       a.href = "#"; a.textContent = k.acaoTxt + " →";
@@ -1952,7 +1999,7 @@ async function openDashboardView(){
   // KPIs
   const ultimo = plUltimo();
   const kpis = [
-    {num: data.log.total_linhas_log, label: "Linhas no registro"},
+    {num: data.log.total_linhas_log, label: `Linhas no ${voc("registro")}`},
   ];
   // um cartão por estágio, com o nome que a estação declara: "quantos ainda
   // não avançaram daqui". O último estágio não avança pra lugar nenhum — dele o
@@ -1961,12 +2008,12 @@ async function openDashboardView(){
     const n = i + 1;
     kpis.push(n < ultimo
       ? {num: (data.log.sem_destino_por_etapa || {})[e.sigla] || 0,
-         label: `${e.plural || e.nome} sem destino`}
+         label: `${e.plural || e.nome} ${voc("sem_destino")}`}
       : {num: (data.log.por_etapa || {})[e.sigla] || 0,
-         label: `${e.plural || e.nome} no registro`});
+         label: `${e.plural || e.nome} no ${voc("registro")}`});
   });
   kpis.push(
-    {num: data.arquivos.total_arquivos, label: "Arquivos na estação"},
+    {num: data.arquivos.total_arquivos, label: `Arquivos na ${voc("estacao")}`},
     {num: data.arquivos.total_md, label: "Arquivos .md"},
     {num: data.arquivos.linhas_codigo, label: "Linhas de código"});
   // só aparece quando a estação declara um campo de núcleo; o rótulo é o
@@ -2005,20 +2052,23 @@ async function openDashboardView(){
   });
   todos.appendChild(etapaSection);
 
-  // Distribuição por tipo
-  const significados = {DIG: "Digital (app/site/ferramenta)", DAD: "Dados/análise", CON: "Consultoria/processo", ADE: "Aprendizado/educação"};
+  // Distribuição por tipo — o que cada sigla quer dizer é o que a estação
+  // declarou em `tipos` ({sigla, nome}); sem nome, a célula fica vazia em vez
+  // de um significado escrito aqui.
+  const tiposDetalhe = (PLAT && PLAT.tipos_detalhe) || [];
+  const nomeDoTipo = (t) => { const d = tiposDetalhe.find(x => x.sigla === t); return (d && d.nome) || "—"; };
   const tipoSection = document.createElement("div");
   tipoSection.className = "dash-section";
   let tipoRows = Object.keys(data.log.por_tipo).sort().map(t =>
-    `<tr><td>${t}</td><td>${significados[t]||"—"}</td><td>${fmt(data.log.por_tipo[t])}</td></tr>`
+    `<tr><td>${escapeHtml(t)}</td><td>${escapeHtml(nomeDoTipo(t))}</td><td>${fmt(data.log.por_tipo[t])}</td></tr>`
   ).join("");
-  tipoSection.innerHTML = `<h2>Distribuição por tipo de projeto</h2><table><thead><tr><th>Tipo</th><th>Significado</th><th>Contagem</th></tr></thead><tbody>${tipoRows}</tbody></table>`;
+  tipoSection.innerHTML = `<h2>Distribuição por ${vocHtml("tipo")} de ${vocHtml("projeto")}</h2><table><thead><tr><th>${vocHtml("tipo", {caps: true})}</th><th>Significado</th><th>Contagem</th></tr></thead><tbody>${tipoRows}</tbody></table>`;
   todos.appendChild(tipoSection);
 
-  // Notas/ideias por dia
+  // Entradas no registro por dia — todas as linhas, de qualquer estágio
   const diaSection = document.createElement("div");
   diaSection.className = "dash-section";
-  diaSection.innerHTML = "<h2>Notas e ideias por dia</h2>";
+  diaSection.innerHTML = `<h2>${vocHtml("registro", {caps: true})}: entradas por dia</h2>`;
   const dias = Object.keys(data.log.por_dia).sort();
   const maxDia = Math.max(...dias.map(d => data.log.por_dia[d]), 1);
   const chart = document.createElement("div");
@@ -2752,9 +2802,9 @@ async function openEmbarqueView(){
   SELECTED_PATH = null;
   renderTree();
   document.getElementById("content").classList.remove("pf-wide");
-  document.getElementById("breadcrumb").textContent = "Central / Embarque";
+  document.getElementById("breadcrumb").textContent = plPrefixo() + vocCap("embarque");
   document.getElementById("meta-bar").innerHTML =
-    `<span class="badge badge-type">embarque</span><span id="meta-path">primeiros passos</span>`;
+    `<span class="badge badge-type">${vocHtml("embarque")}</span><span id="meta-path">primeiros passos</span>`;
   if (!EB_MODELOS.length){
     try { EB_MODELOS = (await (await fetch("/api/embarque/modelos")).json()).modelos || []; } catch(e){}
   }
@@ -2765,8 +2815,8 @@ function ebDesenhar(){
   const paradas = ebParadas();
   const p = paradas[EB_PASSO];
   const content = document.getElementById("content");
-  content.innerHTML = `<h1>Embarque</h1>
-    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria as suas estações.</p>`;
+  content.innerHTML = `<h1>${vocHtml("embarque", {caps: true})}</h1>
+    <p class="dash-lead">Cinco perguntas, e você sai daqui com o texto que cria as suas ${vocHtml("estacao", {plural: true})}.</p>`;
 
   const dots = document.createElement("div");
   dots.className = "eb-passos";
@@ -2891,9 +2941,11 @@ async function ebRegistrar(estacoes){
 // Ficam hardcoded de propósito, como
 // os guardrails do briefing: parsear a prosa do método para montar esta tela a
 // deixaria quebrar em silêncio a cada edição de texto.
+// Cada conjunto é escolhido pelo NÚMERO do estágio de destino (`n`), nunca pela
+// sigla: a sigla é da estação, o número é do método.
 const FX_SETS = [
   {
-    para: "NOT",
+    n: 2,
     pergunta: "já foi lido e organizado?",
     regra: 2,
     criterios: [
@@ -2904,7 +2956,7 @@ const FX_SETS = [
     ],
   },
   {
-    para: "IDE",
+    n: 3,
     pergunta: "serve de insumo para outra coisa, sem reprocessar?",
     regra: 2,
     criterios: [
@@ -2915,44 +2967,48 @@ const FX_SETS = [
     ],
   },
   {
-    para: "FUN",
+    n: 4,
     pergunta: "já diz o que vai existir quando estiver pronto, e onde?",
     regra: 2,
-    criterios: [
+    // função: os nomes dos estágios são os que a estação declara, lidos na hora
+    criterios: () => [
       "Descreve um comportamento ou entregável concreto — o que faz, não só o que resolve?",
-      "Tem destino declarado: um projeto que já existe, ou “projeto novo”?",
+      `Tem destino declarado: ${vocArtigo("projeto") === "a" ? "uma" : "um"} ${voc("projeto")} que já existe, ou “${voc("projeto")} ${vocAdj("projeto", "nova", "novo")}”?`,
       "Tem critério de pronto: dá para responder sim ou não se está feito?",
-      "Cabe numa entrega só? (se precisa de várias, são várias funcionalidades — ou é um projeto)",
+      `Cabe numa entrega só? (se precisa de várias, são várias ${plNome(4, true).toLowerCase()} — ou é ${vocArtigo("projeto") === "a" ? "uma" : "um"} ${voc("projeto")})`,
     ],
   },
   {
-    para: "PRJ",
+    n: 5,
     pergunta: "tem corpo próprio?",
     regra: "todos",
-    criterios: [
-      "Tem pasta própria dentro da pasta de projetos?",
+    criterios: () => [
+      `Tem pasta própria dentro da pasta de ${voc("projeto", true)}?`,
       "Tem CLAUDE.md dizendo o que é, para quem, e em que estado está?",
       "Tem backlog com pelo menos um item aberto de verdade?",
       "É um repositório git próprio?",
     ],
-    nota: "Se o destino é um projeto que já existe, a funcionalidade não vira projeto: ela é acoplada — copiada para dentro dele, com uma linha no backlog, e a linha dela no registro ganha o marcador → com a pasta do projeto.",
+    nota: () => `Se o destino é ${vocArtigo("projeto") === "a" ? "uma" : "um"} ${voc("projeto")} que já existe, a ${plNome(4).toLowerCase()} não vira ${voc("projeto")}: ela é acoplada — copiada para dentro dele, com uma linha no backlog, e a linha dela no ${voc("registro")} ganha o marcador → com a pasta d${vocArtigo("projeto")} ${voc("projeto")}.`,
   },
 ];
+const fxCriterios = (set) => typeof set.criterios === "function" ? set.criterios() : set.criterios;
+const fxNota = (set) => typeof set.nota === "function" ? set.nota() : set.nota;
 let FX_MARCADOS = {};   // índice da passagem -> Set de critérios marcados
 let FX_ABERTA = 0;      // qual passagem está com o checklist aberto
 
 function fxPassagens(){
   const est = plEstagios();
   if (est.length < 2) return [];
-  const porSigla = {};
-  FX_SETS.forEach(s => { porSigla[s.para] = s; });
-  const conhece = est.some(e => porSigla[e.sigla]);
-  // fallback para taxonomia própria: alinhado pelo fim, sem o de funcionalidade
-  const semFun = FX_SETS.filter(s => s.para !== "FUN");
+  const porN = {};
+  FX_SETS.forEach(s => { porN[s.n] = s; });
+  // os cinco estágios do método: cada passagem acha o conjunto pelo número
+  const conhece = est.length === FX_SETS.length + 1;
+  // fallback para taxonomia com outro tamanho: alinhado pelo fim, sem o de funcionalidade
+  const semFun = FX_SETS.filter(s => s.n !== 4);
   const porFim = semFun.slice(-(est.length - 1));
   return est.slice(0, -1).map((de, i) => {
     const para = est[i + 1];
-    const set = (conhece && porSigla[para.sigla]) || porFim[i] || semFun[semFun.length - 1];
+    const set = (conhece && porN[i + 2]) || porFim[i] || semFun[semFun.length - 1];
     return {de, para, set};
   });
 }
@@ -2969,10 +3025,11 @@ async function openFluxoView(){
   const content = document.getElementById("content");
   const passagens = fxPassagens();
   content.innerHTML = `<h1>Fluxo</h1>
-    <p class="dash-lead">O caminho que toda entrada percorre nesta estação. Esta tela não classifica nada — ela ajuda você a decidir, e gera o briefing para a sessão de IA fazer o registro.</p>`;
+    <p class="dash-lead">O caminho que toda entrada percorre nesta ${vocHtml("estacao")} — a ${vocHtml("linha")}. Esta tela não classifica nada — ela ajuda você a decidir, e gera o ${vocHtml("briefing")} para a sessão de IA fazer o registro.</p>`;
 
   if (!passagens.length){
-    content.innerHTML += `<p class="dash-lead">Esta estação declara menos de dois estágios: não há passagem para mostrar.</p>`;
+    content.innerHTML += `<p class="dash-lead">Esta ${vocHtml("estacao")} declara menos de dois estágios: não há passagem para mostrar.</p>`;
+    renderGlossario(content);
     return;
   }
 
@@ -2998,7 +3055,7 @@ async function openFluxoView(){
   barra.appendChild(quem);
   const btnBrf = document.createElement("button");
   btnBrf.className = "brf-btn";
-  btnBrf.textContent = "Briefing de classificação →";
+  btnBrf.textContent = `${vocCap("briefing")} de classificação →`;
   btnBrf.disabled = !alvo;
   btnBrf.onclick = () => {
     const a = alvoDoBriefing();
@@ -3012,14 +3069,15 @@ async function openFluxoView(){
   const zero = document.createElement("div");
   zero.className = "fx-passo";
   zero.innerHTML = `<h3>Entrada — tudo vira ${escapeHtml(plNome(1))} (${escapeHtml(plSigla(1))})</h3>` +
-    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0">Sem exceção, mesmo o que já nasce maduro: identificador pelo utilitário, linha no registro, arquivo no primeiro estágio. Pela interface, é o botão <strong>📝 Nota</strong>.</p>`;
+    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0">Sem exceção, mesmo o que já nasce maduro: identificador pelo utilitário, linha no ${vocHtml("registro")}, arquivo no primeiro estágio. Pela interface, é o botão <strong>+ ${vocHtml("capturar")}</strong> (Ctrl+N), de qualquer tela.</p>`;
   content.appendChild(zero);
 
   passagens.forEach((p, i) => {
     const el = document.createElement("div");
     el.className = "fx-passo";
     const marcados = FX_MARCADOS[i] || (FX_MARCADOS[i] = new Set());
-    const total = p.set.criterios.length;
+    const criterios = fxCriterios(p.set);
+    const total = criterios.length;
     const minimo = p.set.regra === "todos" ? total : p.set.regra;
 
     el.innerHTML = `<h3>${escapeHtml(plNome(i + 1))} → ${escapeHtml(plNome(i + 2))} — ${escapeHtml(p.set.pergunta)}</h3>`;
@@ -3031,7 +3089,7 @@ async function openFluxoView(){
       : `Marque os critérios que valem para o item — ${minimo} ou mais promovem:`;
     el.appendChild(nota);
 
-    p.set.criterios.forEach((texto, idx) => {
+    criterios.forEach((texto, idx) => {
       const lab = document.createElement("label");
       lab.className = "fx-crit" + (marcados.has(idx) ? " sim" : "");
       const cb = document.createElement("input");
@@ -3061,14 +3119,15 @@ async function openFluxoView(){
         : `Marque o que vale: ${minimo} de ${total} promovem a ${plNome(i + 2)}.`;
     } else {
       ver.textContent = `${n} de ${total} — falta${faltam > 1 ? "m" : ""} ${faltam} para promover a ${plNome(i + 2)}. `
-        + `Sem isso o item fica como ${plNome(i + 1)}, e forçar é pior que esperar: dúvida genuína vira pendência.`;
+        + `Sem isso o item fica como ${plNome(i + 1)}, e forçar é pior que esperar: dúvida genuína vira ${voc("pendencia")}.`;
     }
     el.appendChild(ver);
 
-    if (p.set.nota){
+    const notaTxt = fxNota(p.set);
+    if (notaTxt){
       const obs = document.createElement("p");
       obs.style.cssText = "font-size:var(--fs-1);color:var(--text-2);margin:var(--sp-1) 0 0";
-      obs.textContent = p.set.nota;
+      obs.textContent = notaTxt;
       el.appendChild(obs);
     }
 
@@ -3078,8 +3137,38 @@ async function openFluxoView(){
   const fim = document.createElement("div");
   fim.className = "fx-passo";
   fim.innerHTML = `<h3>Ao avançar</h3>` +
-    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0">O item é <strong>copiado</strong> para o estágio seguinte com identificador novo, o original vai para o <code>${escapeHtml((PLAT && PLAT.historico) || "_historico")}/</code> do estágio de onde saiu, e o registro ganha uma linha nova com o marcador de linhagem. A linha antiga nunca é editada nem apagada.</p>`;
+    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0">O item é <strong>copiado</strong> para o estágio seguinte com identificador novo, o original vai para o <code>${escapeHtml((PLAT && PLAT.historico) || "_historico")}/</code> do estágio de onde saiu, e o ${vocHtml("registro")} ganha uma linha nova com o marcador de linhagem. A linha antiga nunca é editada nem apagada.</p>`;
   content.appendChild(fim);
+  renderGlossario(content);
+}
+
+// O Glossário no fim do Fluxo: os nomes que o produto usa, e como esta estação
+// os chama quando ela os renomeou (decisão 8 da taxonomia). A tabela vem de
+// PLAT.vocabulario; a coluna "nesta estação" só aparece quando algum termo é
+// próprio. Nada aqui é escrito à mão além dos cabeçalhos.
+function renderGlossario(content){
+  const vocab = (PLAT && PLAT.vocabulario) || null;
+  const ids = vocab ? Object.keys(vocab) : Object.keys(VOC_PADRAO);
+  const temProprio = !!vocab && ids.some(id => vocab[id].proprio);
+  const sec = document.createElement("div");
+  sec.className = "fx-passo fx-glossario";
+  sec.innerHTML = `<h3>Glossário</h3>` +
+    `<p class="ctx" style="font-size:var(--fs-1);color:var(--text-2);margin:0 0 var(--sp-2)">` +
+    `Os nomes que o produto usa para as próprias peças. A metáfora ferroviária tem sete termos, e para por aí` +
+    (temProprio ? ` — e esta ${escapeHtml(voc("estacao"))} chama algumas dessas peças do seu jeito: o termo dela está na última coluna, e aparece na tela no lugar do termo do método.` : `.`) +
+    `</p>`;
+  const linhas = ids.map(id => {
+    const v = vocab ? vocab[id] : {generico: VOC_PADRAO[id][0], generico_plural: VOC_PADRAO[id][1], metafora: false, nota: "", proprio: false};
+    const generico = v.generico + (v.generico_plural && v.generico_plural !== v.generico ? ` / ${v.generico_plural}` : "");
+    const proprio = v.proprio ? v.rotulo + (v.plural && v.plural !== v.rotulo ? ` / ${v.plural}` : "") : "";
+    return `<tr><td><strong>${escapeHtml(generico)}</strong></td><td>${v.metafora ? "ferroviária" : "—"}</td><td>${escapeHtml(v.nota || "")}</td>` +
+      (temProprio ? `<td>${escapeHtml(proprio)}</td>` : "") + `</tr>`;
+  }).join("");
+  const tabela = document.createElement("table");
+  tabela.innerHTML = `<thead><tr><th>Termo do método</th><th>Metáfora</th><th>O que é</th>` +
+    (temProprio ? `<th>Nesta ${escapeHtml(voc("estacao"))}</th>` : "") + `</tr></thead><tbody>${linhas}</tbody>`;
+  sec.appendChild(tabela);
+  content.appendChild(sec);
 }
 
 // ============================================================

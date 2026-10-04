@@ -207,6 +207,40 @@ class TestEstagiosRenomeados(_ComEstacao):
         self.assertEqual(config._artigo_de("Pergunta ao cozinheiro"), "o")
 
 
+class TestInterface(unittest.TestCase):
+    """O que a página precisa ler da config em vez de escrever à mão."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.html = INDEX_HTML.read_text(encoding="utf-8")
+        m = re.search(r"const VOC_PADRAO = \{(.*?)\n\};", cls.html, re.DOTALL)
+        assert m, "VOC_PADRAO não está no index.html"
+        cls.voc_padrao = {k: (a, b) for k, a, b in
+                          re.findall(r'(\w+): \["([^"]*)", "([^"]*)"\]', m.group(1))}
+
+    def test_o_fallback_da_pagina_bate_com_o_config(self):
+        esperado = {k: (v["rotulo"], v["plural"]) for k, v in config.PADROES["vocabulario"].items()}
+        self.assertEqual(self.voc_padrao, esperado)
+
+    def test_a_tabela_de_tipos_nao_e_escrita_na_pagina(self):
+        self.assertNotIn("significados = {", self.html)
+        self.assertIn("tipos_detalhe", self.html)
+
+    def test_os_criterios_do_fluxo_sao_escolhidos_por_numero(self):
+        self.assertNotRegex(self.html, r'para: "[A-Z]{3}"')
+        for n in (2, 3, 4, 5):
+            self.assertIn(f"n: {n},", self.html)
+
+    def test_o_sem_destino_vem_da_config(self):
+        self.assertNotIn(r"_sem-destino\.md$", self.html)
+        self.assertIn("PLAT.arquivos.sem_destino", self.html)
+
+    def test_o_vocabulario_e_aplicado_ao_carregar(self):
+        self.assertIn("aplicarVocabulario();", self.html)
+        for id_ in ("central", "capturar", "embarque"):
+            self.assertIn(f'data-voc="{id_}"', self.html)
+
+
 class TestFonteUnica(unittest.TestCase):
     """`PADROES["vocabulario"]` é a cópia executável do Glossário da taxonomia."""
 
