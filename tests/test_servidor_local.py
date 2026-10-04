@@ -263,6 +263,50 @@ class TestTriagemResponder(ServidorDeVerdade):
             self.assertIn("lote", json.loads(corpo)["error"])
 
 
+class TestGlossario(ServidorDeVerdade):
+    """`GET /api/glossario`: o markdown que a estação declara, só leitura, só `.md`."""
+
+    def tearDown(self):
+        apoio.aplicar(self.estacao)   # devolve a estação sem a chave
+
+    def _glossario(self, **tax):
+        apoio.aplicar(self.estacao, **tax)
+        st, _, corpo = self.pedir("GET", "/api/glossario")
+        return st, json.loads(corpo)
+
+    def test_sem_a_chave_e_404(self):
+        st, d = self._glossario()
+        self.assertEqual(st, 404)
+        self.assertIn("não declara", d["error"])
+
+    def test_com_arquivo_devolve_o_texto(self):
+        (self.estacao / "glossario.md").write_text("# Glossário\n\n**Obra** — o que saiu da bancada.\n",
+                                                    encoding="utf-8")
+        st, d = self._glossario(glossario="glossario.md")
+        self.assertEqual(st, 200)
+        self.assertEqual(d["path"], "glossario.md")
+        self.assertIn("Obra", d["raw"])
+
+    def test_fora_da_raiz_vale_porque_e_declarado(self):
+        fora = self.tmp / "fora"
+        fora.mkdir(exist_ok=True)
+        (fora / "termos.md").write_text("# fora\n", encoding="utf-8")
+        st, d = self._glossario(glossario="../fora/termos.md")
+        self.assertEqual(st, 200)
+        self.assertEqual(d["raw"], "# fora\n")
+
+    def test_so_markdown(self):
+        (self.estacao / "glossario.txt").write_text("x", encoding="utf-8")
+        st, d = self._glossario(glossario="glossario.txt")
+        self.assertEqual(st, 400)
+        self.assertIn(".md", d["error"])
+
+    def test_declarado_mas_ausente_e_404_com_o_caminho(self):
+        st, d = self._glossario(glossario="nao-existe.md")
+        self.assertEqual(st, 404)
+        self.assertEqual(d["path"], "nao-existe.md")
+
+
 class TestCorpoJson(ServidorDeVerdade):
     ALVO = "/api/embarque/prompt"
 

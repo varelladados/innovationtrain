@@ -3168,6 +3168,37 @@ function renderGlossario(content){
   tabela.innerHTML = `<thead><tr><th>Termo do método</th><th>Metáfora</th><th>O que é</th>` +
     (temProprio ? `<th>Nesta ${escapeHtml(voc("estacao"))}</th>` : "") + `</tr></thead><tbody>${linhas}</tbody>`;
   sec.appendChild(tabela);
+
+  // O glossário por extenso da estação (chave `glossario`): um markdown dela,
+  // aberto aqui dentro pelo marked configurado. A Central nunca o edita.
+  if (PLAT && PLAT.glossario){
+    const barra = document.createElement("p");
+    barra.style.cssText = "margin:var(--sp-3) 0 0";
+    const btn = document.createElement("button");
+    btn.className = "brf-btn";
+    btn.textContent = `Abrir o glossário desta ${voc("estacao")} →`;
+    const corpo = document.createElement("div");
+    corpo.className = "md-body";
+    corpo.hidden = true;
+    btn.onclick = async () => {
+      if (!corpo.hidden){ corpo.hidden = true; btn.textContent = `Abrir o glossário desta ${voc("estacao")} →`; return; }
+      let r, d;
+      try { r = await fetch("/api/glossario"); d = await r.json(); }
+      catch(e){ d = {error: String(e)}; }
+      if (!r || !r.ok){
+        corpo.innerHTML = `<p class="dash-lead">Não deu para abrir o glossário: ${escapeHtml(d.error || "")}` +
+          (d.path ? ` — <code>${escapeHtml(d.path)}</code>` : "") + `</p>`;
+      } else {
+        const stripped = d.raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+        corpo.innerHTML = `<p class="dash-lead"><code>${escapeHtml(d.path)}</code></p>` + marked.parse(stripped);
+      }
+      corpo.hidden = false;
+      btn.textContent = "Fechar o glossário";
+    };
+    barra.appendChild(btn);
+    sec.appendChild(barra);
+    sec.appendChild(corpo);
+  }
   content.appendChild(sec);
 }
 

@@ -183,6 +183,31 @@ def repositorios():
     return saida
 
 
+def glossario_da_estacao():
+    """`({"path", "raw"} | {"error"}, status)` do glossário que a estação declara.
+
+    A chave `glossario` é um caminho relativo à raiz da estação, declarado por
+    ela — a mesma confiança de `trilha` e `fluxo`, que também podem apontar para
+    fora. O que se cobra: existir, ser arquivo e ser `.md`. Nunca se escreve.
+    """
+    if not config.definida():
+        return {"error": "nenhuma estação ativa"}, 404
+    cfg = config.atual()
+    rel = cfg.get("glossario")
+    if not rel:
+        return {"error": "esta estação não declara glossário"}, 404
+    p = cfg.caminho("glossario")
+    if p.suffix.lower() != ".md":
+        return {"error": f"glossário precisa ser um .md: {rel}"}, 400
+    if not p.is_file():
+        return {"error": f"glossário declarado, mas não encontrado: {rel}", "path": str(rel)}, 404
+    try:
+        texto = p.read_text(encoding="utf-8", errors="replace")
+    except OSError as e:
+        return {"error": f"não deu para ler o glossário: {e}", "path": str(rel)}, 500
+    return {"path": str(rel).replace("\\", "/"), "raw": texto}, 200
+
+
 def estacoes_registradas():
     """O que o seletor mostra: as estações do central.json mais a ativa."""
     ativa = str(raiz()) if raiz() else None
@@ -574,6 +599,14 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/avanco":
             self._send_json(avanco_mod.ultima_rodada())
+            return
+
+        if path == "/api/glossario":
+            # o markdown que a estação declara em `glossario` — só leitura, só
+            # `.md`, e pode morar fora da raiz dela (como `trilha` e `fluxo`),
+            # por isso não passa por /files/. Sem a chave, 404: é o caso normal.
+            dados, status = glossario_da_estacao()
+            self._send_json(dados, status=status)
             return
 
         if path == "/api/triagem":
