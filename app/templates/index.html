@@ -929,8 +929,9 @@ function renderBoasVindas(data){
     return;
   }
   const estagios = (p.estagios || []).map(e => e.plural || e.nome).join(" · ");
-  el.innerHTML = `${vocHtml("estacao", {caps: true})} <strong>${escapeHtml(p.nome)}</strong>, em ` +
-    `<code>${escapeHtml(p.caminho)}</code> — ${data.count} arquivos indexados` +
+  // no snapshot estático o caminho vem vazio de propósito (é desta máquina, não da estação)
+  const onde = p.caminho ? `, em <code>${escapeHtml(p.caminho)}</code>` : "";
+  el.innerHTML = `${vocHtml("estacao", {caps: true})} <strong>${escapeHtml(p.nome)}</strong>${onde} — ${data.count} arquivos indexados` +
     (estagios ? `, em ${(p.estagios || []).length} estágios: ${escapeHtml(estagios)}.` : ".");
 }
 

@@ -4,8 +4,9 @@ Pra quando o servidor local não alcança quem precisa ver (celular, remote
 control, alguém de fora): o mesmo index.html, com os endpoints /api/* trocados
 por um `fetch` falso que responde a partir de um snapshot embutido do corpus
 (índice + texto dos .md/.txt/.py, .html truncados em 3000 chars como a UI já
-mostra) — árvore, busca, LOG, dashboard e aba Tour funcionam; toggle de backlog
-e reindexar respondem "somente leitura".
+mostra, mais o resumo da estação — estágios, vocabulário, arquivos de sistema —
+e o glossário dela, se declarado) — árvore, busca, registro, Painel, Fluxo e
+aba Tour funcionam; toggle de backlog e reindexar respondem "somente leitura".
 
 Saída: dist/central-static.html (sem <html>/<head>/<body>, no formato que
 o publicador de Artifacts do Claude espera — abre também direto no navegador,
@@ -54,6 +55,20 @@ MARKED_CDN = "https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js
 MERMAID_CDN = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"
 
 
+def _glossario():
+    """`{"path", "raw"}` do glossário que a estação declara, ou None — a mesma
+    regra de `server.glossario_da_estacao`, sem o servidor: só `.md`, só leitura."""
+    cfg = config.atual()
+    rel = cfg.get("glossario")
+    if not rel:
+        return None
+    p = cfg.caminho("glossario")
+    if p.suffix.lower() != ".md" or not p.is_file():
+        return None
+    return {"path": str(rel).replace("\\", "/"),
+            "raw": p.read_text(encoding="utf-8", errors="replace")}
+
+
 def build_snapshot(escopo_pendencias="estacao"):
     config.recusar_se_privada(config.atual(), "o snapshot estático")
     entries, cache = indexer.build_index()
@@ -65,8 +80,16 @@ def build_snapshot(escopo_pendencias="estacao"):
         raw[e["path"]] = txt
     registro = config.atual().arquivo_rel("registro") or ""
     log_rows = log_parser.parse_log_tables(cache.get(registro, ""))
+    # O resumo da estação viaja junto: é dele que a página tira os nomes dos
+    # estágios, o vocabulário e os arquivos de sistema — sem ele o snapshot
+    # abria com PLAT nulo e tudo caía no genérico. Dois campos são zerados de
+    # propósito: `caminho` é o caminho absoluto desta máquina, não da estação; e
+    # `exemplo` oferece "reiniciar", que não existe num arquivo publicado.
+    estacao = {**config.atual().resumo(), "caminho": "", "exemplo": False}
     return {
         "gerado_em": time.strftime("%Y-%m-%d %H:%M"),
+        "estacao": estacao,
+        "glossario": _glossario(),
         "entries": entries,
         "raw": raw,
         "log_rows": log_rows,
@@ -110,7 +133,8 @@ SHIM = r"""
   window.fetch = async function(url){
     const u = new URL(url, "http://static.local");
     const p = u.pathname, qs = u.searchParams;
-    if (p === "/api/index") return resp({count: D.entries.length, entries: D.entries});
+    if (p === "/api/index") return resp({count: D.entries.length, entries: D.entries, estacao: D.estacao, estacao_ok: true, estacao_erro: null, trilha: {tem: false}});
+    if (p === "/api/glossario") return D.glossario ? resp(D.glossario) : resp({error: "esta estação não declara glossário"}, 404);
     if (p === "/api/file"){
       const path = qs.get("path");
       const e = D.entries.find(x => x.path === path);
