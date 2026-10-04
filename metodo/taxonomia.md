@@ -264,9 +264,20 @@ lista fixa no produto. A sugestão inicial, para quem não quer decidir agora:
 O filtro de tipo do Portfólio é montado a partir dessa lista — então ele nunca
 oferece um tipo que ninguém usa nem esconde um que todo mundo usa.
 
+Um tipo pode vir com o que a sigla quer dizer, e as duas formas se misturam na
+mesma lista:
+
+```json
+"tipos": [{"sigla": "app", "nome": "Aplicativo ou site"}, "dados", "curso"]
+```
+
+A sigla é o que entra no identificador e no filtro; o nome é o que o Painel
+mostra ao lado dela. Sem nome, o Painel mostra só a sigla — nunca inventa um
+significado.
+
 ---
 
-## As sete decisões, e por quê
+## As oito decisões, e por quê
 
 | Parada | Decidido | Por quê |
 |---|---|---|
@@ -277,14 +288,105 @@ oferece um tipo que ninguém usa nem esconde um que todo mundo usa.
 | 5 — nomes de sistema | `_indice.md` · `_registro.md` · `_sem-destino.md` · `_historico/` · `estacao.json` | o `_` marca "isto é maquinário, não conteúdo seu" e agrupa no topo da listagem; um prefixo com ponto *esconde* a pasta em boa parte das ferramentas. `estacao.json` fica sem `_` porque a extensão já o separa |
 | 6 — o estágio entre ideia e projeto (2026-09-10) | **Funcionalidade** · `FUN` · `4-funcionalidades/`; projetos passam a `5-projetos/` | a estação de origem mediu, em uso real, que a maioria das ideias com forma era peça de projeto existente, não projeto novo — e não tinha para onde ir. O nome vem do fluxo literal escolhido lá (captura › anotação › ideia › funcionalidade › projeto); a sigla segue a regra das outras quatro (três primeiras letras). A pasta de projetos foi renumerada porque a numeração carrega a sequência — manter `4-projetos/` ao lado de `4-funcionalidades/` diria que os dois são o mesmo momento |
 | 7 — os nomes dos níveis (2026-09-14) | **Central** (o app e a pasta; o arquivo da raiz é `CENTRAL.md`) › **estação** (o espaço de trabalho) | a Central passa a operar espaços de propósitos diferentes — o trem de inovação, a vida pessoal, a administração da empresa — e "plataforma" virou o nome de um deles. Os outros arquivos de orquestra continuam `CLAUDE.md`, que é nome fixo do harness; o da raiz ganha nome próprio, e um `CLAUDE.md` de uma linha aponta para ele |
+| 8 — o vocabulário é da estação, o mecanismo é do produto (2026-10-04) | a chave `vocabulario` do `estacao.json` (de-para por placeholders) e a chave `glossario` (um markdown da estação); a metáfora ganha *trilho* e *linha* | o princípio 5 já dizia que o nome próprio é identidade e não deve ser apagado — mas só os estágios, as siglas, os arquivos de sistema e os campos de frontmatter eram declaráveis; o resto (estação, registro, pendência, índice…) estava escrito no código, e uma estação que já tinha nome para essas coisas ou traduzia de cabeça ou vazava o nome dela para o produto. Com a chave, o nome da estação **substitui** o do método na tela e o do método vai para o tooltip; no briefing para a IA saem os dois. *Trilho* e *linha* entram porque a interface já os usava sem registro — oficializar é mais barato do que policiar |
 
 ---
 
 **Metáfora ferroviária — os únicos termos:** *Central* (a aplicação),
 *estação* (um espaço de trabalho), *projeto* (um trabalho dentro dela),
-*trem* (a fila de pendências passando uma por vez) e *embarque* (os primeiros
-passos). Não invente outros: chamar prompt de "bilhete" ou projeto de "vagão"
-recria exatamente o vocabulário privado que este trabalho desfaz.
+*trem* (a fila de pendências passando uma por vez), *embarque* (os primeiros
+passos), *trilho* (a barra lateral, onde as abas se enfileiram) e *linha* (a
+sequência dos estágios, do primeiro ao último). Não invente outros: chamar
+prompt de "bilhete" ou projeto de "vagão" recria exatamente o vocabulário
+privado que este trabalho desfaz. O que a estação quiser chamar de outro jeito
+ela declara — é a seção seguinte.
+
+---
+
+## Glossário
+
+Esta é a lista dos nomes que o produto usa — e, para cada um, o identificador
+pelo qual uma estação pode trocá-lo. `app/config.py` carrega esta tabela como
+`PADROES["vocabulario"]`, do mesmo jeito que carrega os estágios: mudou aqui,
+muda lá, e um teste compara os dois.
+
+| Termo do método | Metáfora | O que é | id em `vocabulario` |
+|---|---|---|---|
+| **Central** | ferroviária | a aplicação, o que se abre no navegador | `central` |
+| **estação** / estações | ferroviária | um espaço de trabalho: uma pasta, com as suas ideias | `estacao` |
+| **projeto** / projetos | ferroviária | um trabalho que ganhou corpo próprio dentro da estação; o nome do **estágio** continua em `estagios` — este é o conceito solto (a pasta de projetos, o Portfólio) | `projeto` |
+| **trem** / trens | ferroviária | a fila de pendências, passando uma por vez | `trem` |
+| **embarque** | ferroviária | os primeiros passos: a aba que cria as estações | `embarque` |
+| **trilho** | ferroviária | a barra lateral, onde as abas se enfileiram | `trilho` |
+| **linha** | ferroviária | a sequência dos estágios, do primeiro ao último | `linha` |
+| **registro** | — | o arquivo append-only, uma linha por item | `registro` |
+| **índice** / índices | — | o arquivo de orquestra de uma pasta; o da estação é o marcador | `indice` |
+| **sem destino** | — | a lista do que está no registro e ainda não avançou | `sem_destino` |
+| **histórico** | — | a subpasta de cada estágio com o que já avançou | `historico` |
+| **pendência** / pendências | — | uma decisão aberta, que só quem usa fecha | `pendencia` |
+| **briefing** / briefings | — | o texto pronto para colar numa sessão de IA | `briefing` |
+| **Capturar** | — | o verbo do botão e do atalho que criam um item do primeiro estágio | `capturar` |
+| **tipo** / tipos | — | a classificação livre de um projeto | `tipo` |
+
+Os nomes dos **estágios** e as **siglas** não estão nesta tabela porque já têm
+casa: `estagios` e `siglas_legadas`, acima.
+
+### Termos do autor — o vocabulário próprio de uma estação
+
+Uma estação que já existia antes da Central chega com nomes próprios para
+quase tudo nesta tabela — e isso é identidade, não ruído
+([princípio 5](principios.md)). O método não pede que ela os troque: pede que
+sejam **declarados**, não escritos no código. Duas chaves do `estacao.json`
+fazem isso.
+
+**`vocabulario`** é um de-para fechado: a chave é o id da tabela acima, o
+valor é como a estação chama aquilo. Uma string vale como rótulo no singular;
+um objeto diz mais:
+
+```json
+"vocabulario": {
+  "estacao":     {"rotulo": "Cozinha", "plural": "Cozinhas", "artigo": "a"},
+  "projeto":     {"rotulo": "Prato", "plural": "Pratos", "artigo": "o",
+                  "nota": "o que já tem forma de ir à mesa"},
+  "registro":    "Caderno",
+  "sem_destino": "Na bancada",
+  "pendencia":   {"rotulo": "Pergunta ao cozinheiro", "plural": "Perguntas ao cozinheiro"},
+  "indice":      "Cardápio"
+}
+```
+
+- `rotulo` é obrigatório (é o que a string sozinha quer dizer); `plural`
+  ausente repete o rótulo; `artigo` ausente é deduzido da última letra;
+  `nota` é uma linha de explicação, mostrada no glossário da tela.
+- Id que não está na tabela é ignorado, de propósito: a lista de placeholders
+  é do produto, e uma estação não a estende — se um conceito falta, ele entra
+  aqui primeiro, pelo caminho de [`promocao.md`](promocao.md).
+- Os estágios não entram em `vocabulario`: o nome deles é o que `estagios`
+  declara.
+
+**`glossario`** aponta para um markdown da estação — pode estar fora da raiz
+dela, como `trilha`, `fluxo` e `manifesto` já podem. É ali que o autor explica
+os termos dele por extenso, inclusive os que não têm placeholder (uma
+metáfora, uma persona, um apelido). A Central o abre pela aba Fluxo, na seção
+Glossário, e nunca o edita.
+
+**Precedência, uma só:** o que a estação declara em `vocabulario` (no
+`estacao.json`, ou inline no `central.json` do hub) vence o padrão do método.
+Na tela, o termo da estação **substitui** o do método, e o do método vai para
+o tooltip ("registro — termo do método"), para quem chega de fora não ficar
+perdido. No briefing para a IA saem os dois, lado a lado ("Caderno
+(registro)"), porque a IA vai ler os documentos do método e precisa casar as
+duas palavras. No snapshot estático vale o mesmo que na tela. Uma estação que
+o Embarque acaba de criar não declara a chave: nasce com o vocabulário do
+método, e muda quando quiser.
+
+Chave ausente, id ausente: vale o termo do método. Nada degrada, nada avisa —
+é o caso normal.
+
+O que **não** é isto: o vocabulário de **triagem** (`palavras_pessoais`,
+`palavras_profissionais` e os apelidos de projeto e de estação na chave
+`triagem`) são palavras pelas quais a triagem reconhece de quem é um assunto,
+não nomes para as peças do produto. Moram em [`triagem.md`](triagem.md).
 
 ---
 

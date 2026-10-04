@@ -33,6 +33,9 @@ configuração de cada estação faz:
 | as siglas de uma taxonomia anterior | `siglas_legadas` — lidas sempre, nunca emitidas |
 | os campos que o app lê e escreve no frontmatter | `frontmatter.processado` · `.nucleo` · `.origem` |
 | o registro, o índice, a lista do que não tem destino | `arquivos.registro` · `.indice` · `.sem_destino` |
+| os nomes das peças e da metáfora — estação, projeto, registro, pendência, índice… | `vocabulario` — o rótulo da estação substitui na tela, o do método vai para o tooltip; a tabela dos ids está no Glossário de [`taxonomia.md`](taxonomia.md) |
+| o que cada tipo de projeto quer dizer | `tipos` como `{"sigla", "nome"}` |
+| o glossário dos termos próprios, por extenso | `glossario` — um markdown da estação, aberto pela aba Fluxo |
 | a fila de dúvidas genuínas | um arquivo próprio, citado na orquestra da estação |
 
 Por isso o teste do critério 3 é possível: o que é mecânico já está separado do
