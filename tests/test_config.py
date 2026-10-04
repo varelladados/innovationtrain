@@ -209,6 +209,11 @@ class TestFonteUnica(unittest.TestCase):
         for e in config.PADROES["estagios"]:
             self.assertIn(e["pasta"], texto, f"pasta {e['pasta']} não está na taxonomia")
             self.assertIn(e["sigla"], texto, f"sigla {e['sigla']} não está na taxonomia")
+        # a seção Glossário é a fonte de PADROES["vocabulario"]; o detalhe está
+        # em test_vocabulario.TestFonteUnica
+        self.assertIn("## Glossário", texto)
+        for id_ in config.PADROES["vocabulario"]:
+            self.assertIn(f"`{id_}`", texto, f"id {id_} não está no Glossário da taxonomia")
 
     def test_a_porta_do_launch_json_bate_com_o_config(self):
         """A porta tem uma fonte só (`config.PORTA`); o launch.json é o único

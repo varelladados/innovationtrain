@@ -73,7 +73,50 @@ PADROES = {
         "registro": "_registro.md",
         "sem_destino": "_sem-destino.md",
     },
+    #: Cada tipo é uma sigla (string) ou `{"sigla", "nome"}` — o nome é o que o
+    #: Painel mostra ao lado da sigla, e sem ele mostra só a sigla.
     "tipos": ["app", "dados", "serviço", "curso"],
+    #: Cópia executável da seção "Glossário" de `metodo/taxonomia.md`: os nomes
+    #: que o produto usa para as próprias peças, cada um com o id pelo qual uma
+    #: estação pode trocá-lo. `artigo` é o do rótulo genérico; `metafora` marca
+    #: os sete termos ferroviários. Os estágios não entram aqui — já têm casa em
+    #: `estagios`. Mudou lá, muda aqui (há um teste que compara).
+    "vocabulario": {
+        "central":     {"rotulo": "Central", "plural": "Central", "artigo": "a", "metafora": True,
+                        "nota": "a aplicação, o que se abre no navegador"},
+        "estacao":     {"rotulo": "estação", "plural": "estações", "artigo": "a", "metafora": True,
+                        "nota": "um espaço de trabalho: uma pasta, com as suas ideias"},
+        "projeto":     {"rotulo": "projeto", "plural": "projetos", "artigo": "o", "metafora": True,
+                        "nota": "um trabalho que ganhou corpo próprio dentro da estação"},
+        "trem":        {"rotulo": "trem", "plural": "trens", "artigo": "o", "metafora": True,
+                        "nota": "a fila de pendências, passando uma por vez"},
+        "embarque":    {"rotulo": "embarque", "plural": "embarque", "artigo": "o", "metafora": True,
+                        "nota": "os primeiros passos: a aba que cria as estações"},
+        "trilho":      {"rotulo": "trilho", "plural": "trilho", "artigo": "o", "metafora": True,
+                        "nota": "a barra lateral, onde as abas se enfileiram"},
+        "linha":       {"rotulo": "linha", "plural": "linha", "artigo": "a", "metafora": True,
+                        "nota": "a sequência dos estágios, do primeiro ao último"},
+        "registro":    {"rotulo": "registro", "plural": "registro", "artigo": "o", "metafora": False,
+                        "nota": "o arquivo append-only, uma linha por item"},
+        "indice":      {"rotulo": "índice", "plural": "índices", "artigo": "o", "metafora": False,
+                        "nota": "o arquivo de orquestra de uma pasta; o da estação é o marcador"},
+        "sem_destino": {"rotulo": "sem destino", "plural": "sem destino", "artigo": "o", "metafora": False,
+                        "nota": "a lista do que está no registro e ainda não avançou"},
+        "historico":   {"rotulo": "histórico", "plural": "histórico", "artigo": "o", "metafora": False,
+                        "nota": "a subpasta de cada estágio com o que já avançou"},
+        "pendencia":   {"rotulo": "pendência", "plural": "pendências", "artigo": "a", "metafora": False,
+                        "nota": "uma decisão aberta, que só quem usa fecha"},
+        "briefing":    {"rotulo": "briefing", "plural": "briefings", "artigo": "o", "metafora": False,
+                        "nota": "o texto pronto para colar numa sessão de IA"},
+        "capturar":    {"rotulo": "Capturar", "plural": "Capturar", "artigo": "", "metafora": False,
+                        "nota": "o verbo do botão e do atalho que criam um item do primeiro estágio"},
+        "tipo":        {"rotulo": "tipo", "plural": "tipos", "artigo": "o", "metafora": False,
+                        "nota": "a classificação livre de um projeto"},
+    },
+    #: Um markdown da estação com os termos próprios dela por extenso — pode
+    #: estar fora da raiz, como `trilha` e `fluxo`. A aba Fluxo o abre; o produto
+    #: nunca o edita.
+    "glossario": None,
     #: Nomes de campo de frontmatter que a estação usa. Não são caminhos: são
     #: chaves que o produto **lê e escreve**. Ficam aqui, e não literais no
     #: código, pelo mesmo motivo da raiz — uma estação com convenção própria
@@ -208,7 +251,110 @@ class Config:
 
     @property
     def tipos(self):
-        return list(self._d.get("tipos") or [])
+        """Só as siglas, na ordem — o que entra no identificador e no filtro.
+
+        Um tipo pode vir como string ou como `{"sigla", "nome"}`; aqui as duas
+        formas viram a sigla, e quem quer o nome usa `tipos_detalhe`.
+        """
+        return [t["sigla"] for t in self.tipos_detalhe]
+
+    @property
+    def tipos_detalhe(self):
+        """`[{"sigla", "nome"}]` — `nome` é None quando a estação não o declarou."""
+        saida = []
+        for t in self._d.get("tipos") or []:
+            if isinstance(t, dict):
+                sigla = str(t.get("sigla") or "").strip()
+                if sigla:
+                    saida.append({"sigla": sigla, "nome": t.get("nome") or None})
+            elif str(t).strip():
+                saida.append({"sigla": str(t).strip(), "nome": None})
+        return saida
+
+    def tipos_nome(self, sigla):
+        """O que a sigla quer dizer, ou None — nunca um significado inventado."""
+        for t in self.tipos_detalhe:
+            if t["sigla"] == sigla:
+                return t["nome"]
+        return None
+
+    # -- vocabulário ------------------------------------------------------
+    @property
+    def vocabulario(self):
+        """O de-para dos nomes das peças, já mesclado com o padrão do método.
+
+        `{id: {rotulo, plural, artigo, nota, metafora, generico, generico_plural,
+        proprio}}`. `proprio` diz se a estação trocou o nome — é o que decide se
+        a tela mostra o tooltip e se o briefing imprime os dois. Só os ids da
+        tabela do método entram: id desconhecido é ignorado, de propósito.
+        """
+        declarado = self._d.get("vocabulario") or {}
+        saida = {}
+        for id_, gen in PADROES["vocabulario"].items():
+            v = _normalizar_termo(declarado.get(id_))
+            rotulo = v["rotulo"] if v else gen["rotulo"]
+            proprio = bool(v) and rotulo != gen["rotulo"]
+            plural = (v.get("plural") if v else None) or (gen["plural"] if not proprio else rotulo)
+            artigo = v.get("artigo") if v else None
+            if artigo is None:
+                artigo = gen["artigo"] if not proprio else _artigo_de(rotulo)
+            saida[id_] = {
+                "rotulo": rotulo,
+                "plural": plural,
+                "artigo": artigo,
+                "nota": (v.get("nota") if v else None) or gen["nota"],
+                "metafora": gen["metafora"],
+                "generico": gen["rotulo"],
+                "generico_plural": gen["plural"],
+                "proprio": proprio,
+            }
+        return saida
+
+    def termo(self, id_, plural=False):
+        """Como esta estação chama a peça `id_`; o id cru se ele não existe."""
+        v = self.vocabulario.get(id_)
+        if not v:
+            return id_
+        return v["plural"] if plural else v["rotulo"]
+
+    def termo_duplo(self, id_, plural=False):
+        """`Rótulo (genérico)` quando a estação trocou o nome; só o genérico se não.
+
+        É o que o briefing imprime: a IA vai ler os documentos do método e
+        precisa casar as duas palavras.
+        """
+        v = self.vocabulario.get(id_)
+        if not v:
+            return id_
+        proprio = v["plural"] if plural else v["rotulo"]
+        if not v["proprio"]:
+            return proprio
+        return f"{proprio} ({v['generico_plural'] if plural else v['generico']})"
+
+    def artigo(self, id_):
+        v = self.vocabulario.get(id_)
+        return v["artigo"] if v else "o"
+
+    def artigo_estagio(self, n):
+        """O artigo do nome do estágio `n`: o declarado, senão deduzido do nome."""
+        for e in self.estagios:
+            if e["n"] == n:
+                return e.get("artigo") or _artigo_de(e["nome"])
+        return "o"
+
+    def estagio_duplo(self, n, plural=False):
+        """`Nome (padrão)` quando a estação renomeou o estágio em relação ao
+        método; só o nome se não — o par de `termo_duplo` para os estágios."""
+        for e in self.estagios:
+            if e["n"] == n:
+                nome = (e.get("plural") or e["nome"]) if plural else e["nome"]
+                padrao = next((p for p in PADROES["estagios"] if p["n"] == n), None)
+                if padrao:
+                    nome_padrao = (padrao.get("plural") or padrao["nome"]) if plural else padrao["nome"]
+                    if nome_padrao != nome:
+                        return f"{nome} ({nome_padrao})"
+                return nome
+        return ""
 
     @property
     def excluir(self):
@@ -377,8 +523,15 @@ class Config:
             "tipos": self.tipos,
             "trilha": self.get("trilha"),
             "registro": self.arquivo_rel("registro"),
+            "arquivos": {k: self.arquivo_rel(k) for k in ("indice", "registro", "sem_destino")},
+            "entrada": self.get("entrada"),
             "historico": self.historico,
             "siglas_legadas": self.siglas_legadas,
+            # O vocabulário é da estação, não dado pessoal: viaja para a tela
+            # e para o snapshot. O glossário é um caminho relativo à raiz dela.
+            "vocabulario": self.vocabulario,
+            "tipos_detalhe": self.tipos_detalhe,
+            "glossario": self.get("glossario"),
             "ok": self.ok(),
             "modelo": self.modelo,
             "privada": self.privada,
@@ -392,11 +545,33 @@ class Config:
 
 # ---------------------------------------------------------------- carga
 
+def _normalizar_termo(valor):
+    """Um termo de `vocabulario` como a estação o escreveu — string ou objeto —
+    vira sempre objeto com `rotulo`. Qualquer outra coisa vira None (ignorado)."""
+    if isinstance(valor, str):
+        valor = valor.strip()
+        return {"rotulo": valor} if valor else None
+    if isinstance(valor, dict) and str(valor.get("rotulo") or "").strip():
+        return {**valor, "rotulo": str(valor["rotulo"]).strip()}
+    return None
+
+
+def _artigo_de(palavra):
+    """O artigo definido de um nome, deduzido da terminação — para o rótulo que
+    a estação declarou sem dizer o artigo, e para o nome dos estágios."""
+    p = (palavra or "").strip().lower()
+    p = p.split()[-1] if p.split() else p
+    if p.endswith(("a", "ção", "são", "ade", "agem", "ice", "ência")):
+        return "a"
+    return "o"
+
+
 def _fundir(base: dict, extra: dict) -> dict:
-    """Merge raso, com um nível a mais em `arquivos`, `projetos` e `frontmatter`."""
+    """Merge raso, com um nível a mais em `arquivos`, `projetos`, `frontmatter`
+    e `vocabulario` — a estação que declara um termo mantém os outros."""
     saida = dict(base)
     for k, v in (extra or {}).items():
-        if k in ("arquivos", "projetos", "frontmatter") and isinstance(v, dict):
+        if k in ("arquivos", "projetos", "frontmatter", "vocabulario") and isinstance(v, dict):
             saida[k] = {**base.get(k, {}), **v}
         else:
             saida[k] = v
