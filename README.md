@@ -27,6 +27,13 @@ Abre em `http://127.0.0.1:8744`. No Windows, um duplo clique em
 
 Uma Central opera **várias** estações, e troca entre elas sem reiniciar.
 
+A metáfora inteira tem sete termos — Central, estação, projeto, trem, embarque,
+trilho e linha — e para por aí. Ela está, com o glossário de todos os nomes que
+o produto usa, em [`metodo/taxonomia.md`](metodo/taxonomia.md). Uma estação que
+já chamava essas peças do seu jeito não precisa trocar de nome: declara
+`vocabulario` e `glossario` no `estacao.json`, e a tela passa a falar como ela
+(com o termo do método no tooltip). A estação de exemplo faz isso.
+
 ## Os cinco estágios
 
 Toda ideia entra crua e vai amadurecendo. As pastas numeradas são esse caminho:

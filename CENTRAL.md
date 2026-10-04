@@ -1,6 +1,6 @@
 # CENTRAL.md — Central
 
-> **Documento** · v0.17.3 · atualizado em 2026-10-03
+> **Documento** · v0.18.0 · atualizado em 2026-10-04
 >
 > Este arquivo é lido automaticamente por qualquer sessão do Claude Code que
 > abrir nesta pasta — pelo `CLAUDE.md` ao lado, que só contém `@CENTRAL.md`.
@@ -116,7 +116,7 @@ Três regras que o código cobra:
 
 Tudo que é nome de estação sai de `config.atual()`, **lido na hora da
 chamada**, nunca no import — é isso que faz o seletor trocar de estação sem
-reiniciar o servidor. Isso vale para seis famílias de coisa, e a terceira é a que
+reiniciar o servidor. Isso vale para sete famílias de coisa, e a terceira é a que
 se esquece:
 
 | Família | Onde é declarada | Exemplos |
@@ -127,6 +127,7 @@ se esquece:
 | **Siglas de uma taxonomia anterior** | `siglas_legadas` | `{sigla: nº do estágio}` — lidas em todo lugar, nunca emitidas |
 | **Duplicatas que o acervo já trouxe** | `duplicatas_historicas` | identificadores repetidos de antes da convenção `-N`: viram AVISO, não PROBLEMA |
 | **Triagem** | `triagem` | onde ficam a espera e a estação pessoal, o de-para dos projetos (esfera e apelidos) e o vocabulário de cada esfera |
+| **Vocabulário** | `vocabulario` · `glossario` · `tipos` como `{sigla, nome}` | o nome das peças e da metáfora como a estação os chama (estação, registro, pendência, índice…): na tela o rótulo dela **substitui** e o do método vai para o tooltip; no briefing saem os dois. `glossario` é um markdown dela, aberto pela aba Fluxo. A tabela dos ids é a seção Glossário de `metodo/taxonomia.md` (decisão 8) |
 
 A terceira existe porque nome de campo é comportamento, não prosa: o app grava
 `<processado>: <id>` no arquivo que cria e procura esse mesmo campo depois. Se
@@ -173,7 +174,7 @@ central/                  ← a raiz do repositório É o hub
 │   ├── trava.py          a trava do registro: uma captura por vez na estação, entre processos
 │   └── triagem.py        o passo antes da captura: levantamento, relatório e aplicar
 ├── estacoes/            as de exemplo; as suas, que o Embarque cria aqui, ficam fora do git
-│   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos
+│   ├── exemplo/          cozinha e fotografia — começa vazia, com uma trilha de 7 passos; declara `vocabulario` e um `glossario.md` (a prova viva da decisão 8)
 │   ├── exemplo-precos/   preços e lojas clone — já povoada, para ser lida
 │   ├── _inicial/         cópias intactas das duas: é delas que "voltar ao início" copia
 │   └── _passos/          os estados seguintes da trilha do exemplo

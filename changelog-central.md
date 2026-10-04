@@ -1,5 +1,49 @@
 # Changelog — Central
 
+## 0.18.0 — 2026-10-04
+
+**O vocabulário é da estação, o mecanismo é do produto (decisão 8 da taxonomia).**
+
+- **`vocabulario` no `estacao.json`**: um de-para por placeholders para os
+  nomes das peças do produto — estação, projeto, registro, sem destino,
+  pendência, índice, histórico, briefing, o verbo capturar, o tipo, e a
+  metáfora (Central, trem, embarque, trilho, linha). Até aqui só estágios,
+  siglas, arquivos de sistema e campos de frontmatter eram declaráveis; o resto
+  estava escrito no código, e uma estação com nome próprio para essas coisas ou
+  traduzia de cabeça ou vazava o nome dela para o produto. Na tela o rótulo da
+  estação **substitui** o do método e o do método vai para o tooltip; no
+  briefing para a IA saem os dois ("Caderno (registro)"). Chave ausente, id
+  ausente: vale o termo do método. `config.PADROES["vocabulario"]` é a cópia
+  executável da seção **Glossário** nova de `metodo/taxonomia.md`, e um teste
+  compara os dois.
+- **`glossario`**: um markdown da estação com os termos dela por extenso —
+  inclusive os que não têm placeholder. `GET /api/glossario` o devolve (só
+  `.md`, só leitura, pode morar fora da raiz como `trilha` e `fluxo`); a aba
+  Fluxo termina numa seção Glossário com a tabela do de-para e o botão que o
+  abre.
+- **`tipos` com nome**: cada tipo pode ser `{"sigla", "nome"}`; a tabela de
+  significados que estava escrita na página sai, e o Painel mostra o nome que
+  a estação declarou — ou nada.
+- **A metáfora ganha trilho e linha** (a barra lateral e a sequência dos
+  estágios), que a interface já usava sem registro; continua fechada.
+- **O snapshot estático leva o resumo da estação** (estágios, vocabulário,
+  arquivos de sistema) e o glossário. Antes abria com `PLAT` nulo: prefixo
+  genérico, Painel sem cartões por estágio, Fluxo dizendo "menos de dois
+  estágios". O caminho absoluto da máquina é zerado e `exemplo` vira falso.
+- **Correções colaterais**: os critérios do Fluxo são escolhidos pelo número
+  do estágio, não pela sigla; o arquivo de sem-destino vem de
+  `arquivos.sem_destino`; o breadcrumb do Embarque usa o nome da estação;
+  `entradas_hoje` traduz sigla legada como os outros cartões; o texto do
+  Embarque e o Fluxo deixam de citar a aba Nota (é o botão Capturar desde a
+  0.17.2); docstrings de `server`, `notas` e `workflow` saem do vocabulário de
+  uma estação em particular.
+- **A estação de exemplo fala como cozinha** (`Cozinha`, `Prato`, `Caderno`,
+  `Na bancada`, `Pergunta ao cozinheiro`, `Cardápio`) e tem `glossario.md`, nas
+  nove cópias; a `exemplo-precos` não declara nada, de propósito.
+- Testes: `tests/test_vocabulario.py` (config, página, fonte única), e casos
+  novos em `test_briefing`, `test_embarque`, `test_export_static`,
+  `test_servidor_local`, `test_siglas_legadas`, `test_trilha`.
+
 ## 0.17.3 — 2026-10-03
 
 **Duas escolhas menores da revisão de UX, decididas pelo dono em 2026-10-03.**
