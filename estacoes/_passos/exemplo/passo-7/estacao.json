@@ -45,10 +45,22 @@
     "sem_destino": "_sem-destino.md"
   },
   "tipos": [
-    "app",
-    "dados",
-    "curso",
-    "servico"
+    {
+      "sigla": "app",
+      "nome": "Aplicativo ou site"
+    },
+    {
+      "sigla": "dados",
+      "nome": "Análise de dados"
+    },
+    {
+      "sigla": "curso",
+      "nome": "Curso ou aula"
+    },
+    {
+      "sigla": "servico",
+      "nome": "Serviço prestado"
+    }
   ],
   "projetos": {
     "pasta": "5-projetos",
@@ -60,6 +72,30 @@
     "__pycache__",
     ".claude"
   ],
+  "vocabulario": {
+    "estacao": {
+      "rotulo": "Cozinha",
+      "plural": "Cozinhas",
+      "artigo": "a",
+      "nota": "o lugar onde as ideias são preparadas — esta pasta"
+    },
+    "projeto": {
+      "rotulo": "Prato",
+      "plural": "Pratos",
+      "artigo": "o",
+      "nota": "o que já tem forma de ir à mesa: pasta própria, lista do que falta, versão"
+    },
+    "registro": "Caderno",
+    "sem_destino": "Na bancada",
+    "pendencia": {
+      "rotulo": "Pergunta ao cozinheiro",
+      "plural": "Perguntas ao cozinheiro",
+      "artigo": "a",
+      "nota": "uma escolha que só quem cozinha faz; a Central só a mostra"
+    },
+    "indice": "Cardápio"
+  },
+  "glossario": "glossario.md",
   "pendencias": "_pendencias",
   "trilha": "_trilha.md",
   "utilitario": "../../metodo/estacao.py",

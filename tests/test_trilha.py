@@ -104,7 +104,7 @@ class TestPassos(_ComConfig):
         Sem isto, editar o `_indice.md` do exemplo e esquecer de propagar faz o
         primeiro clique em "voltar ao início" desfazer a edição — em silêncio.
         """
-        constantes = ["_indice.md", "_trilha.md", "CLAUDE.md", "estacao.json"]
+        constantes = ["_indice.md", "_trilha.md", "CLAUDE.md", "estacao.json", "glossario.md"]
         for p in trilha.passos():
             pasta = (EXEMPLO / str(p["pasta"]).replace("\\", "/")).resolve()
             for rel in constantes:
