@@ -270,7 +270,7 @@ def _claude_md(tax):
         "> não estiver, a sessão não sabe.", "",
         "## O que é esta pasta", "",
         f"Uma estação da Central. {m['proposito']}", "",
-        f"O trem daqui: {nomes}. Toda entrada chega crua no primeiro estágio e vai",
+        f"A linha daqui: {nomes}. Toda entrada chega crua no primeiro estágio e vai",
         "amadurecendo. A porta de entrada é o `_indice.md`.", "",
         "## As regras que valem aqui", "",
         "- **O registro é append-only.** Nunca edite nem apague linha existente;",
@@ -438,9 +438,9 @@ def _fim(L, destino, base, lista, taxs=None):
         L += ["## Passo 5 — o que eu faço depois", "",
               "Quando terminar, me diga estas três coisas, nesta ordem:", "",
               f"1. que as estações estão em `{base}` e já aparecem no seletor da Central;",
-              "2. que o próximo passo é **abrir o app e criar a primeira nota** pela "
-              "aba 📝 Nota — é a operação mais barata do sistema, e é assim que o "
-              "registro ganha a primeira linha;",
+              "2. que o próximo passo é **abrir o app e capturar o primeiro item** pelo "
+              "botão **+ Capturar** (`Ctrl+N`, de qualquer tela) — é a operação mais "
+              "barata do sistema, e é assim que o registro ganha a primeira linha;",
               "3. que **você não commitou nada**, de propósito."]
         if versionam:
             L += ["   Para " + " e ".join(versionam) + ", basta eu pedir o primeiro ponto "
@@ -452,13 +452,17 @@ def _fim(L, destino, base, lista, taxs=None):
         L += ["", "> Sobre as decisões: cada estação tem uma pasta `_pendencias/`, vazia "
               "agora. Quando uma dúvida sua depender de uma escolha, ela vira um "
               "arquivo lá — uma pergunta com opções — e aparece na aba Workflow do app.", ""]
+        L += ["> Sobre os nomes: as estações nascem com o vocabulário do método (estação, "
+              "registro, pendência…). Cada uma pode, mais tarde, declarar `vocabulario` e "
+              "`glossario` no `estacao.json` dela para chamar essas peças do seu jeito — a "
+              "seção Glossário de `metodo/taxonomia.md` explica. Não escreva essas chaves agora.", ""]
         espera = next((f"{config.MODELOS[t['modelo']]['pasta']}/{_espera_aqui(t)}/"
                        for t in taxs.values() if _espera_aqui(t)), None)
         if espera:
             L += [f"> Sobre a triagem: o que chega sem se saber de quem é espera em `{espera}`, "
                   "dentro da estação privada — nunca numa versionada. A chave `triagem` do "
                   "`estacao.json` de cada estação aponta para lá e para as outras estações: é o "
-                  "que dá à aba 📝 Nota para onde mandar o que não é trabalho, e à aba 🧴 Triagem "
+                  "que dá ao botão Capturar para onde mandar o que não é trabalho, e à aba Triagem "
                   "o que mostrar.", ""]
 
     L += ["---", "",

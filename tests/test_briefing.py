@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import apoio  # noqa: E402  (insere app/ no sys.path)
 import briefing  # noqa: E402
+import config  # noqa: E402
 import pendencias  # noqa: E402
 
 
@@ -210,6 +211,44 @@ class TestAvancar(unittest.TestCase):
     def test_projeto_sem_backlog(self):
         r = briefing.briefing_avancar(self.PASTA, [], {})
         self.assertIn("nenhum backlog indexado", r["texto"])
+
+
+class TestVocabulario(unittest.TestCase):
+    """O briefing imprime o nome da estação E o do método, lado a lado: a IA vai
+    ler os documentos do método e precisa casar as duas palavras."""
+
+    VOC = {"estacao": "Oficina", "pendencia": "Dúvida", "registro": "Diário"}
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="central-brf-voc-"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_com_a_chave_saem_os_dois(self):
+        estacao_de_teste(self.tmp, vocabulario=self.VOC)
+        texto = briefing.briefing_pendencias()["texto"]
+        self.assertIn("Dúvida (pendência)", texto)
+        self.assertIn("Diário (registro)", texto)
+        texto = briefing.briefing_classificar("1-capturas/x.md")["texto"]
+        self.assertIn("Dúvida (pendência)", texto)
+        # o que a estação não renomeou sai só no termo do método
+        texto = briefing.briefing_avancar("projeto-de-teste", [], {})["texto"]
+        self.assertIn("Avançar o projeto projeto-de-teste", texto)
+
+    def test_sem_a_chave_so_o_termo_do_metodo(self):
+        estacao_de_teste(self.tmp)
+        texto = briefing.briefing_pendencias()["texto"]
+        self.assertIn("pendência", texto)
+        self.assertNotIn("(pendência)", texto)
+        self.assertNotIn("(registro)", texto)
+
+    def test_estagio_renomeado_sai_com_o_do_metodo(self):
+        estagios = [dict(e) for e in config.PADROES["estagios"]]
+        estagios[0]["nome"], estagios[0]["plural"] = "Achado", "Achados"
+        estacao_de_teste(self.tmp, estagios=estagios)
+        texto = briefing.briefing_classificar("1-capturas/x.md")["texto"]
+        self.assertIn("Classificar: Achado (Captura) → Nota", texto)
 
 
 class TestGerar(unittest.TestCase):

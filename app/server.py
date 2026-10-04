@@ -10,7 +10,7 @@ concorrência otimista, backup antes de gravar, preserva LF/CRLF):
 | endpoint                  | escreve o quê                          | módulo        |
 |---------------------------|----------------------------------------|---------------|
 | POST /api/backlog/toggle  | `- [ ]`/`- [x]` numa linha de backlog  | aqui          |
-| POST /api/nota/nova       | SBC em .pendente/ + linha no LOG       | notas.py      |
+| POST /api/nota/nova       | item no estágio de entrada + linha no registro | notas.py |
 | POST /api/pendencia/responder | opção/“Outra resposta” de pendência | pendencias.py |
 
 POST /api/launch abre executável local (efeito colateral, não escreve arquivo).
@@ -173,12 +173,14 @@ def repositorios():
     **a ferramenta** (a Central). A separação que importa continua de pé — é
     fácil salvar um e esquecer o outro, e é por isso que aparecem juntos.
     """
-    saida = [{"chave": "central", "rotulo": "A Central (app, método e exemplo)",
+    # os rótulos saem do vocabulário da estação ativa; sem estação, do padrão do método
+    cfg = config.atual() if config.definida() else config.carregar(PROJECT_DIR)
+    central = cfg.termo("central")
+    saida = [{"chave": "central", "rotulo": f"{cfg.artigo('central').upper()} {central} (app, método e exemplo)",
               "pasta": PROJECT_DIR}]
     if config.definida():
-        cfg = config.atual()
         saida.insert(0, {"chave": "estacao",
-                         "rotulo": f"Estação: {cfg.nome}", "pasta": cfg.raiz,
+                         "rotulo": f"{cfg.termo('estacao').capitalize()}: {cfg.nome}", "pasta": cfg.raiz,
                          "privada": cfg.privada})
     return saida
 

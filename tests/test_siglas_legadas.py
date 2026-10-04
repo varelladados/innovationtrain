@@ -229,6 +229,21 @@ class TestMetricas(_ComEstacao):
         self.assertEqual(velho["dias"], (datetime.date.today() - datetime.date(2026, 8, 31)).days)
         self.assertEqual(log["entradas_hoje"], 0)
 
+    def test_entradas_hoje_reconhece_a_sigla_legada(self):
+        """Uma linha de hoje com sigla legada que cai no PRIMEIRO estágio conta
+        como entrada — a mesma tradução dos outros cartões, que faltava aqui."""
+        import datetime
+        import metrics
+        hoje = datetime.date.today()
+        tax = taxonomia(siglas_legadas=dict(LEGADAS, SBA=1))
+        (self.tmp / "estacao.json").write_text(json.dumps(tax, ensure_ascii=False), encoding="utf-8")
+        linha = (f"| {hoje.strftime('%y.%m.%d')}-SBA-001-entrada-de-hoje-ab12 | {hoje.isoformat()} | SBA "
+                 f"| `1-capturas/` | chegou hoje, com a sigla antiga | [arquivo](<1-capturas/x.md>) |\n")
+        with (self.tmp / "_registro.md").open("a", encoding="utf-8") as f:
+            f.write(f"\n## Entradas {hoje.isoformat()}\n\n" + CABECA + linha)
+        self.cfg = config.aplicar(config.carregar(self.tmp))
+        self.assertEqual(metrics._metricas_log()["entradas_hoje"], 1)
+
     def test_a_continuacao_tira_a_original_do_sem_destino(self):
         """O registro é append-only: a promoção vai numa linha `<id>-1` com a
         seta, e a original fica como estava. Ela não é "sem destino"."""

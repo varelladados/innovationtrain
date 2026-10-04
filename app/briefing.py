@@ -47,10 +47,10 @@ def guardrails():
     return f"""## Guardrails (regras permanentes — íntegra em `{doutrina}`)
 
 - **Apagar é sempre lógico, nunca físico.** Rebaixar/consolidar acontece em índice e `.md`; pasta de projeto não some.
-- **O registro (`{registro}`) é append-only.** Nunca edite nem apague linha existente; continuação usa o mesmo ID com sufixo `-N`.
+- **O {cfg.termo_duplo("registro")} (`{registro}`) é append-only.** Nunca edite nem apague linha existente; continuação usa o mesmo ID com sufixo `-N`.
 - **Nunca pule etapa:** {cadeia} em ordem, cada uma com ID próprio e linha própria no registro, mesmo que aconteçam na mesma sessão.
 - **IDs só via {comando_id}** — nunca monte o ID à mão, e grave a linha do registro antes de pedir o próximo (senão dois itens nascem com o mesmo SEQ).
-- **Nunca fecha pendência por inferência** — só o campo `## Resposta` explícito fecha; "Deixar para depois" incrementa `**Adiada:**` e mantém ativa.
+- **Nunca fecha {cfg.termo_duplo("pendencia")} por inferência** — só o campo `## Resposta` explícito fecha; "Deixar para depois" incrementa `**Adiada:**` e mantém ativa.
 - **Salvar é automático; publicar é decisão.** Commite local ao terminar, sem me pedir autorização — me **avise** o que entrou, não pergunte. `git add` **nominal**, nunca `git add .`. Mudança que não é sua fica de fora. **Push só com autorização explícita e separada.**
 - **Artefato de sessão vive no repositório**: plano, relatório ou análise substancial é copiado pra raiz do projeto com a convenção local (`plano-<assunto>-<AAAA-MM-DD>.md`) e commitado na mesma sessão.
 - O que a estação declarar em `excluir` fica de fora de tudo isso — nunca
@@ -75,16 +75,17 @@ def briefing_pendencias():
     respondidas = [c for c in dados["cards"] if c["estado"] == "respondida"]
     adiadas = [c for c in dados["cards"] if c["estado"] == "adiada-marcada"]
 
-    linhas = [_cabecalho("Encaminhar pendências respondidas no console"), ""]
+    cfg = config.atual()
+    linhas = [_cabecalho(f"Encaminhar {cfg.termo_duplo('pendencia', plural=True)} respondidas no console"), ""]
     if not respondidas:
         linhas += ["Nenhuma pendência respondida aguardando encaminhamento agora.", ""]
     else:
         linhas += [
-            f"O usuário respondeu **{len(respondidas)}** pendência(s) pela interface do "
-            "Central (marcou a opção no próprio arquivo). Processe cada uma: "
+            f"O usuário respondeu **{len(respondidas)}** {cfg.termo_duplo('pendencia')}(s) pela interface "
+            f"d{cfg.artigo('central')} {cfg.termo('central')} (marcou a opção no próprio arquivo). Processe cada uma: "
             "aplique a decisão, renomeie o arquivo pra `pendencia-resolvida-*`, "
             "escreva o bloco `## Resolvida em <data>` explicando o que foi feito, "
-            "e regenere o `sem-destino` da estação.", "",
+            f"e regenere o {cfg.termo_duplo('sem_destino')} d{cfg.artigo('estacao')} {cfg.termo('estacao')}.", "",
         ]
         for c in respondidas:
             marcadas = []
@@ -121,8 +122,11 @@ def briefing_classificar(path, text_cache=None):
     """Classificar um item do primeiro estágio pelo checklist do método."""
     cfg = config.atual()
     e1, e2 = cfg.estagios[0], cfg.estagios[1]
+    # o nome do estágio é o que a estação declara; se ela o renomeou em relação
+    # ao método, o do método vai entre parênteses — a IA lê os dois documentos
+    n1, n2 = cfg.estagio_duplo(e1["n"]), cfg.estagio_duplo(e2["n"])
     if not path:
-        raise ValueError(f"informe o caminho d{'a' if e1['nome'][-1] == 'a' else 'o'} {e1['nome']}")
+        raise ValueError(f"informe o caminho d{cfg.artigo_estagio(e1['n'])} {n1}")
     rel = _rel(path)
     if e1["pasta"] not in rel:
         raise ValueError(f"o caminho não está em {e1['pasta']}")
@@ -134,7 +138,7 @@ def briefing_classificar(path, text_cache=None):
         trecho = " ".join(corpo.split())[:400]
 
     linhas = [
-        _cabecalho(f"Classificar: {e1['nome']} → {e2['nome']}"), "",
+        _cabecalho(f"Classificar: {n1} → {n2}"), "",
         f"Item: `{rel}`",
     ]
     if trecho:
@@ -148,8 +152,8 @@ def briefing_classificar(path, text_cache=None):
         f"O item já tem ID e linha no registro. Aplique o checklist de "
         f"`{checklist}` — os 4 critérios (forma definida · serve de input sem reprocessar · "
         "é decisão/v1/resumo com próximos passos · deixou de ser ambíguo). **2 ou mais "
-        f"\"sim\" promovem a {e2['nome']}**; menos que isso, o item fica onde está, e dúvida "
-        f"genuína vira pendência. O fluxo inteiro está em `{fluxo}`.",
+        f"\"sim\" promovem a {n2}**; menos que isso, o item fica onde está, e dúvida "
+        f"genuína vira {cfg.termo_duplo('pendencia')}. O fluxo inteiro está em `{fluxo}`.",
         "",
         f"Se promover: gere o ID novo com `{util} novo-id --etapa {e2['sigla']} --tipo <{tipos}>`, "
         f"crie o arquivo em `{e2['pasta']}/` com `origem:`, acrescente a **linha nova** "
@@ -182,9 +186,10 @@ def briefing_avancar(pasta, entries, text_cache):
                 texto = linha.strip()[5:].replace("**[ESSENCIAL]**", "").strip()
                 essenciais.append((b["path"], " ".join(texto.split())[:180]))
 
+    cfg = config.atual()
     linhas = [
-        _cabecalho(f"Avançar o projeto {pasta}"), "",
-        f"Leia primeiro `{base}CLAUDE.md` (o índice do projeto) e os backlogs:",
+        _cabecalho(f"Avançar {cfg.artigo('projeto')} {cfg.termo_duplo('projeto')} {pasta}"), "",
+        f"Leia primeiro `{base}CLAUDE.md` (o {cfg.termo('indice')} d{cfg.artigo('projeto')} {cfg.termo('projeto')}) e os backlogs:",
         "",
     ]
     linhas += [f"- `{b['path']}`" for b in backlogs] or ["- (nenhum backlog indexado)"]

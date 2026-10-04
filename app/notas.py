@@ -1,8 +1,9 @@
-"""Frente 1 do console operacional — captura de nota crua (SBC) pela UI, sem
-abrir sessão do Claude Code. Mesma mecânica da skill encaminhando-trecho-para-
-captura (novo-id -> arquivo no estágio de entrada -> linha no registro), disparada
-por POST /api/nota/nova em vez de chat. Nunca classifica, nunca decide destino
-— ver PRJ-Estacao/plano-console-operacional-2026-09-06.md, frente 1.
+"""Captura pela interface — um item do primeiro estágio criado sem abrir sessão
+de IA. A mesma mecânica que uma skill de captura faz no chat (novo-id ->
+arquivo no estágio de entrada -> linha no registro), disparada por
+POST /api/nota/nova. Nunca classifica, nunca decide destino: o item nasce
+sempre no primeiro estágio — ou, se a triagem mandar, na espera ou na estação
+privada (ver `triagem_ui.py`).
 
 O utilitário é chamado via subprocess, nunca importado direto: `novo-id` faz
 sys.exit() em erro, o que mataria o servidor inteiro se fosse import (mesmo

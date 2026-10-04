@@ -209,6 +209,20 @@ class TestPromptCria(unittest.TestCase):
     def claude(self, modelo):
         return (self.raiz(modelo) / "CLAUDE.md").read_text(encoding="utf-8")
 
+    def test_o_texto_cita_a_interface_de_hoje(self):
+        """A aba Nota virou o botão Capturar (0.17.2): o texto não pode mandar a
+        pessoa procurar uma aba que não existe — nem com o emoji antigo."""
+        self.assertNotIn("📝", self.texto)
+        self.assertNotIn("🧴", self.texto)
+        self.assertIn("+ Capturar", self.texto)
+        self.assertIn("aba Triagem", self.texto)
+        # as chaves de vocabulário são citadas, nunca escritas pelo Embarque
+        self.assertIn("`vocabulario`", self.texto)
+        for modelo in config.MODELOS:
+            dados = (self.raiz(modelo) / "estacao.json").read_text(encoding="utf-8")
+            self.assertNotIn('"vocabulario"', dados)
+            self.assertNotIn('"glossario"', dados)
+
     def test_as_tres_nascem_validas(self):
         for modelo, m in config.MODELOS.items():
             with self.subTest(modelo):

@@ -146,7 +146,8 @@ def _metricas_log():
     entradas_hoje = sum(1 for l in linhas
                         if l["data"] == hoje.isoformat() and "→" not in l["etapa_tipo"]
                         and not re.match(r"^.+-\d+$", l["id"])
-                        and (etapa_re.search(l["etapa_tipo"]) or [None, ""])[1] == primeiro)
+                        # a sigla legada conta no estágio de hoje, como nos outros cartões
+                        and cfg.sigla_canonica((etapa_re.search(l["etapa_tipo"]) or [None, ""])[1]) == primeiro)
     return {
         "por_etapa": dict(por_etapa),
         "por_tipo": dict(por_tipo),

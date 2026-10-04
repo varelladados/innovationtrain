@@ -40,8 +40,8 @@ def _estagio_de(etapa):
 def colunas_do_quadro():
     """As colunas do kanban, e como um item cai numa delas.
 
-    Onde a estação declara um ciclo de vida dentro do estágio (uma
-    legado, com .entrada/.pendente/.historico), as colunas são ele. Onde não
+    Onde a estação declara um ciclo de vida dentro do estágio (`ciclo_vida`:
+    subpastas de triagem, um acervo anterior à Central), as colunas são ele. Onde não
     declara — a taxonomia nova — as colunas são os próprios estágios, que é o
     quadro que faz sentido quando o item muda de pasta ao avançar.
     """
