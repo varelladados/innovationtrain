@@ -1,5 +1,18 @@
 # Changelog — Central
 
+## 0.18.1 — 2026-10-07
+
+**`novo-id --tipo` aceita o tipo declarado com nome.**
+
+- A 0.18.0 deixou cada tipo ser `{"sigla", "nome"}` e ensinou a tela a ler as
+  duas formas, mas `metodo/estacao.py` continuou lendo `tipos` como lista de
+  strings: numa estação que declara nomes, `novo-id --tipo DIG` caía com
+  `AttributeError: 'dict' object has no attribute 'upper'` — e a regra 5 diz
+  que identificador só nasce pelo utilitário. Agora `Estacao.tipos` devolve só
+  as siglas, nas duas formas, com a mesma leitura de `app/config.py`; teste de
+  regressão em `tests/test_siglas_legadas.py`. Achado em 2026-10-07, ao
+  promover um item a projeto numa estação com tipos nomeados.
+
 ## 0.18.0 — 2026-10-04
 
 **O vocabulário é da estação, o mecanismo é do produto (decisão 8 da taxonomia).**

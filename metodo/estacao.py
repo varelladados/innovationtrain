@@ -119,7 +119,22 @@ class Estacao:
 
     @property
     def tipos(self):
-        return list(self.d.get("tipos") or [])
+        """Só as siglas, na ordem — o que entra no identificador.
+
+        Desde a 0.18.0 um tipo pode vir como string ou como `{"sigla", "nome"}`
+        (o nome é da tela; `app/config.py` tem a mesma leitura). Aqui as duas
+        formas viram a sigla, e `novo-id --tipo` volta a aceitar o tipo que a
+        estação declarou com nome.
+        """
+        saida = []
+        for t in self.d.get("tipos") or []:
+            if isinstance(t, dict):
+                sigla = str(t.get("sigla") or "").strip()
+            else:
+                sigla = str(t).strip()
+            if sigla:
+                saida.append(sigla)
+        return saida
 
     @property
     def historico(self):

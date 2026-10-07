@@ -286,6 +286,27 @@ class TestUtilitario(unittest.TestCase):
         self.assertRegex(r.stdout.strip(),
                          r"^\d{2}\.\d{2}\.\d{2}-FUN-\d{3}-uma-funcionalidade-[a-f0-9]{4}$")
 
+    def test_novo_id_com_tipo_declarado_com_nome(self):
+        """Desde a 0.18.0 um tipo pode ser `{"sigla", "nome"}`; até a 0.18.1 o
+        utilitário só lia strings e `--tipo` caía com AttributeError. A sigla
+        entra no identificador nas duas formas, e maiúscula ou minúscula."""
+        montar(self.tmp, tipos=[{"sigla": "DIG", "nome": "Digital"}, "DAD"])
+        r = util("novo-id", "--raiz", str(self.tmp), "--etapa", "FUN",
+                 "--tipo", "dig", "--slug", "uma funcionalidade")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertRegex(r.stdout.strip(),
+                         r"^\d{2}\.\d{2}\.\d{2}-FUN-DIG-\d{3}-uma-funcionalidade-[a-f0-9]{4}$")
+
+    def test_novo_id_recusa_tipo_que_a_estacao_nao_declarou(self):
+        """A recusa continua — e a mensagem lista as siglas, não os dicionários."""
+        montar(self.tmp, tipos=[{"sigla": "DIG", "nome": "Digital"}])
+        r = util("novo-id", "--raiz", str(self.tmp), "--etapa", "FUN",
+                 "--tipo", "XYZ", "--slug", "sem tipo")
+        self.assertNotEqual(r.returncode, 0)
+        saida = r.stdout + r.stderr
+        self.assertIn("DIG", saida)
+        self.assertNotIn("sigla", saida.split("tipos:")[-1])
+
     def test_a_sequencia_do_dia_nao_colide_com_a_legada(self):
         """`SBI` e `IDE` são o mesmo estágio, mas sequências independentes —
         o identificador inteiro é que precisa ser único, e o hash garante isso."""
